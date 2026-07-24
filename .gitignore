@@ -11,7 +11,7 @@
 # /storage/logs/*
 
 # Keep storage/app/public if you want uploaded files tracked
-!/storage/app/public
+# !/storage/app/public
 
 # Environment & Config
 .env
