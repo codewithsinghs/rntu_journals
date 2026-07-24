@@ -24,11 +24,11 @@ class HeaderComposer
         $currentPage = $this->resolveCurrentPage();
 
         // Temporary debug log — remove once confirmed working.
-        Log::info('HeaderComposer debug', [
-            'route_name'    => request()->route()?->getName(),
-            'url'           => request()->path(),
-            'resolved_page' => $currentPage,
-        ]);
+        // Log::info('HeaderComposer debug', [
+        //     'route_name'    => request()->route()?->getName(),
+        //     'url'           => request()->path(),
+        //     'resolved_page' => $currentPage,
+        // ]);
 
         $view->with([
             'logoIcon'  => $settings?->logo,

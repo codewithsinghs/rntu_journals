@@ -4,8 +4,8 @@
 @include('frontend.partials.AllPageHeader')
 
  <section class="s__container_custom">
-    
- @include('frontend.partials.guideCart')
+
+ @include('frontend.partials.guidecart')
 
 </section>
 
