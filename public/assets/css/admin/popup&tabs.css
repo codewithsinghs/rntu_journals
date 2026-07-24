@@ -1,0 +1,531 @@
+.modal-content {
+    border: none;
+    border-radius: 10px;
+    background-color: var(--white);
+    position: relative;
+
+}
+
+.modal-content .modal-header {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    border: none;
+    background: var(--primary-red);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    z-index: 1;
+    padding: 10px;
+
+}
+
+.modal-content .modal-header button.btn-close {
+    margin: auto;
+    padding: 0;
+    opacity: 1;
+    background-image: url(/storage/min.png);
+}
+
+.modal-content .modal-body {
+    padding: 20px;
+    position: relative;
+    min-height: 200px;
+}
+
+
+
+.modal-content .modal-body .full-width-i {
+    margin: 20px 0 0;
+    padding: 0 20px;
+}
+
+.modal-content .modal-body .full-width-i span.input-set {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content .modal-body .full-width-i span.input-set label {
+    font-size: 14px;
+    line-height: 140%;
+    color: #2d3748;
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.modal-content .modal-body .full-width-i span.input-set input,
+textarea {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    background-color: #F5F7FA;
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+    height: 100px;
+    padding: 10px;
+    margin: .40px 0;
+}
+
+.modal-content .top .pop-title {
+    background: var(--primary-clr);
+    font-size: 15px;
+    padding: 15px 20px;
+    color: var(--white);
+    border-radius: 0px 10px 10px 0px;
+    position: absolute;
+    left: 0;
+    top: 20px;
+}
+
+.modal-content .top .pop-title-remove {
+    background: var(--primary-red);
+    font-size: 15px;
+    padding: 15px 20px;
+    color: var(--white);
+    border-radius: 0px 10px 10px 0px;
+    position: absolute;
+    left: 0;
+    top: 20px;
+}
+
+.modal-content .top .pop-title-green {
+    background: var(--nature-green);
+    font-size: 15px;
+    padding: 15px 20px;
+    color: var(--white);
+    border-radius: 0px 10px 10px 0px;
+    position: absolute;
+    left: 0;
+    top: 20px;
+}
+
+.modal-content .modal-body .middle-upper-card {
+    margin: 70px 0 0;
+    padding: 20px;
+    box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+    border-radius: 15px;
+    background-color: #fff;
+}
+
+.modal-content .middle {
+    margin: 70px 0 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    padding: 0 20px;
+}
+
+.modal-content .middle-no-grid {
+    margin: 70px 0 0;
+    padding: 0 20px;
+}
+
+.modal-content .middle-3 {
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    padding: 0 20px;
+}
+
+.modal-content .margin-zero {
+    margin-top: 0;
+}
+
+.modal-content .middle-content {
+    text-align: center;
+    font-size: 15px;
+}
+
+.modal-content .middle-content,
+.modal-content .middle-3-content {
+    margin: 70px 0 0;
+    padding: 0 20px;
+}
+
+
+
+.modal-content .middle-3-content p.red {
+    text-align: center;
+    font-size: 15px;
+    color: var(--primary-red);
+}
+
+.modal-content .middle-content,
+.modal-content .middle-3-content p.green {
+    text-align: center;
+    font-size: 15px;
+}
+
+.modal-content .reason {
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    gap: 10px;
+}
+
+.modal-content .reason label {
+    font-size: 14px;
+    line-height: 140%;
+
+    color: #2d3748;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.modal-content .reason input,
+select {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    background-color: #F5F7FA;
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+    
+
+    padding: 10px;
+}
+
+
+.modal-content .middle span.input-set,
+.modal-content .middle-3 span.input-set {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content .modal-body .full-width-i span.input-set label .big_b {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-content .middle span.input-set label,
+.modal-content .middle-3 span.input-set label {
+    font-size: 14px;
+    line-height: 140%;
+    color: #2d3748;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+/* Placeholder color */
+::placeholder {
+    
+}
+
+/* Placeholder color */
+
+.modal-content .middle span.input-set input,
+select,
+.modal-content .middle-3 span.input-set input,
+select {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    background-color: #F5F7FA;
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+    padding: 10px;
+}
+
+.modal-content .middle span.input-set input.status-leave,
+.modal-content .middle-3 span.input-set input.status-leave {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+
+    padding: 10px;
+}
+
+.green {
+    background-color: var(--nature-green) !important;
+}
+
+.red {
+    background-color: var(--primary-red) !important;
+}
+
+.yellow {
+    background-color: var(--salty-orange) !important;
+}
+
+.modal-content .middle span.input-set input.status-leave::placeholder,
+.modal-content .middle-3 span.input-set input.status-leave::placeholder {
+    text-align: center;
+    color: var(--white);
+}
+
+.modal-content .middle span.input-set input:focus,
+.modal-content .middle-3 span.input-set input:focus {
+    outline: none;
+}
+
+.modal-content .middle span.input-set select,
+.modal-content .middle-3 span.input-set select {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    background-color: #F5F7FA;
+    background-image: url(../public/dashboard/drop\ arrow.png);
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+
+
+    padding: 10px;
+    background-size: 10px;
+}
+
+.modal-content .middle span.input-set select::placeholder {
+    
+}
+
+.modal-content .bottom-btn {
+    margin-top: 20px;
+    padding: 0 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.modal-content .bottom-btn button.red {
+    min-width: 160px;
+    background-color: #D32F2F;
+    padding: 15px 20px;
+    color: var(--white);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.modal-content .bottom-btn button.green {
+    min-width: 160px;
+    background-color: #27C374;
+    padding: 15px 20px;
+    color: var(--white);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.modal-content .bottom-btn button.orange {
+    min-width: 160px;
+    background-color: orange;
+    padding: 15px 20px;
+    color: var(--white);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.modal-content .bottom-btn button.blue {
+    min-width: 160px;
+    background-color: var(--primary-clr);
+    padding: 15px 20px;
+    border-radius: 10px;
+    color: var(--white);
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.pop-bottom-div p {
+    margin: 20px 0;
+    font-size: 15px;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+/* Tabs Start*/
+
+/* Tabs Input css */
+
+.modal-content .tabs-middle {
+
+    margin: 70px 0 0;
+    display: grid;
+    gap: 25px;
+    padding: 0 20px;
+}
+
+.modal-content .tabs-middle .tabset .tab-panels section.tab-panel .row {
+    margin-top: 10px;
+}
+
+.modal-content .tabs-middle span.input-set {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content .tabs-middle span.input-set label {
+    font-size: 14px;
+    line-height: 140%;
+
+    color: #2d3748;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+/* Placeholder color */
+::placeholder {
+    
+}
+
+/* Placeholder color */
+
+.modal-content .tabs-middle span.input-set input,
+select {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    background-color: #F5F7FA;
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+    
+
+    padding: 10px;
+}
+
+
+
+.modal-content .tabs-middle span.input-set input:focus {
+    outline: none;
+}
+
+.modal-content .tabs-middle span.input-set select {
+    border: none;
+    width: 100%;
+    border-radius: 6.77px;
+    background-color: #F5F7FA;
+    background-image: url(../public/dashboard/drop\ arrow.png);
+    height: 49px;
+    overflow: hidden;
+    text-align: left;
+    font-size: 14px;
+    
+
+    padding: 10px;
+    background-size: 10px;
+}
+
+/* Input css */
+
+.tabset>input[type="radio"] {
+    position: absolute;
+    left: -200vw;
+}
+
+.tabset .tab-panel {
+    display: none;
+}
+
+.tabset>input:first-child:checked~.tab-panels>.tab-panel:first-child,
+.tabset>input:nth-child(3):checked~.tab-panels>.tab-panel:nth-child(2),
+.tabset>input:nth-child(5):checked~.tab-panels>.tab-panel:nth-child(3),
+.tabset>input:nth-child(7):checked~.tab-panels>.tab-panel:nth-child(4),
+.tabset>input:nth-child(9):checked~.tab-panels>.tab-panel:nth-child(5),
+.tabset>input:nth-child(11):checked~.tab-panels>.tab-panel:nth-child(6) {
+    display: block;
+}
+
+.tabset>label {
+    font-size: 15px;
+    position: relative;
+    display: inline-block;
+    padding: 20px 35px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tabset>label:hover,
+.tabset>input:focus+label,
+.tabset>input:checked+label {
+    background-color: var(--primary-clr);
+    color: var(--white);
+    border-radius: 10px;
+}
+
+.tab-panel {
+    padding: 10px 0;
+}
+
+.tabs-middle .tab-panels .tab-panel p.heading {
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+
+/* Boostrap Accordion Edit */
+
+.accordion-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 15px 8px;
+    font-size: 15px;
+    color: var(--bs-accordion-btn-color);
+    text-align: left;
+    background-color: var(--bs-accordion-btn-bg);
+    border: 0;
+    border-radius: 0;
+    overflow-anchor: none;
+    transition: var(--bs-accordion-transition);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--primary-clr);
+    color: var(--white);
+    font-weight: 600;
+}
+
+.accordion-button:not(.collapsed)::after {
+    transform: var(--bs-accordion-btn-icon-transform);
+}
+
+.accordion-body {
+    padding: var(--bs-accordion-body-padding-y) var(--bs-accordion-body-padding-x);
+    margin-bottom: 10px;
+}
+
+/* End */
+
+/* (max-width: 700px) and (min-width: 200px)*/
+
+@media screen and (max-width: 700px) and (min-width: 200px) {
+    .modal-content .middle {
+        grid-template-columns: repeat(1, 1fr);
+    }
+
+    .modal-content .bottom-btn {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+
+    .tabset>label {
+        width: 100%;
+        font-size: 12px;
+    }
+
+    .tabset>label {
+        padding: 15px 25px;
+    }
+
+    .modal-content .tabs-middle {
+        padding: 0;
+    }
+}

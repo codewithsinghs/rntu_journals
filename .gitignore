@@ -1,0 +1,47 @@
+# Laravel & PHP
+/vendor/
+/node_modules/
+/bootstrap/cache/
+# /storage/*.key
+# /storage/app/public/*
+# /storage/debugbar/*
+# /storage/framework/cache/*
+# /storage/framework/sessions/*
+# /storage/framework/views/*
+# /storage/logs/*
+
+# Keep storage/app/public if you want uploaded files tracked
+!/storage/app/public
+
+# Environment & Config
+.env
+.env.*
+.phpunit.result.cache
+Homestead.yaml
+Homestead.json
+
+# IDE & Editor
+/.idea/
+/.vscode/
+/*.sublime-project
+/*.sublime-workspace
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# NPM / Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Composer
+composer.lock
+
+# Cache
+.cache/
+*.log
+
+# Admin folder (ignore everything inside /admin)
+# Adjust if you want to keep specific files tracked
+/admin/
