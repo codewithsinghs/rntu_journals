@@ -1,4 +1,3 @@
-<!-- New -->
 <aside class="sidebar" id="sidebar">
 
     <!-- Logo -->
@@ -8,7 +7,7 @@
             <img src="{{ asset('storage/dashboard/logo.png') }}" alt="Logo">
         </a>
         @php
-$can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
+            $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endphp
     </div>
 
@@ -29,7 +28,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         </li>
 
         <!-- All Article List -->
-        @if($can('view submit article'))
+        @if ($can('view submit article'))
             <li>
                 <a href="{{ route('admin.submit-article') }}"
                     class="{{ request()->routeIs('admin.submit-article*') ? 'active' : '' }}">
@@ -40,9 +39,10 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Journal Management -->
-        @if($can('view journals'))
+        @if ($can('view journals'))
             <li>
-                <a href="{{ route('admin.journals') }}" class="{{ request()->routeIs('admin.journals*') ? 'active' : '' }}">
+                <a href="{{ route('admin.journals') }}"
+                    class="{{ request()->routeIs('admin.journals*') ? 'active' : '' }}">
                     <i class="fa-solid fa-book"></i>
                     Journal Management
                 </a>
@@ -50,7 +50,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Volume Management -->
-        @if($can('view volumes'))
+        @if ($can('view volumes'))
             <li>
                 <a href="{{ route('admin.volume') }}" class="{{ request()->routeIs('admin.volume*') ? 'active' : '' }}">
                     <i class="fa-solid fa-book-open"></i>
@@ -60,7 +60,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Issues Management -->
-        @if($can('view issues'))
+        @if ($can('view issues'))
             <li>
                 <a href="{{ route('admin.issue') }}" class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
                     <i class="fa-solid fa-newspaper"></i>
@@ -70,7 +70,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Article Management -->
-        @if($can('view'))
+        @if ($can('view'))
             <li>
                 <a href="{{ route('admin.issue') }}" class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
                     <i class="fa-solid fa-file-alt"></i>
@@ -80,7 +80,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Review Management -->
-        @if($can('view'))
+        @if ($can('view'))
             <li>
                 <a href="{{ route('admin.issue') }}" class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
                     <i class="fa-solid fa-star"></i>
@@ -88,14 +88,6 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
                 </a>
             </li>
         @endif
-
-
-        <!-- <li>
-            <a href="ArchivesManagement.html">
-                <i class="fa-solid fa-box-archive"></i>
-                Archives Management
-            </a>
-        </li> -->
 
     </ul>
 
@@ -105,7 +97,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
     <ul class="nav">
 
         <!-- Navbar -->
-        @if($can('view menus'))
+        @if ($can('view menus'))
             <li>
                 <a href="{{ route('admin.menus') }}" class="{{ request()->routeIs('admin.menus') ? 'active' : '' }}">
                     <i class="fa-solid fa-bars"></i>
@@ -115,7 +107,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Home Page -->
-        @if($can('view home content'))
+        @if ($can('view home content'))
             <li>
                 <a href="{{ route('admin.homebasiccontent') }}"
                     class="{{ request()->routeIs('admin.homebasiccontent*') ? 'active' : '' }}">
@@ -126,9 +118,10 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Announcements -->
-        @if($can('view announcements'))
+        @if ($can('view announcements'))
             <li>
-                <a href="{{ route('admin.announcements') }}" class="{{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
+                <a href="{{ route('admin.announcements') }}"
+                    class="{{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
                     <i class="fa-solid fa-bullhorn"></i>
                     Announcements
                 </a>
@@ -136,28 +129,18 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- About Page -->
-        @if($can('view about'))
+        @if ($can('view about'))
             <li>
-                <a href="{{ route('admin.aboutcontent') }}" class="{{ request()->routeIs('admin.aboutcontent*') ? 'active' : '' }}">
+                <a href="{{ route('admin.aboutcontent') }}"
+                    class="{{ request()->routeIs('admin.aboutcontent*') ? 'active' : '' }}">
                     <i class="fa-solid fa-info-circle"></i>
                     About Page
                 </a>
             </li>
         @endif
 
-        <!-- Submit Article Page -->
-        <!-- @if($can('view submit article'))
-            <li>
-                <a href="{{ route('admin.submit-article') }}"
-                    class="{{ request()->routeIs('admin.submit-article*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Submit Article Page
-                </a>
-            </li>
-        @endif -->
-
         <!-- Editorial Board -->
-        @if($can('view editorial board'))
+        @if ($can('view editorial board'))
             <li>
                 <a href="{{ route('admin.editorial-board') }}"
                     class="{{ request()->routeIs('admin.editorial-board*') ? 'active' : '' }}">
@@ -168,9 +151,10 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Contact Page -->
-        @if($can('view contacts'))
+        @if ($can('view contacts'))
             <li>
-                <a href="{{ route('admin.contact') }}" class="{{ request()->routeIs('admin.contact') ? 'active' : '' }}">
+                <a href="{{ route('admin.contact') }}"
+                    class="{{ request()->routeIs('admin.contact') ? 'active' : '' }}">
                     <i class="fa-solid fa-address-book"></i>
                     Contact Page
                 </a>
@@ -178,7 +162,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Guidelines Page -->
-        @if($can('view guidelines'))
+        @if ($can('view guidelines'))
             <li>
                 <a href="{{ route('admin.guidelines') }}"
                     class="{{ request()->routeIs('admin.guidelines*') ? 'active' : '' }}">
@@ -188,18 +172,11 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
             </li>
         @endif
 
-        <!-- Journal Description Page -->
-        <!-- <li>
-            <a href="#">
-                <i class="fa-solid fa-chart-column"></i>
-                Journal Description Page
-            </a>
-        </li> -->
-
         <!-- Media -->
-        @if($can('view medias'))
+        @if ($can('view medias'))
             <li>
-                <a href="{{ route('admin.medias') }}" class="{{ request()->routeIs('admin.medias') ? 'active' : '' }}">
+                <a href="{{ route('admin.medias') }}"
+                    class="{{ request()->routeIs('admin.medias') ? 'active' : '' }}">
                     <i class="fa-solid fa-images"></i>
                     Media
                 </a>
@@ -214,7 +191,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
     <ul class="nav">
 
         <!-- Users Management -->
-        @if($can('view users'))
+        @if ($can('view users'))
             <li>
                 <a href="{{ route('admin.users') }}" class="{{ request()->routeIs('admin.users*') ? 'active' : '' }}">
                     <i class="fa-solid fa-users"></i>
@@ -224,7 +201,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Roles Management -->
-        @if($can('view roles'))
+        @if ($can('view roles'))
             <li>
                 <a href="{{ route('admin.roles') }}" class="{{ request()->routeIs('admin.roles*') ? 'active' : '' }}">
                     <i class="fa-solid fa-briefcase"></i>
@@ -234,7 +211,7 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
         @endif
 
         <!-- Permissions Management-->
-        @if($can('view permissions'))
+        @if ($can('view permissions'))
             <li>
                 <a href="{{ route('admin.permissions') }}"
                     class="{{ request()->routeIs('admin.permissions') ? 'active' : '' }}">
@@ -248,12 +225,13 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
 
     <!-- Settings -->
     <p>Settings</p>
-        
+
     <ul class="nav">
         <!-- Settings -->
-        @if($can('view settings'))
+        @if ($can('view settings'))
             <li>
-                <a href="{{ route('admin.settings') }}" class="{{ request()->routeIs('admin.settings') ? 'active' : '' }}">
+                <a href="{{ route('admin.settings') }}"
+                    class="{{ request()->routeIs('admin.settings') ? 'active' : '' }}">
                     <i class="fa-solid fa-gears"></i>
                     Settings
                 </a>
@@ -262,32 +240,3 @@ $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
     </ul>
 
 </aside>
-
-
-{{-- ==================== SIDEBAR SCRIPT ==================== --}}
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-
-        const sidebar = document.getElementById('sidebar');
-        const toggleBtn = document.getElementById('toggle-btn'); // topbar hamburger, if present
-        const toggleBtnSmall = document.getElementById('toggle-btn-small-screen');
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('collapsed');
-        }
-
-        toggleBtn?.addEventListener('click', toggleSidebar);
-        toggleBtnSmall?.addEventListener('click', toggleSidebar);
-
-        // Simple sidebar search filter
-        const searchInput = document.getElementById('sidebarSearch');
-        searchInput?.addEventListener('input', () => {
-            const term = searchInput.value.toLowerCase();
-            document.querySelectorAll('.nav > li').forEach(li => {
-                const text = li.textContent.toLowerCase();
-                li.style.display = text.includes(term) ? '' : 'none';
-            });
-        });
-
-    });
-</script>

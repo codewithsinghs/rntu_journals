@@ -7,7 +7,7 @@
                 <header class="header_container header m-0">
 
                     <!-- Logo -->
-                    <a href="index.html" class="logo">
+                    <a href="/" class="logo">
                         @if ($logoIcon)
                             <img src="{{ $logoIcon->url }}" alt="{{ $settings->website_name ?? 'Logo' }}">
                         @endif
