@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/admin/CKEditor.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/admin/sidebar.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/admin/mainstyle.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/css/admin/popup&tabs.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/admin/style.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/admin/table.css') }}">

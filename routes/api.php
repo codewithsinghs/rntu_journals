@@ -1,4 +1,4 @@
-        <?php
+<?php
 
         use App\Http\Controllers\Admin\AboutBasicContentController;
         use App\Http\Controllers\Admin\AnnouncementController;
@@ -9,7 +9,7 @@
         use App\Http\Controllers\Admin\GuidelinesController;
         use App\Http\Controllers\Frontend\AnnoncementsController;
         use App\Http\Controllers\Admin\HomeBasicContentController;
-        use App\Http\Controllers\admin\IssueController;
+        use App\Http\Controllers\Admin\IssueController;
         use App\Http\Controllers\Admin\JournalsController;
         use App\Http\Controllers\Admin\MediasController;
         use App\Http\Controllers\Admin\MenuController as AdminMenuController;
@@ -19,10 +19,10 @@
         use App\Http\Controllers\Admin\SettingsController;
         use App\Http\Controllers\Admin\SubmitArticleController;
         use App\Http\Controllers\Admin\UserController;
-        use App\Http\Controllers\admin\VolumeController;
         use App\Http\Controllers\Frontend\AboutController;
         use App\Http\Controllers\Frontend\HomeController;
         use Illuminate\Support\Facades\Route;
+        use App\Http\Controllers\Admin\VolumeController;
 
 
         // ── Public routes (no auth) ───────────────────────────────────────
@@ -85,14 +85,14 @@
             Route::post('/about-content/{id}',         [AboutBasicContentController::class, 'update']);
             Route::put('/about-content/{id}',          [AboutBasicContentController::class, 'update']);
 
-            //guidelines    
+            //guidelines
             Route::get('/guidelines',               [GuidelinesController::class, 'adminIndex']);
             Route::post('/guidelines',              [GuidelinesController::class, 'store']);
             Route::get('/guidelines/{id}',          [GuidelinesController::class, 'show']);
             Route::post('/guidelines/{id}',         [GuidelinesController::class, 'update']);
             Route::put('/guidelines/{id}',          [GuidelinesController::class, 'update']);
 
-            //contacts    
+            //contacts
             Route::get('/contacts',               [ContactController::class, 'adminIndex']);
             Route::post('/contacts',              [ContactController::class, 'store']);
             Route::get('/contacts/{id}',          [ContactController::class, 'show']);
@@ -142,9 +142,9 @@
             Route::post('submit-articles/{id}/resubmit', [SubmitArticleController::class, 'resubmit']);
             Route::post('submit-articles/{id}/publish', [SubmitArticleController::class, 'publish']);
             Route::get('reviewers', [SubmitArticleController::class, 'reviewers']);
-            Route::get('submit-articles-issues', [SubmitArticleController::class, 'issuesForJournal']); 
+            Route::get('submit-articles-issues', [SubmitArticleController::class, 'issuesForJournal']);
 
-            
+
             // Volumes
             Route::get('/volumes',                       [VolumeController::class, 'adminIndex'])->name('volumes.data');
             Route::post('/volumes',                      [VolumeController::class, 'store'])->name('volumes.store');

@@ -26,8 +26,9 @@ class VolumeController extends Controller
     }
 
     // ─── List All Volumes (Admin) ─────────────────────────────────
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
+        Log::info(' request'. json_encode($request->all()) );
         try {
             $volumes = Volume::with('journal:id,title')
                 ->orderBy('id', 'desc')
@@ -65,7 +66,7 @@ class VolumeController extends Controller
                 'journal_id'   => $validated['journal_id'],
                 'volume'       => $validated['volume'],
                 'year'         => $validated['year'] ?? null,
-                'issues_count' => $validated['issues_count'] ?? 0,
+                // 'issues_count' => $validated['issues_count'] ?? 0,
                 'status'       => $validated['status'],
                 'is_current'   => $request->boolean('is_current', false),
             ]);
@@ -158,7 +159,7 @@ class VolumeController extends Controller
             $volume->journal_id   = $validated['journal_id'];
             $volume->volume       = $validated['volume'];
             $volume->year         = $validated['year'] ?? null;
-            $volume->issues_count = $validated['issues_count'] ?? 0;
+            // $volume->issues_count = $validated['issues_count'] ?? 0;
             $volume->status       = $validated['status'];
             $volume->is_current   = $request->boolean('is_current', false);
             $volume->save();
