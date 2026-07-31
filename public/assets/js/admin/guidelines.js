@@ -9,12 +9,65 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── CKEditor fields ────────────────────────────────────────── */
     const editors = {};
     const CK_FIELDS = [
-        "author_description",
-        "process_description",
-        "manuscript_description",
-        "formatting_description",
-        "layout_description",
-        "acknowlegdement_description",
+        {
+            id: "author_description",
+            required: true,
+        },
+        {
+            id: "process_description",
+            required: true,
+        },
+        {
+            id: "manuscript_description",
+            required: true,
+        },
+        {
+            id: "formatting_description",
+            required: true,
+        },
+        {
+            id: "layout_description",
+            required: true,
+        },
+        {
+            id: "acknowlegdement_description",
+            required: true,
+        },
+    ];
+
+    const TOOLBAR = [
+        "undo",
+        "redo",
+        "|",
+        "heading",
+        "|",
+        "fontFamily",
+        "fontSize",
+        "fontColor",
+        "fontBackgroundColor",
+        "|",
+        "bold",
+        "italic",
+        "underline",
+        "strikethrough",
+        "|",
+        "alignment",
+        "|",
+        "bulletedList",
+        "numberedList",
+        "outdent",
+        "indent",
+        "|",
+        "link",
+        "blockQuote",
+        "insertTable",
+        "|",
+        "imageUpload",
+        "mediaEmbed",
+        "|",
+        "code",
+        "codeBlock",
+        "horizontalLine",
     ];
 
     /*
@@ -26,14 +79,14 @@ document.addEventListener("DOMContentLoaded", function () {
     let pendingFill = null;
 
     async function initEditors() {
-        for (const field of CK_FIELDS) {
-            if (editors[field]) {
-                await editors[field].destroy();
-                delete editors[field];
+        for (const { id } of CK_FIELDS) {
+            if (editors[id]) {
+                await editors[id].destroy();
+                delete editors[id];
             }
 
-            editors[field] = await CKEDITOR.ClassicEditor.create(
-                document.getElementById(`ck_${field}`),
+            editors[id] = await CKEDITOR.ClassicEditor.create(
+                document.getElementById(`ck_${id}`),
                 {
                     licenseKey: "GPL",
                     removePlugins: [
@@ -62,29 +115,29 @@ document.addEventListener("DOMContentLoaded", function () {
                         "CaseChange",
                     ],
                     toolbar: {
-                        items: [
-                            "heading",
-                            "|",
-                            "bold",
-                            "italic",
-                            "underline",
-                            "|",
-                            "bulletedList",
-                            "numberedList",
-                            "|",
-                            "blockQuote",
-                            "link",
-                            "|",
-                            "undo",
-                            "redo",
+                        items: TOOLBAR,
+                    },
+                    alignment: {
+                        options: ["left", "center", "right", "justify"],
+                    },
+                    fontSize: {
+                        options: [8, 10, 12, 14, "default", 18, 24, 32, 48],
+                    },
+                    table: {
+                        contentToolbar: [
+                            "tableColumn",
+                            "tableRow",
+                            "mergeTableCells",
+                            "tableProperties",
+                            "tableCellProperties",
                         ],
                     },
                     placeholder: "Enter content…",
                 },
             );
 
-            editors[field].model.document.on("change:data", () => {
-                document.getElementById(field).value = editors[field].getData();
+            editors[id].model.document.on("change:data", () => {
+                document.getElementById(id).value = editors[id].getData();
             });
         }
     }
@@ -92,6 +145,10 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── Toast ──────────────────────────────────────────────────── */
     function showToast(type, title, msg) {
         const el = document.getElementById("glToast");
+        if (!el) {
+            console.warn("Toast element #glToast not found in DOM");
+            return;
+        }
         document.getElementById("glToastTitle").textContent = title;
         const msgEl = document.getElementById("glToastMsg");
         msgEl.textContent = msg || "";
@@ -135,7 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const msg = Array.isArray(msgs) ? msgs[0] : msgs;
             const err = document.getElementById(`err_${field}`);
             if (err) err.textContent = msg;
-            if (CK_FIELDS.includes(field)) {
+            if (CK_FIELDS.some((f) => f.id === field)) {
                 document
                     .getElementById(`ck_${field}`)
                     ?.classList.add("is-invalid");
@@ -146,7 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Form helpers ───────────────────────────────────────────── */
-    const TEXT_FIELDS = [
+    const PLAIN_FIELDS = [
         "author_badge",
         "author_heading",
         "process_badge",
@@ -166,30 +223,32 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("glForm").reset();
         document.getElementById("glId").value = "";
         document.getElementById("glMethod").value = "POST";
-        CK_FIELDS.forEach((f) => {
-            if (editors[f]) editors[f].setData("");
-            document.getElementById(f).value = "";
+        CK_FIELDS.forEach(({ id }) => {
+            if (editors[id]) editors[id].setData("");
+            const ta = document.getElementById(id);
+            if (ta) ta.value = "";
         });
         clearErrors();
     }
 
     function fillForm(r) {
-        TEXT_FIELDS.forEach((f) => {
+        PLAIN_FIELDS.forEach((f) => {
             const el = document.getElementById(f);
             if (el) el.value = r[f] ?? "";
         });
-        CK_FIELDS.forEach((f) => {
-            if (editors[f]) editors[f].setData(r[f] ?? "");
-            document.getElementById(f).value = r[f] ?? "";
+        CK_FIELDS.forEach(({ id }) => {
+            if (editors[id]) editors[id].setData(r[id] ?? "");
+            const ta = document.getElementById(id);
+            if (ta) ta.value = r[id] ?? "";
         });
         document.getElementById("glId").value = r.id;
         document.getElementById("glMethod").value = "PUT";
     }
 
     function syncEditors() {
-        CK_FIELDS.forEach((f) => {
-            if (editors[f])
-                document.getElementById(f).value = editors[f].getData();
+        CK_FIELDS.forEach(({ id }) => {
+            if (editors[id])
+                document.getElementById(id).value = editors[id].getData();
         });
     }
 
@@ -199,12 +258,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let hasError = false;
         CK_FIELDS.forEach((f) => {
-            const val = editors[f] ? editors[f].getData() : "";
-            if (!val.trim() || val === "<p>&nbsp;</p>") {
-                document.getElementById(`ck_${f}`)?.classList.add("is-invalid");
-                const errEl = document.getElementById(`err_${f}`);
-                if (errEl) errEl.textContent = "This field is required.";
-                hasError = true;
+            if (f.required) {
+                const val = editors[f.id] ? editors[f.id].getData() : "";
+                if (!val.trim() || val === "<p>&nbsp;</p>") {
+                    document
+                        .getElementById(`ck_${f.id}`)
+                        ?.classList.add("is-invalid");
+                    const errEl = document.getElementById(`err_${f.id}`);
+                    if (errEl) errEl.textContent = "This field is required.";
+                    hasError = true;
+                }
             }
         });
         if (hasError) return;

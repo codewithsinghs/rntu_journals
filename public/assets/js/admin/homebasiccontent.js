@@ -38,20 +38,38 @@ document.addEventListener("DOMContentLoaded", function () {
     let editorsReady = false;
 
     const TOOLBAR = [
+        "undo",
+        "redo",
+        "|",
         "heading",
+        "|",
+        "fontFamily",
+        "fontSize",
+        "fontColor",
+        "fontBackgroundColor",
         "|",
         "bold",
         "italic",
         "underline",
+        "strikethrough",
+        "|",
+        "alignment",
         "|",
         "bulletedList",
         "numberedList",
+        "outdent",
+        "indent",
         "|",
-        "blockQuote",
         "link",
+        "blockQuote",
+        "insertTable",
         "|",
-        "undo",
-        "redo",
+        "imageUpload",
+        "mediaEmbed",
+        "|",
+        "code",
+        "codeBlock",
+        "horizontalLine",
     ];
 
     async function initEditors() {
@@ -60,10 +78,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 await editors[id].destroy();
                 delete editors[id];
             }
+
             editors[id] = await CKEDITOR.ClassicEditor.create(
                 document.getElementById(`ck_${id}`),
                 {
                     licenseKey: "GPL",
+
                     removePlugins: [
                         "CKBox",
                         "CKFinder",
@@ -88,23 +108,43 @@ document.addEventListener("DOMContentLoaded", function () {
                         "AIAssistant",
                         "MultiLevelList",
                         "CaseChange",
-                        "RestrictedEditingMode",
-                        "RestrictedEditingModeEditing",
-                        "RestrictedEditingModeUI",
                     ],
+
                     toolbar: {
                         items: TOOLBAR,
                     },
+
+                    alignment: {
+                        options: ["left", "center", "right", "justify"],
+                    },
+
+                    fontSize: {
+                        options: [8, 10, 12, 14, "default", 18, 24, 32, 48],
+                    },
+
+                    table: {
+                        contentToolbar: [
+                            "tableColumn",
+                            "tableRow",
+                            "mergeTableCells",
+                            "tableProperties",
+                            "tableCellProperties",
+                        ],
+                    },
+
                     placeholder: "Enter content…",
                 },
             );
+
             editors[id].model.document.on("change:data", () => {
                 document.getElementById(id).value = editors[id].getData();
             });
         }
     }
 
-    /*  Plain (non-CK) form fields */
+    /* ─────────────────────────────────────────────────────────────
+               Plain (non-CK) text fields
+            ───────────────────────────────────────────────────────────── */
     const PLAIN_FIELDS = [
         "aim_and_scope_title_1",
         "aim_and_scope_title_2",
@@ -128,10 +168,71 @@ document.addEventListener("DOMContentLoaded", function () {
         "latest_journal_heading",
     ];
 
-    /*  Toast */
+    /* ─────────────────────────────────────────────────────────────
+               Image preview helpers
+            ───────────────────────────────────────────────────────────── */
+    const IMAGE_FIELDS = [
+        {
+            input: "aim_section_image",
+            preview: "currentImagePreview",
+            thumb: "currentImageThumb",
+        },
+    ];
+
+    function showImagePreview(previewId, thumbId, url) {
+        if (url) {
+            document.getElementById(thumbId).src = url;
+            document.getElementById(previewId).classList.remove("d-none");
+        } else {
+            document.getElementById(previewId).classList.add("d-none");
+            document.getElementById(thumbId).src = "";
+        }
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+               Toast
+            ───────────────────────────────────────────────────────────── */
+    function ensureToastEl() {
+        let el = document.getElementById("ecToast");
+        if (el) return el;
+
+        let container = document.getElementById("ecToastContainer");
+        if (!container) {
+            container = document.createElement("div");
+            container.id = "ecToastContainer";
+            container.className =
+                "toast-container position-fixed top-0 end-0 p-3";
+            container.style.zIndex = "1080";
+            document.body.appendChild(container);
+        }
+
+        el = document.createElement("div");
+        el.id = "ecToast";
+        el.className = "toast align-items-center border-0 text-white";
+        el.setAttribute("role", "alert");
+        el.setAttribute("aria-live", "assertive");
+        el.setAttribute("aria-atomic", "true");
+        el.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-start gap-2">
+                    <span id="ecToastIcon" class="flex-shrink-0"></span>
+                    <div>
+                        <div id="ecToastTitle" class="fw-semibold"></div>
+                        <div id="ecToastMsg" class="small"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div style="height:3px;background:rgba(255,255,255,.25);">
+                <div id="ecToastBarInner" style="height:100%;background:rgba(255,255,255,.8);width:100%;"></div>
+            </div>
+        `;
+        container.appendChild(el);
+        return el;
+    }
+
     function showToast(type, title, msg) {
-        const el = document.getElementById("ecToast");
-        if (!el) return;
+        const el = ensureToastEl();
         document.getElementById("ecToastTitle").textContent = title;
         const msgEl = document.getElementById("ecToastMsg");
         msgEl.textContent = msg || "";
@@ -157,7 +258,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }).show();
     }
 
-    /* Error helpers */
+    /* ─────────────────────────────────────────────────────────────
+               Error helpers
+            ───────────────────────────────────────────────────────────── */
     function clearErrors() {
         document.querySelectorAll('[id^="err_"]').forEach((el) => {
             el.textContent = "";
@@ -175,7 +278,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const msg = Array.isArray(msgs) ? msgs[0] : msgs;
             const errEl = document.getElementById(`err_${field}`);
             if (errEl) errEl.textContent = msg;
-            if (editors[field]) {
+            if (CK_FIELDS.some((f) => f.id === field)) {
                 document
                     .getElementById(`ck_${field}`)
                     ?.classList.add("is-invalid");
@@ -185,7 +288,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /*  Form helpers */
+    /* ─────────────────────────────────────────────────────────────
+               Form helpers
+            ───────────────────────────────────────────────────────────── */
     function resetForm() {
         document.getElementById("hbcForm").reset();
         document.getElementById("hbcId").value = "";
@@ -195,8 +300,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const ta = document.getElementById(id);
             if (ta) ta.value = "";
         });
-        document.getElementById("currentImagePreview").classList.add("d-none");
-        document.getElementById("currentImageThumb").src = "";
+        IMAGE_FIELDS.forEach(({ preview, thumb }) =>
+            showImagePreview(preview, thumb, null),
+        );
         clearErrors();
     }
 
@@ -212,17 +318,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         document.getElementById("hbcId").value = r.id;
         document.getElementById("hbcMethod").value = "PUT";
-        const imgUrl = r.aim_section_image_url || r.aim_section_image || null;
-        if (imgUrl) {
-            document.getElementById("currentImageThumb").src = imgUrl;
-            document
-                .getElementById("currentImagePreview")
-                .classList.remove("d-none");
-        } else {
-            document
-                .getElementById("currentImagePreview")
-                .classList.add("d-none");
-        }
+        showImagePreview(
+            "currentImagePreview",
+            "currentImageThumb",
+            r.aim_section_image_url || r.aim_section_image || null,
+        );
     }
 
     function syncEditors() {
@@ -241,12 +341,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return null;
     }
 
-    /* Save (form submit) */
+    /* ─────────────────────────────────────────────────────────────
+               Save / Update
+            ───────────────────────────────────────────────────────────── */
     document
-        .getElementById("hbcForm")
-        .addEventListener("submit", async (e) => {
+        .getElementById("hbcSaveBtn")
+        .addEventListener("click", async (e) => {
             e.preventDefault();
-
             clearErrors();
             syncEditors();
 
@@ -323,6 +424,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+    /* ─────────────────────────────────────────────────────────────
+               Load
+            ───────────────────────────────────────────────────────────── */
     async function loadRecord() {
         document.getElementById("hbcLoading").classList.remove("d-none");
         document.getElementById("hbcFormContainer").classList.add("d-none");
@@ -356,71 +460,6 @@ document.addEventListener("DOMContentLoaded", function () {
             showToast("error", "Load failed", e.message);
         }
     }
-    /*  Toast */
-function ensureToastEl() {
-    let el = document.getElementById("ecToast");
-    if (el) return el;
-
-    let container = document.getElementById("ecToastContainer");
-    if (!container) {
-        container = document.createElement("div");
-        container.id = "ecToastContainer";
-        container.className = "toast-container position-fixed top-0 end-0 p-3";
-        container.style.zIndex = "1080";
-        document.body.appendChild(container);
-    }
-
-    el = document.createElement("div");
-    el.id = "ecToast";
-    el.className = "toast align-items-center border-0 text-white";
-    el.setAttribute("role", "alert");
-    el.setAttribute("aria-live", "assertive");
-    el.setAttribute("aria-atomic", "true");
-    el.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body d-flex align-items-start gap-2">
-                <span id="ecToastIcon" class="flex-shrink-0"></span>
-                <div>
-                    <div id="ecToastTitle" class="fw-semibold"></div>
-                    <div id="ecToastMsg" class="small"></div>
-                </div>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div style="height:3px;background:rgba(255,255,255,.25);">
-            <div id="ecToastBarInner" style="height:100%;background:rgba(255,255,255,.8);width:100%;"></div>
-        </div>
-    `;
-    container.appendChild(el);
-    return el;
-}
-
-function showToast(type, title, msg) {
-    const el = ensureToastEl();
-    document.getElementById("ecToastTitle").textContent = title;
-    const msgEl = document.getElementById("ecToastMsg");
-    msgEl.textContent = msg || "";
-    msgEl.style.display = msg ? "block" : "none";
-    document.getElementById("ecToastIcon").innerHTML =
-        type === "success"
-            ? `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
-            : `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`;
-    el.classList.remove("bg-success", "bg-danger");
-    el.classList.add(type === "success" ? "bg-success" : "bg-danger");
-    const bar = document.getElementById("ecToastBarInner");
-    bar.style.transition = "none";
-    bar.style.width = "100%";
-    requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-            bar.style.transition = "width 4s linear";
-            bar.style.width = "0%";
-        }),
-    );
-    bootstrap.Toast.getOrCreateInstance(el, {
-        delay: 4000,
-        autohide: true,
-    }).show();
-}
 
     loadRecord();
 });

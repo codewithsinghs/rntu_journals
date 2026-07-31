@@ -7,11 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
         Authorization: `Bearer ${TOKEN}`,
     });
 
-    /* ─────────────────────────────────────────────────────────────
-               CKEditor — initialise ONLY after modal is fully visible.
-               CKEditor CANNOT mount into hidden (display:none) elements.
-               Uses the CKEDITOR global already loaded in admin.blade.php.
-            ───────────────────────────────────────────────────────────── */
+
     const CK_FIELDS = [
         {
             id: "about_description_1",
@@ -53,52 +49,125 @@ document.addEventListener("DOMContentLoaded", function () {
         "redo",
     ];
 
-    async function initEditors() {
-        for (const { id } of CK_FIELDS) {
-            if (editors[id]) {
-                await editors[id].destroy();
-                delete editors[id];
-            }
-            editors[id] = await CKEDITOR.ClassicEditor.create(
-                document.getElementById(`ck_${id}`),
-                {
-                    licenseKey: "GPL",
-                    removePlugins: [
-                        "CKBox",
-                        "CKFinder",
-                        "EasyImage",
-                        "RealTimeCollaborativeComments",
-                        "RealTimeCollaborativeTrackChanges",
-                        "RealTimeCollaborativeRevisionHistory",
-                        "PresenceList",
-                        "Comments",
-                        "TrackChanges",
-                        "TrackChangesData",
-                        "RevisionHistory",
-                        "Pagination",
-                        "WProofreader",
-                        "MathType",
-                        "SlashCommand",
-                        "Template",
-                        "DocumentOutline",
-                        "FormatPainter",
-                        "TableOfContents",
-                        "PasteFromOfficeEnhanced",
-                        "AIAssistant",
-                        "MultiLevelList",
-                        "CaseChange",
-                    ],
-                    toolbar: {
-                        items: TOOLBAR,
-                    },
-                    placeholder: "Enter content…",
-                },
-            );
-            editors[id].model.document.on("change:data", () => {
-                document.getElementById(id).value = editors[id].getData();
-            });
+
+async function initEditors() {
+    for (const { id } of CK_FIELDS) {
+
+        if (editors[id]) {
+            await editors[id].destroy();
+            delete editors[id];
         }
+
+        editors[id] = await CKEDITOR.ClassicEditor.create(
+            document.getElementById(`ck_${id}`),
+            {
+                licenseKey: "GPL",
+
+                removePlugins: [
+                    "CKBox",
+                    "CKFinder",
+                    "EasyImage",
+                    "RealTimeCollaborativeComments",
+                    "RealTimeCollaborativeTrackChanges",
+                    "RealTimeCollaborativeRevisionHistory",
+                    "PresenceList",
+                    "Comments",
+                    "TrackChanges",
+                    "TrackChangesData",
+                    "RevisionHistory",
+                    "Pagination",
+                    "WProofreader",
+                    "MathType",
+                    "SlashCommand",
+                    "Template",
+                    "DocumentOutline",
+                    "FormatPainter",
+                    "TableOfContents",
+                    "PasteFromOfficeEnhanced",
+                    "AIAssistant",
+                    "MultiLevelList",
+                    "CaseChange",
+                ],
+
+                toolbar: {
+                    items: [
+                        "undo",
+                        "redo",
+                        "|",
+                        "heading",
+                        "|",
+                        "fontFamily",
+                        "fontSize",
+                        "fontColor",
+                        "fontBackgroundColor",
+                        "|",
+                        "bold",
+                        "italic",
+                        "underline",
+                        "strikethrough",
+                        "|",
+                        "alignment",
+                        "|",
+                        "bulletedList",
+                        "numberedList",
+                        "outdent",
+                        "indent",
+                        "|",
+                        "link",
+                        "blockQuote",
+                        "insertTable",
+                        "|",
+                        "imageUpload",
+                        "mediaEmbed",
+                        "|",
+                        "code",
+                        "codeBlock",
+                        "horizontalLine"
+                    ]
+                },
+
+                alignment: {
+                    options: [
+                        "left",
+                        "center",
+                        "right",
+                        "justify"
+                    ]
+                },
+
+                fontSize: {
+                    options: [
+                        8,
+                        10,
+                        12,
+                        14,
+                        "default",
+                        18,
+                        24,
+                        32,
+                        48
+                    ]
+                },
+
+                table: {
+                    contentToolbar: [
+                        "tableColumn",
+                        "tableRow",
+                        "mergeTableCells",
+                        "tableProperties",
+                        "tableCellProperties"
+                    ]
+                },
+
+                placeholder: "Enter content…",
+            }
+        );
+
+        editors[id].model.document.on("change:data", () => {
+            document.getElementById(id).value = editors[id].getData();
+        });
     }
+}
 
     /* ─────────────────────────────────────────────────────────────
                Plain (non-CK) text fields

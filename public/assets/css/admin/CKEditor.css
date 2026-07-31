@@ -386,7 +386,7 @@
 }
 
 .ck.ck-editor__editable_inline[dir=ltr] {
-    text-align: justify;
+    /* text-align: justify; */
     font-size: 14px;
 }
 
@@ -806,7 +806,7 @@
 
 .toast-body {
     padding: 10px 20px 20px;
-    color: #666;
+    color: white;
     font-size: 14px;
     line-height: 1.5;
 }
