@@ -25,6 +25,7 @@ class AuthController extends Controller
         ]);
 
         try {
+
             if (!$token = JWTAuth::attempt($credentials)) {
                 Log::warning('Login failed: invalid credentials', [
                     'email' => $credentials['email'],
@@ -33,7 +34,7 @@ class AuthController extends Controller
 
                 return back()
                     ->withInput()
-                    ->with('error', 'Invalid email or password.');
+                    ->withErrors(['email' => 'Invalid email or password.']);
             }
             $user = JWTAuth::user();
             $articleService->linkSubmissionsAndAssignAuthorRole($user);
@@ -65,7 +66,7 @@ class AuthController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Could not create token. Please try again.');
+                ->withErrors(['email' => 'Could not create token. Please try again.']);
         }
     }
 

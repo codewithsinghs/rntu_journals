@@ -1,4 +1,4 @@
-<?php
+        <?php
 
         use App\Http\Controllers\Admin\AboutBasicContentController;
         use App\Http\Controllers\Admin\AnnouncementController;
@@ -7,7 +7,6 @@
         use App\Http\Controllers\Frontend\EditorialBoardController as FrontendEditorialBoardController;
         use App\Http\Controllers\Admin\EditorialBoardController as AdminEditorialBoardController;
         use App\Http\Controllers\Admin\GuidelinesController;
-        use App\Http\Controllers\Frontend\AnnoncementsController;
         use App\Http\Controllers\Admin\HomeBasicContentController;
         use App\Http\Controllers\Admin\IssueController;
         use App\Http\Controllers\Admin\JournalsController;
@@ -19,20 +18,26 @@
         use App\Http\Controllers\Admin\SettingsController;
         use App\Http\Controllers\Admin\SubmitArticleController;
         use App\Http\Controllers\Admin\UserController;
-        use App\Http\Controllers\Frontend\AboutController;
-        use App\Http\Controllers\Frontend\HomeController;
-        use Illuminate\Support\Facades\Route;
         use App\Http\Controllers\Admin\VolumeController;
+        use App\Http\Controllers\Frontend\PageResolverController;
+        use App\Http\Controllers\Frontend\SettingController;
+        use App\Http\Controllers\Frontend\AboutController;
+        use App\Http\Controllers\Frontend\ArchiveController;
+        use App\Http\Controllers\Frontend\ArticleController;
+        use App\Http\Controllers\Frontend\ContactController as FrontendContactController;
+        use App\Http\Controllers\Frontend\CurrentIssuesController;
+        use App\Http\Controllers\Frontend\FooterController;
+        use App\Http\Controllers\Frontend\GuidelinesController as FrontendGuidelinesController;
+        use App\Http\Controllers\Frontend\HomeController;
+        use App\Http\Controllers\frontend\HomeController as FrontendHomeController;
+        use App\Http\Controllers\Frontend\JournalDetailController;
+        use App\Http\Controllers\frontend\MenuController;
+        use Illuminate\Support\Facades\Route;
 
 
         // ── Public routes (no auth) ───────────────────────────────────────
-        Route::get('/public/menus', [FrontendMenuController::class, 'index']);
-        Route::get('/public/announcements', [AnnoncementsController::class, 'PublicIndex']);
-        Route::get('/public/home-content', [HomeController::class, 'index']);
-        Route::get('/public/about-content', [AboutController::class, 'index']);
         Route::get('/submit-article/journals', [SubmitArticleController::class, 'journals']);
         Route::post('/submit-article',         [SubmitArticleController::class, 'store']);
-        Route::get('/public/editorial-board', [FrontendEditorialBoardController::class, 'index']);
 
 
         // ── Admin routes (jwt protected) ──────────────────────────────────
@@ -85,14 +90,14 @@
             Route::post('/about-content/{id}',         [AboutBasicContentController::class, 'update']);
             Route::put('/about-content/{id}',          [AboutBasicContentController::class, 'update']);
 
-            //guidelines
+            //guidelines    
             Route::get('/guidelines',               [GuidelinesController::class, 'adminIndex']);
             Route::post('/guidelines',              [GuidelinesController::class, 'store']);
             Route::get('/guidelines/{id}',          [GuidelinesController::class, 'show']);
             Route::post('/guidelines/{id}',         [GuidelinesController::class, 'update']);
             Route::put('/guidelines/{id}',          [GuidelinesController::class, 'update']);
 
-            //contacts
+            //contacts    
             Route::get('/contacts',               [ContactController::class, 'adminIndex']);
             Route::post('/contacts',              [ContactController::class, 'store']);
             Route::get('/contacts/{id}',          [ContactController::class, 'show']);
@@ -119,8 +124,8 @@
             Route::put('/users/{id}',    [UserController::class, 'updateRoles']);
             Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
-            Route::get('/editorial-board',                  [AdminEditorialBoardController::class, 'adminIndex']);
-            Route::post('/editorial-board',                 [AdminEditorialBoardController::class, 'store']);
+            Route::get('/editorial-board',                   [AdminEditorialBoardController::class, 'adminIndex']);
+            Route::post('/editorial-board',                  [AdminEditorialBoardController::class, 'store']);
             Route::get('/editorial-board/{id}',              [AdminEditorialBoardController::class, 'show']);
             Route::post('/editorial-board/{id}',             [AdminEditorialBoardController::class, 'update']);
             Route::put('/editorial-board/{id}',              [AdminEditorialBoardController::class, 'update']);
@@ -169,4 +174,30 @@
             Route::get('/dashboard/article-downloads', [DashboardController::class, 'articleDownloads']);
             Route::get('/dashboard/recent-submissions', [DashboardController::class, 'recentSubmissions']);
             Route::get('/dashboard/latest-publications', [DashboardController::class, 'latestPublications']);
+        });
+
+        Route::get('/public/menus', [FrontendMenuController::class, 'index']);
+        Route::get('/public/home-content', [HomeController::class, 'index']);
+        Route::get('/public/about-content', [AboutController::class, 'index']);
+        Route::get('/public/editorial-board', [FrontendEditorialBoardController::class, 'index']);
+
+        Route::group(['prefix' => 'public'], function () {
+
+            Route::get('/home-content',    [FrontendHomeController::class, 'content']);
+            Route::get('/journals',        [FrontendHomeController::class, 'journalsList']);
+            Route::get('/announcements',   [FrontendHomeController::class, 'announcementsList']);
+            Route::get('/latest-articles', [FrontendHomeController::class, 'latestArticles']);
+            Route::get('/about', [AboutController::class, 'content']);
+            Route::get('/guidelines', [FrontendGuidelinesController::class, 'content']);
+            Route::get('/contact', [FrontendContactController::class, 'content']);
+            Route::get('/journals/{id}/detail', [JournalDetailController::class, 'detail']);
+            Route::get('/journals/{id}/archives', [ArchiveController::class, 'archivesData']);
+            Route::get('/issues/{uuid}/articles', [CurrentIssuesController::class, 'articlesData']);
+            Route::get('/articles/{uuid}', [ArticleController::class, 'data']);
+            Route::get('/editorial-board/{journalParam}', [FrontendEditorialBoardController::class, 'boardData']);
+            Route::get('/menus', [MenuController::class, 'index']);
+            Route::get('/menus/location/{location}', [MenuController::class, 'byLocation']);
+            Route::get('/settings/logo', [SettingController::class, 'logo']);
+            Route::get('/current-page', [PageResolverController::class, 'resolve']);
+            Route::get('/footer', [FooterController::class, 'index']);
         });

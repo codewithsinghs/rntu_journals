@@ -2,233 +2,214 @@
 
 @section('content')
 
-<div class="jrn-page">
+<div class="jrn-page" id="articleApp"
+     data-article-uuid="{{ $articleUuid }}"
+     data-api-base="{{ url('/api/public/articles') }}">
 
-    <!-- Top -->
-    <div class="jrn-breadcrumb">
+    <!-- Loading state -->
+    <div id="articleLoading" class="text-center py-5">Loading article...</div>
 
-        <!-- breadcrumb — static, no Volume/Issue linkage in DB yet -->
-        <div><a href="{{ route('home') }}">Home /</a> <a href="#">Archives /</a> <span class="active">Volume 8, Issue 3, Year 2026</span></div>
+    <!-- Error state -->
+    <div id="articleError" class="text-center py-5 d-none">Article not found.</div>
 
-        <!-- DOI — static, no doi column in DB yet -->
-        <div class="jrn-top-meta">
-            <span>
-                DOI :
-                <a href="#">https://doi.org/10.54392/ijrmt263</a>
-            </span>
-        </div>
+    <div id="articleContent" class="d-none">
 
-    </div>
+        <!-- Top -->
+        <div class="jrn-breadcrumb">
 
-    <!-- Title -->
-    <h1 class="jrn-title">
-        {{ $article->manuscript_title }}
-    </h1>
+            <!-- breadcrumb — static, no Volume/Issue linkage in DB yet -->
+            <div><a href="{{ route('home') }}">Home /</a> <a href="#">Archives /</a> <span class="active">Volume 8, Issue 3, Year 2026</span></div>
 
-    <!-- Authors — main author + co-authors, from DB -->
-    <div class="jrn-authors">
-        {{ $article->full_name }}@if($article->coAuthors->isNotEmpty()),
-            @foreach($article->coAuthors as $coAuthor)
-                {{ $coAuthor->name }}{{ !$loop->last ? ',' : '' }}
-            @endforeach
-        @endif
-    </div>
-
-    <div class="row">
-
-        <div class="col-xl-6 col-md-12 col-sm-12">
-            <div class="jrn-main-content">
-
-                <!-- Abstract -->
-                <div class="jrn-card">
-
-                    <div class="jrn-card-header">
-                        <div class="jrn-icon">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                        <h3>Abstract</h3>
-                    </div>
-
-                    <div class="jrn-card-body">
-                        <p>{{ $article->abstract_summary }}</p>
-                    </div>
-
-                    <!-- Keywords -->
-                    <div class="card_j_line"></div>
-
-                    <div class="jrn-card-header">
-                        <div class="jrn-icon">
-                            <i class="fas fa-tags"></i>
-                        </div>
-                        <h3>Keywords</h3>
-                    </div>
-
-                    <div class="jrn-keyword-list">
-                        @foreach(($article->keywords ?? []) as $keyword)
-                            <span>{{ $keyword }}</span>
-                        @endforeach
-                    </div>
-
-                </div>
-
+            <!-- DOI — static, no doi column in DB yet -->
+            <div class="jrn-top-meta">
+                <span>
+                    DOI :
+                    <a href="#">https://doi.org/10.54392/ijrmt263</a>
+                </span>
             </div>
+
         </div>
 
-        <div class="col-xl-6 col-md-12 col-sm-12">
+        <!-- Title -->
+        <h1 class="jrn-title" id="articleTitle"></h1>
 
-            <div class="row">
-                <!-- Downloads — static, no downloads tracking in DB yet -->
-                <div class="col-xl-6 col-md-12 col-sm-12">
-                    <div class="jrn-sidebar">
-                        <div class="jrn-card">
+        <!-- Authors -->
+        <div class="jrn-authors" id="articleAuthors"></div>
 
-                            <div class="jrn-card-header">
-                                <div class="jrn-icon">
-                                    <i class="fas fa-chart-column"></i>
-                                </div>
-                                <h3>Downloads</h3>
-                            </div>
+        <div class="row">
 
-                            <div class="jrn-download-box">
-                                <span>Total Downloads</span>
-                                <strong>20</strong>
-                            </div>
+            <div class="col-xl-6 col-md-12 col-sm-12">
+                <div class="jrn-main-content">
 
-                            <div class="chart-wrapper">
-                                <canvas id="downloadChart"></canvas>
-                            </div>
-
-                            <button class="jrn-btn">
-                                Most downloads in May 2026
-                            </button>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PDF / Details / Copyright -->
-                <div class="col-xl-6 col-md-12 col-sm-12">
-                    <div class="jrn-sidebar">
-
-                        <!-- PDF — real file, from DB -->
-                        <div class="jrn-card">
-                            <div class="jrn-card-header m-0">
-                                <div class="jrn-icon">
-                                    <i class="fas fa-download"></i>
-                                </div>
-                                <h3>
-                                    @if($article->signed_manuscript_pdf)
-                                        <a href="{{ route('article.download-manuscript', $article->id) }}" style="color:inherit;text-decoration:none;">
-                                            Download PDF
-                                        </a>
-                                    @else
-                                        Download PDF
-                                    @endif
-                                </h3>
-                            </div>
-                        </div>
-
-                        <!-- Details -->
-                        <div class="jrn-card">
-                            <div class="jrn-card-header">
-                                <div class="jrn-icon">
-                                    <i class="fas fa-file-lines"></i>
-                                </div>
-                                <h3>Article Details</h3>
-                            </div>
-
-                            <!-- Volume/Issue — static, no linkage in DB yet -->
-                            <p class="deatils_j">
-                                Volume 8, Issue 3, Year 2026
-                            </p>
-
-                            <!-- DOI — static -->
-                            <p class="deatils_j">
-                                DOI :
-                                <a href="#">
-                                    https://doi.org/10.54392/ijrmt263
-                                </a>
-                            </p>
-
-                            <!-- Published date — real, from DB -->
-                            <p class="deatils_j">
-                                Published :
-                                {{ optional($article->review?->updated_at ?? $article->submission_date)->format('Y-m-d') ?? '—' }}
-                            </p>
-                        </div>
-
-                        <!-- Copyright — author names real, year/text static -->
-                        <div class="jrn-card">
-                            <div class="jrn-card-header mb-2">
-                                <div class="jrn-icon">
-                                    <i class="fas fa-copyright"></i>
-                                </div>
-                                <h3>Copyrights & License</h3>
-                            </div>
-
-                            <p class="copyright_j">
-                                Copyright (c) {{ now()->year }} {{ $article->full_name }}@if($article->coAuthors->isNotEmpty()), @foreach($article->coAuthors as $coAuthor){{ $coAuthor->name }}{{ !$loop->last ? ',' : '' }} @endforeach @endif
-                            </p>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Citation — static formatting/DOI, real title/authors -->
-                <div class="col-12">
+                    <!-- Abstract -->
                     <div class="jrn-card">
 
                         <div class="jrn-card-header">
                             <div class="jrn-icon">
-                                <i class="fas fa-quote-right"></i>
+                                <i class="fas fa-file-alt"></i>
                             </div>
-                            <h3>How to Cite</h3>
+                            <h3>Abstract</h3>
                         </div>
 
-                        <p class="Citation">
-                            {{ $article->full_name }}@if($article->coAuthors->isNotEmpty()), @foreach($article->coAuthors as $coAuthor){{ $coAuthor->name }}{{ !$loop->last ? ',' : '' }} @endforeach @endif.
-                            {{ now()->year }}. &ldquo;{{ $article->manuscript_title }}&rdquo;.
-                            {{ $article->journal?->title ?? 'Journal' }}. Volume 8 (3):152-65.
-                            https://doi.org/10.54392/irjmt26310.
-                        </p>
-
-                        <div class="jrn-btn-wrap">
-                            <button class="jrn-btn">
-                                More Citation Formats
-                            </button>
+                        <div class="jrn-card-body">
+                            <p id="articleAbstract"></p>
                         </div>
+
+                        <!-- Keywords -->
+                        <div class="card_j_line"></div>
+
+                        <div class="jrn-card-header">
+                            <div class="jrn-icon">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <h3>Keywords</h3>
+                        </div>
+
+                        <div class="jrn-keyword-list" id="articleKeywords"></div>
 
                     </div>
+
                 </div>
             </div>
 
-        </div>
+            <div class="col-xl-6 col-md-12 col-sm-12">
 
-    </div>
+                <div class="row">
+                    <!-- Downloads — static, no downloads tracking in DB yet -->
+                    <div class="col-xl-6 col-md-12 col-sm-12">
+                        <div class="jrn-sidebar">
+                            <div class="jrn-card">
 
-    <!-- References — real free-text field from DB, static fallback if empty -->
-    <div class="jrn-card">
+                                <div class="jrn-card-header">
+                                    <div class="jrn-icon">
+                                        <i class="fas fa-chart-column"></i>
+                                    </div>
+                                    <h3>Downloads</h3>
+                                </div>
 
-        <div class="jrn-card-header">
-            <div class="jrn-icon">
-                <i class="fas fa-link"></i>
+                                <div class="jrn-download-box">
+                                    <span>Total Downloads</span>
+                                    <strong>20</strong>
+                                </div>
+
+                                <div class="chart-wrapper">
+                                    <canvas id="downloadChart"></canvas>
+                                </div>
+
+                                <button class="jrn-btn">
+                                    Most downloads in May 2026
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PDF / Details / Copyright -->
+                    <div class="col-xl-6 col-md-12 col-sm-12">
+                        <div class="jrn-sidebar">
+
+                            <!-- PDF -->
+                            <div class="jrn-card">
+                                <div class="jrn-card-header m-0">
+                                    <div class="jrn-icon">
+                                        <i class="fas fa-download"></i>
+                                    </div>
+                                    <h3 id="articlePdfLink">Download PDF</h3>
+                                </div>
+                            </div>
+
+                            <!-- Details -->
+                            <div class="jrn-card">
+                                <div class="jrn-card-header">
+                                    <div class="jrn-icon">
+                                        <i class="fas fa-file-lines"></i>
+                                    </div>
+                                    <h3>Article Details</h3>
+                                </div>
+
+                                <!-- Volume/Issue — static, no linkage in DB yet -->
+                                <p class="deatils_j">
+                                    Volume 8, Issue 3, Year 2026
+                                </p>
+
+                                <!-- DOI — static -->
+                                <p class="deatils_j">
+                                    DOI :
+                                    <a href="#">
+                                        https://doi.org/10.54392/ijrmt263
+                                    </a>
+                                </p>
+
+                                <!-- Published date -->
+                                <p class="deatils_j">
+                                    Published : <span id="articlePublishedDate">—</span>
+                                </p>
+                            </div>
+
+                            <!-- Copyright -->
+                            <div class="jrn-card">
+                                <div class="jrn-card-header mb-2">
+                                    <div class="jrn-icon">
+                                        <i class="fas fa-copyright"></i>
+                                    </div>
+                                    <h3>Copyrights &amp; License</h3>
+                                </div>
+
+                                <p class="copyright_j" id="articleCopyright"></p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Citation -->
+                    <div class="col-12">
+                        <div class="jrn-card">
+
+                            <div class="jrn-card-header">
+                                <div class="jrn-icon">
+                                    <i class="fas fa-quote-right"></i>
+                                </div>
+                                <h3>How to Cite</h3>
+                            </div>
+
+                            <p class="Citation" id="articleCitation"></p>
+
+                            <div class="jrn-btn-wrap">
+                                <button class="jrn-btn">
+                                    More Citation Formats
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            <h3>References</h3>
+
         </div>
 
-        @if($article->references)
-            <p style="white-space: pre-line;">{{ $article->references }}</p>
-        @else
-            <p class="text-muted">No references provided for this submission.</p>
-        @endif
+        <!-- References -->
+        <div class="jrn-card">
+
+            <div class="jrn-card-header">
+                <div class="jrn-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+                <h3>References</h3>
+            </div>
+
+            <p id="articleReferences" style="white-space: pre-line;"></p>
+
+        </div>
 
     </div>
 
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
+<!-- <script>
     new Chart(document.getElementById('downloadChart'), {
         type: 'bar',
         data: {
@@ -251,6 +232,6 @@
             }
         }
     });
-</script>
+</script> -->
 
 @endsection

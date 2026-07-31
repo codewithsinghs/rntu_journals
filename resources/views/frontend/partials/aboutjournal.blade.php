@@ -1,30 +1,21 @@
-   <section class="journal-section">
+
+
+
+        <section class="journal-section">
         <div class="container s__container_custom">
 
-            <!-- Left Content -->
-            <div class="about_journal">
-                @if($aboutContent->about_badge)
-                <span class="journal_tag">{{ $aboutContent->about_badge }}</span>
-                 @endif
-
-                <h2>{{ $aboutContent->about_heading }}</h2>
-
-                <p>{!! $aboutContent->about_description_1 !!}</p>
-
-                <p>{!! $aboutContent->about_description_2 !!}</p>
-
-
+            <div id="aboutLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
             </div>
 
-            <!-- Right Images -->
-            <div class="journal-images">
-                @if($aboutContent->about_section_img1)
-                <img src="{{ asset('storage/' . $aboutContent->about_section_img1) }}" alt="Journal Cover">
-                @endif
-                @if($aboutContent->about_section_img2)
-                <img src="{{ asset('storage/' . $aboutContent->about_section_img2) }}" alt="Journal Cover">
-                @endif
+            <div id="aboutJournalContent" class="about_journal d-none">
+                <span id="aboutBadge" class="journal_tag d-none"></span>
+                <h2 id="aboutHeading"></h2>
+                <p id="aboutDesc1"></p>
+                <p id="aboutDesc2"></p>
             </div>
+
+            <div id="journalImages" class="journal-images d-none"></div>
 
         </div>
     </section>

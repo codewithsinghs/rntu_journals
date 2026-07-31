@@ -776,6 +776,19 @@
 }
 
 
+
+#ecToast {
+    min-width: 320px;
+    border-radius: 14px;
+    overflow: hidden;
+    color: #fff;
+}
+
+#ecToastBarInner {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
 .error-icon {
     background: #feecec;
     color: #dc2626;

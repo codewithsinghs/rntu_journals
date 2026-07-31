@@ -22,7 +22,7 @@ Route::get('/guidelines', [GuidelinesController::class, 'index'])->name('guideli
 Route::get('/contact', [ContactController::class, 'index'])->name('contacts');
 Route::get('/submit-article', [SubmitArticleController::class, 'index'])->name('submitarticles');
 Route::get('/menus/{location}', [FrontendMenuController::class, 'byLocation'])->name('menus.byLocation');
-// Route::get('/editorial-board', [EditorialBoardController::class, 'index'])->name('editorial-board');
+// Route::get('/editorial-board', [EditorialBoardController::class, 'index'])->name('editorial_board');
 
 
 Route::post('/password/send-otp', [ForgotPasswordOtpController::class, 'sendOtp'])->name('password.send-otp');
@@ -42,10 +42,8 @@ Route::get('/{journal}', [JournalDetailController::class, 'show'])->name('journa
 Route::get('/archives/{journal}', [ArchiveController::class, 'show'])->name('archives');
 Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles');
 Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
-Route::get('/current-issues/{issue?}', [CurrentIssuesController::class, 'index'])->name('current-issues');
-Route::get('/editorial_board/{journal}', [EditorialBoardController::class, 'index'])->name('editorial-board');
-
-
+Route::get('/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
+Route::get('/editorial-board/{journal}', [EditorialBoardController::class, 'index'])->name('editorial_board');
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
