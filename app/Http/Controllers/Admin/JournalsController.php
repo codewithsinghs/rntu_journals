@@ -7,6 +7,7 @@ use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class JournalsController extends Controller
 {
@@ -52,6 +53,51 @@ class JournalsController extends Controller
             'badge'                        => 'nullable|string|max:255',
             'article_template_url'         => 'nullable|string|max:255',
         ];
+    }
+
+    /**
+     * Generate a unique slug from the explore_journals_link URL.
+     * Falls back to the title if the link is empty or has no usable segment.
+     */
+    private function generateUniqueSlug(?string $exploreLink, string $title, ?int $ignoreId = null): string
+    {
+        $baseSlug = $this->extractSlugSource($exploreLink, $title);
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (
+            Journal::where('slug', $slug)
+                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Pulls a usable slug string out of the explore_journals_link URL.
+     * Falls back to the title if the link is missing or has no meaningful path.
+     */
+    private function extractSlugSource(?string $exploreLink, string $title): string
+    {
+        if ($exploreLink) {
+            $path = parse_url(trim($exploreLink), PHP_URL_PATH);
+
+            if ($path) {
+                $segments = array_values(array_filter(explode('/', trim($path, '/'))));
+                $lastSegment = end($segments);
+
+                if ($lastSegment) {
+                    return Str::slug($lastSegment);
+                }
+            }
+        }
+
+        // Fallback: no link, no path, or path had no segments
+        return Str::slug($title);
     }
 
     // ─── List All Journals (Admin) ────────────────────────────────
@@ -105,6 +151,10 @@ class JournalsController extends Controller
             $journal = Journal::create([
                 // Common
                 'title'                     => $validated['title'],
+                'slug'                      => $this->generateUniqueSlug(
+                    $validated['explore_journals_link'] ?? null,
+                    $validated['title']
+                ),
                 'description'               => $validated['description'] ?? null,
                 'cover_image'               => $coverImagePath,
                 'is_active'                 => $request->boolean('is_active', true),
@@ -142,6 +192,7 @@ class JournalsController extends Controller
             Log::info('Journal created successfully', [
                 'journal_id'      => $journal->id,
                 'title'           => $journal->title,
+                'slug'            => $journal->slug,
                 'has_cover_image' => !is_null($coverImagePath),
             ]);
 
@@ -250,7 +301,15 @@ class JournalsController extends Controller
             }
 
             // Common
-            $journal->title       = $validated['title'];
+            $journal->title = $validated['title'];
+
+            // Always regenerate slug from the current explore_journals_link on every update
+            $journal->slug = $this->generateUniqueSlug(
+                $validated['explore_journals_link'] ?? null,
+                $validated['title'],
+                $journal->id
+            );
+
             $journal->description = $validated['description'] ?? null;
             $journal->is_active   = $request->boolean('is_active', true);
 

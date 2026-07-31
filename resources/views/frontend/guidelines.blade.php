@@ -1,12 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
-@include('frontend.partials.AllPageHeader')
+
 
  <section class="s__container_custom">
-
+    
  @include('frontend.partials.guidecart')
 
 </section>
 
 @endSection
+
+
+@section('scripts')
+    <script src="{{ asset('assets/js/frontend/guidelines.js') }}"></script>
+    
+@endsection

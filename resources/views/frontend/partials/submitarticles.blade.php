@@ -26,7 +26,7 @@
             <div class="rjf-card-heading">
                 Name of First Author/Head of Team to give presentation
             </div>
-            <div class="row">
+            <div class="row mt-4">
                 <div class="col-lg-3 col-md-6">
                     <label>Full Name <span class="text-danger">*</span></label>
                     <input type="text" name="full_name" class="rjf-input" placeholder="e.g. Dr. Ramesh Kumar">
@@ -43,11 +43,11 @@
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>Affiliating Institute <span class="text-danger">*</span></label>
-                    <input type="text" name="affiliating_institute" class="rjf-input">
+                    <input type="text" name="affiliating_institute" class="rjf-input" placeholder="e.g. RNTU University">
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>Department <span class="text-danger">*</span></label>
-                    <input type="text" name="department" class="rjf-input">
+                    <input type="text" name="department" class="rjf-input" placeholder="Computer Science">
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>ORCID ID</label>
@@ -56,7 +56,7 @@
                 </div>
                 <div class="col-12">
                     <label>Affiliating Institute Address <span class="text-danger">*</span></label>
-                    <textarea name="affiliating_institute_address" class="rjf-textarea"></textarea>
+                    <textarea name="affiliating_institute_address" class="rjf-textarea" placeholder="Bhojpur, Bhopal, Madhya Pradesh "></textarea>
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
                 <div class="row author-block">
                     <div class="col-lg-3 col-md-6">
                         <label>Full Name</label>
-                        <input type="text" name="co_authors[0][name]" class="rjf-input" placeholder="e.g. Dr. Priya Sharma">
+                        <input type="text" name="co_authors[0][name]" class="rjf-input" placeholder="e.g. Rajat Pradhan">
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <label>Email Address</label>
@@ -76,7 +76,7 @@
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <label>Affiliation</label>
-                        <input type="text" name="co_authors[0][affiliation]" class="rjf-input">
+                        <input type="text" name="co_authors[0][affiliation]" class="rjf-input" placeholder="e.g. RNTU University">
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <label>ORCID ID</label>
@@ -118,13 +118,13 @@
                     @endfor
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-xl-6 col-md-6 col-sm-12">
                 <label>Upload Manuscript PDF <span class="text-danger">*</span></label>
                 <input type="file" name="signed_manuscript_pdf" accept=".pdf" class="rjf-input" id="manuscript-pdf" style="padding: 10px 15px;">
                 <small class="field-hint">PDF only • Max 50MB</small>
                 <small id="manuscript-pdf-error" style="color:#e53935;display:none;"></small>
             </div>
-            <div class="col-6">
+            <div class="col-xl-6 col-md-6 col-sm-12">
                 <label>Upload Source File (DOCX) <span class="text-danger">*</span></label>
                 <input type="file" name="abstract_file" accept=".pdf,.doc,.docx" class="rjf-input" id="abstract-file" style="padding: 10px 15px;">
                 <small class="field-hint">PDF, DOC, DOCX only • Max 50MB</small>
@@ -140,7 +140,7 @@
         <div class="row reviewer-block">
             <div class="col-lg-3 col-md-6">
                 <label>Full Name</label>
-                <input type="text" name="reviewers[0][name]" class="rjf-input">
+                <input type="text" name="reviewers[0][name]" class="rjf-input" placeholder="e.g. Rajat Pradhan">
             </div>
             <div class="col-lg-3 col-md-6">
                 <label>Email Address</label>
@@ -148,11 +148,11 @@
             </div>
             <div class="col-lg-3 col-md-6">
                 <label>Institution</label>
-                <input type="text" name="reviewers[0][institution]" class="rjf-input">
+                <input type="text" name="reviewers[0][institution]" class="rjf-input" placeholder="e.g. RNTU University">
             </div>
             <div class="col-lg-3 col-md-6">
                 <label>Area of Expertise</label>
-                <input type="text" name="reviewers[0][area_of_expertise]" class="rjf-input">
+                <input type="text" name="reviewers[0][area_of_expertise]" class="rjf-input" placeholder="Robotic , Development">
             </div>
         </div>
     </div>
@@ -179,7 +179,7 @@
     <div class="row">
         <div class="col-lg-4">
             <label>Full Name <span class="text-danger">*</span></label>
-            <input type="text" name="author_signature" class="rjf-input" placeholder="As appears on ID proof">
+            <input type="text" name="author_signature" class="rjf-input" placeholder="e.g. Rajat Pradhan">
         </div>
         <div class="col-lg-4">
             <label>Signature (Image)</label>
@@ -466,7 +466,7 @@
                 });
                 const json = await res.json();
                 const journals = json.data ?? [];
-                select.innerHTML = '<option value="">-- Select Journal --</option>';
+                select.innerHTML = '<option value="">Select Journal</option>';
                 journals.forEach(j => {
                     const opt = document.createElement('option');
                     opt.value = j.id;

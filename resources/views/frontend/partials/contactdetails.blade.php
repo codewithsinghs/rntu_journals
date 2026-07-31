@@ -1,48 +1,35 @@
-<!-- Heading -->
-
-@if($contacts->contact_badge)
-<div class="rntu-contact-heading">
-    {{ $contacts->contact_badge }}
+<div id="contactLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
 </div>
-@endif
 
-<!-- Contact Cards -->
+<div id="contactContent" class="d-none">
 
-<div class="rntu-contact-grid">
+    <!-- Heading -->
+    <div class="rntu-contact-heading d-none" id="contactBadgeWrap">
+        <span id="contactBadge"></span>
+    </div>
 
-    <!-- Principal Contact -->
+    <!-- Contact Cards -->
+    <div class="rntu-contact-grid">
 
-    <div class="rntu-contact-card">
+        <div class="rntu-contact-card">
+            <h3 id="contactHeading1"></h3>
+            <p id="contactDetail1"></p>
+        </div>
 
-        <h3>{{ $contacts->contact_heading1 }}</h3>
-
-        <p>{!!$contacts->contact_detail1!!}</p>
+        <div class="rntu-contact-card">
+            <h3 id="contactHeading2"></h3>
+            <p id="contactDetail2"></p>
+        </div>
 
     </div>
 
-    <!-- Publisher Contact -->
-
-    <div class="rntu-contact-card">
-
-        <h3>{{ $contacts->contact_heading2 }}</h3>
-
-        <p>{!! $contacts->contact_detail2 !!}</p>
-
-    </div>
-
-</div>
-
-
-<!-- Editorial Office -->
-
-<div class="rntu-contact-bottom">
-
-    <div class="rntu-contact-card rntu-editorial-card">
-
-        <h3>{{ $contacts->contact_heading3 }}</h3>
-
-        <p>{!! $contacts->contact_detail3 !!}</p>
-
+    <!-- Editorial Office -->
+    <div class="rntu-contact-bottom">
+        <div class="rntu-contact-card rntu-editorial-card">
+            <h3 id="contactHeading3"></h3>
+            <p id="contactDetail3"></p>
+        </div>
     </div>
 
 </div>
