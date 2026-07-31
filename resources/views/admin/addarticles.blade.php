@@ -34,14 +34,30 @@
                                         <!-- Mobile No. -->
                                         <div class="partitions_inner">
                                             <label>Mobile No.</label>
-                                            <input type="text" class="content_show" name="mobile_no" id="mobile_no">
+                                            <input
+                                                type="text"
+                                                class="content_show"
+                                                name="mobile_no"
+                                                id="mobile_no"
+                                                inputmode="numeric"
+                                                pattern="[0-9]{10}"
+                                                maxlength="10"
+                                                placeholder="10-digit mobile number"
+                                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                                             <div class="validation-error-addarticle" data-error-for="mobile_no"></div>
                                         </div>
 
                                         <!-- Email Address -->
                                         <div class="partitions_inner">
                                             <label>Email Address</label>
-                                            <input type="email" class="content_show" name="email" id="email">
+                                            <input
+                                                type="email"
+                                                class="content_show"
+                                                name="email"
+                                                id="email"
+                                                pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+                                                placeholder="name@example.com"
+                                                title="Enter a valid email address">
                                             <div class="validation-error-addarticle" data-error-for="email"></div>
                                         </div>
 

@@ -7,33 +7,143 @@ const CSRF_TOKEN =
 let addJournalModal, deletePopupModal;
 let isEditMode = false;
 let pendingDeleteId = null;
-let descEditor = null;
-let aimScopeEditor = null;
 
 let allJournals = [];
 let filteredJournals = [];
 let currentPage = 1;
 let perPage = 10;
 
+/* ─────────────────────────────────────────────────────────────
+           CKEditor fields
+        ───────────────────────────────────────────────────────────── */
+const CK_FIELDS = [
+    {
+        id: "description",
+        required: false,
+    },
+    {
+        id: "aim_and_scope",
+        required: false,
+    },
+];
+
+const editors = {};
+let editorsReady = false;
+
 const TOOLBAR = [
+    "undo",
+    "redo",
+    "|",
     "heading",
+    "|",
+    "fontFamily",
+    "fontSize",
+    "fontColor",
+    "fontBackgroundColor",
     "|",
     "bold",
     "italic",
     "underline",
+    "strikethrough",
+    "|",
+    "alignment",
     "|",
     "bulletedList",
     "numberedList",
+    "outdent",
+    "indent",
     "|",
-    "blockQuote",
     "link",
+    "blockQuote",
+    "insertTable",
     "|",
-    "undo",
-    "redo",
+    "imageUpload",
+    "mediaEmbed",
+    "|",
+    "code",
+    "codeBlock",
+    "horizontalLine",
 ];
 
+async function initEditors() {
+    for (const { id } of CK_FIELDS) {
+        if (editors[id]) {
+            await editors[id].destroy();
+            delete editors[id];
+        }
+
+        editors[id] = await CKEDITOR.ClassicEditor.create(
+            document.getElementById(`ck_${id}`),
+            {
+                licenseKey: "GPL",
+
+                removePlugins: [
+                    "CKBox",
+                    "CKFinder",
+                    "EasyImage",
+                    "RealTimeCollaborativeComments",
+                    "RealTimeCollaborativeTrackChanges",
+                    "RealTimeCollaborativeRevisionHistory",
+                    "PresenceList",
+                    "Comments",
+                    "TrackChanges",
+                    "TrackChangesData",
+                    "RevisionHistory",
+                    "Pagination",
+                    "WProofreader",
+                    "MathType",
+                    "SlashCommand",
+                    "Template",
+                    "DocumentOutline",
+                    "FormatPainter",
+                    "TableOfContents",
+                    "PasteFromOfficeEnhanced",
+                    "AIAssistant",
+                    "MultiLevelList",
+                    "CaseChange",
+                ],
+
+                toolbar: {
+                    items: TOOLBAR,
+                },
+
+                alignment: {
+                    options: ["left", "center", "right", "justify"],
+                },
+
+                fontSize: {
+                    options: [8, 10, 12, 14, "default", 18, 24, 32, 48],
+                },
+
+                table: {
+                    contentToolbar: [
+                        "tableColumn",
+                        "tableRow",
+                        "mergeTableCells",
+                        "tableProperties",
+                        "tableCellProperties",
+                    ],
+                },
+
+                placeholder: "Enter content…",
+            },
+        );
+
+        editors[id].model.document.on("change:data", () => {
+            document.getElementById(id).value = editors[id].getData();
+        });
+    }
+}
+
+function syncEditors() {
+    CK_FIELDS.forEach(({ id }) => {
+        if (editors[id])
+            document.getElementById(id).value = editors[id].getData();
+    });
+}
+
 // ── Boot ─────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
     addJournalModal = new bootstrap.Modal(
         document.getElementById("AddJournal"),
     );
@@ -44,34 +154,10 @@ document.addEventListener("DOMContentLoaded", function () {
     perPage = parseInt(document.getElementById("perPage").value, 10);
     loadJournals();
 
-    ClassicEditor.create(document.getElementById("description"), {
-        toolbar: {
-            items: TOOLBAR,
-        },
-        placeholder: "Brief description of the journal...",
-    })
-        .then((editor) => {
-            descEditor = editor;
-            editor.model.document.on("change:data", () => {
-                document.getElementById("description").value = editor.getData();
-            });
-        })
-        .catch((err) => console.error("CKEditor init failed:", err));
-
-    ClassicEditor.create(document.getElementById("aim_and_scope"), {
-        toolbar: {
-            items: TOOLBAR,
-        },
-        placeholder: "Describe the journal's aim & scope...",
-    })
-        .then((editor) => {
-            aimScopeEditor = editor;
-            editor.model.document.on("change:data", () => {
-                document.getElementById("aim_and_scope").value =
-                    editor.getData();
-            });
-        })
-        .catch((err) => console.error("CKEditor init failed:", err));
+    if (!editorsReady) {
+        await initEditors();
+        editorsReady = true;
+    }
 
     document
         .getElementById("journalForm")
@@ -97,7 +183,10 @@ document.addEventListener("DOMContentLoaded", function () {
 // ── Toast ──────────────────────────────────────────────────────
 function showToast(type, title, msg) {
     const el = document.getElementById("ecToast");
-    if (!el) return;
+    if (!el) {
+        console.warn("Toast element #ecToast not found in DOM");
+        return;
+    }
     document.getElementById("ecToastTitle").textContent = title;
     const msgEl = document.getElementById("ecToastMsg");
     msgEl.textContent = msg || "";
@@ -108,7 +197,7 @@ function showToast(type, title, msg) {
             : `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`;
 
     el.classList.remove("bg-success", "bg-danger", "bg-warning", "text-dark");
-    
+
     if (type === "success") el.classList.add("bg-success");
     else if (type === "warning") el.classList.add("bg-warning", "text-dark");
     else el.classList.add("bg-danger");
@@ -340,8 +429,9 @@ function openCreateModal() {
     document.getElementById("is_active").value = "1";
     document.getElementById("sequence").value = "0";
 
-    if (descEditor) descEditor.setData("");
-    if (aimScopeEditor) aimScopeEditor.setData("");
+    CK_FIELDS.forEach(({ id }) => {
+        if (editors[id]) editors[id].setData("");
+    });
 
     document.getElementById("fieldsCoveredContainer").innerHTML = "";
     addFieldRow();
@@ -397,8 +487,9 @@ function openEditModal(id) {
         journal.title_2 || journal.heading_1 || "";
     document.getElementById("is_active").value = journal.is_active ? "1" : "0";
 
-    if (descEditor) descEditor.setData(journal.description || "");
-    if (aimScopeEditor) aimScopeEditor.setData(journal.aim_and_scope || "");
+    CK_FIELDS.forEach(({ id }) => {
+        if (editors[id]) editors[id].setData(journal[id] ?? "");
+    });
 
     document.getElementById("coverPreviewCurrent").style.display = "none";
     if (journal.cover_image) {
@@ -416,6 +507,8 @@ function openEditModal(id) {
 
 // ── Save ───────────────────────────────────────────────────────
 function saveJournal() {
+    syncEditors();
+
     const id = document.getElementById("journal_id").value;
 
     const formData = new FormData();
@@ -424,7 +517,10 @@ function saveJournal() {
         "heading_1",
         document.getElementById("heading_1").value.trim(),
     );
-    formData.append("description", descEditor ? descEditor.getData() : "");
+    formData.append(
+        "description",
+        document.getElementById("description").value,
+    );
     formData.append(
         "abbreviation",
         document.getElementById("abbreviation").value.trim(),
@@ -480,7 +576,7 @@ function saveJournal() {
     );
     formData.append(
         "aim_and_scope",
-        aimScopeEditor ? aimScopeEditor.getData() : "",
+        document.getElementById("aim_and_scope").value,
     );
     formData.append(
         "view_all_issues_label",

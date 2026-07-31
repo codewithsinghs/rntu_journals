@@ -277,6 +277,7 @@
                         {{-- Description (CKEditor) --}}
                         <div class="reason">
                             <label>Journal Description</label>
+                            <div id="ck_description" class="ckeditor-wrapper"></div>
                             <textarea class="d-none" id="description"></textarea>
                         </div>
 
@@ -289,6 +290,7 @@
 
                         <div class="reason">
                             <label>Aim & Scope</label>
+                            <div id="ck_aim_and_scope" class="ckeditor-wrapper"></div>
                             <textarea class="d-none" id="aim_and_scope"></textarea>
                         </div>
 
@@ -371,7 +373,6 @@
 @endsection
 
 @section('scripts')
-    {{-- CKEditor 5 CDN --}}
-    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+
     <script src="{{ asset('assets/js/admin/journals.js') }}"></script>
 @endsection

@@ -84,15 +84,33 @@
                             <!-- Volume -->
                             <span class="input-set">
                                 <label>Volume <span class="text-danger">*</span></label>
-                                <input type="text" class="content_show" name="volume" id="volume"
-                                    placeholder="e.g. Volume 12" required>
+                                <input
+                                    type="text"
+                                    class="content_show"
+                                    name="volume"
+                                    id="volume"
+                                    placeholder="e.g. 6"
+                                    inputmode="numeric"
+                                    pattern="\d{1}"
+                                    maxlength="1"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                    required>
                             </span>
 
                             <!-- Year -->
                             <span class="input-set">
                                 <label>Year <span class="text-danger">*</span></label>
-                                <input type="text" class="content_show" name="year" id="year"
-                                    placeholder="e.g. 2025">
+                                <input
+                                    type="text"
+                                    class="content_show"
+                                    name="year"
+                                    id="year"
+                                    placeholder="e.g. 2025"
+                                    inputmode="numeric"
+                                    pattern="\d{4}"
+                                    maxlength="4"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)"
+                                    required>
                             </span>
 
                             <!-- Status -->
