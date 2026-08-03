@@ -8,11 +8,17 @@
 
 # Laravel runtime & cache
 /bootstrap/cache/
+
+# Keep runtime stuff ignored
 /storage/*.key
 /storage/logs/*
 /storage/framework/*
 /storage/app/private/*
-/storage/app/uploads/
+/storage/app/uploads/*
+
+# Allow public assets to be tracked
+!/storage/app/public/
+
 
 # Public build artifacts
 /public/build
