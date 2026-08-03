@@ -29,9 +29,9 @@
         use App\Http\Controllers\Frontend\FooterController;
         use App\Http\Controllers\Frontend\GuidelinesController as FrontendGuidelinesController;
         use App\Http\Controllers\Frontend\HomeController;
-        use App\Http\Controllers\frontend\HomeController as FrontendHomeController;
+        use App\Http\Controllers\Frontend\HomeController as FrontendHomeController;
         use App\Http\Controllers\Frontend\JournalDetailController;
-        use App\Http\Controllers\frontend\MenuController;
+        use App\Http\Controllers\Frontend\MenuController;
         use Illuminate\Support\Facades\Route;
 
 
@@ -90,14 +90,14 @@
             Route::post('/about-content/{id}',         [AboutBasicContentController::class, 'update']);
             Route::put('/about-content/{id}',          [AboutBasicContentController::class, 'update']);
 
-            //guidelines    
+            //guidelines
             Route::get('/guidelines',               [GuidelinesController::class, 'adminIndex']);
             Route::post('/guidelines',              [GuidelinesController::class, 'store']);
             Route::get('/guidelines/{id}',          [GuidelinesController::class, 'show']);
             Route::post('/guidelines/{id}',         [GuidelinesController::class, 'update']);
             Route::put('/guidelines/{id}',          [GuidelinesController::class, 'update']);
 
-            //contacts    
+            //contacts
             Route::get('/contacts',               [ContactController::class, 'adminIndex']);
             Route::post('/contacts',              [ContactController::class, 'store']);
             Route::get('/contacts/{id}',          [ContactController::class, 'show']);
