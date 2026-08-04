@@ -18,7 +18,7 @@
                     <table class="status-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>S.No.</th>
                                 <th>Journal</th>
                                 <th>Volume</th>
                                 <th>Issue</th>
@@ -173,6 +173,39 @@
                     <div class="reason" id="viewModalBody">Loading...</div>
 
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Delete Confirm Modal --}}
+    <div class="modal fade" id="delete_popup" tabindex="-1" aria-labelledby="delete_popupLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="top">
+                        <div class="pop-title-remove">Confirm Delete</div>
+                    </div>
+
+                    <div class="middle-content">
+                        <span>
+                            Do you want to delete issue "<strong id="deleteIssueName"></strong>"?
+                        </span>
+                    </div>
+
+                    <div class="bottom-btn">
+                        <button type="button" class="red" id="confirmDeleteIssueBtn"> Delete </button>
+                        <button type="button" class="blue" data-bs-dismiss="modal" aria-label="Close"> Keep it
+                        </button>
+                    </div>
+
+                </div>
+
             </div>
         </div>
     </div>

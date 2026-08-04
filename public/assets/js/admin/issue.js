@@ -4,6 +4,9 @@ const VOLUMES_API = "/api/admin/volumes?page=1&per_page=200";
 const token = localStorage.getItem("token");
 let currentPage = 1;
 let allVolumes = [];
+let deleteIssueModal;
+let pendingDeleteId = null;
+let pendingDeleteName = null;
 
 function authHeaders() {
     return {
@@ -92,7 +95,6 @@ function loadVolumeOptions(journalId, selectedVolumeId = null) {
             select.innerHTML += `<option value="${v.id}" ${selected}>${v.volume}</option>`;
         });
 }
-
 async function loadIssues(page = 1) {
     currentPage = page;
     const res = await fetch(`${API_BASE}?page=${page}`, {
@@ -108,10 +110,14 @@ async function loadIssues(page = 1) {
         return;
     }
 
-    json.data.data.forEach((i) => {
+    const perPage = json.data.per_page ?? json.data.data.length;
+    const startSerial = (json.data.current_page - 1) * perPage + 1;
+
+    json.data.data.forEach((i, index) => {
+        const serialNo = startSerial + index;
         tbody.innerHTML += `
             <tr>
-                <td>${i.id}</td>
+                <td>${serialNo}</td>
                 <td>${i.journal?.title ?? "-"}</td>
                 <td>${i.volume?.volume ?? "-"}</td>
                 <td>${i.issue}</td>
@@ -128,13 +134,15 @@ async function loadIssues(page = 1) {
                 <td>
                     <button class="edit-btn" onclick="viewIssue(${i.id})">View</button>
                     <button class="edit-btn" onclick="editIssue(${i.id})">Edit</button>
-                    <button class="delete-btn" onclick="deleteIssue(${i.id}, '${i.issue}')">Delete</button>
+                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#delete_popup"
+                            onclick="promptDeleteIssue(${i.id}, '${i.issue}')">Delete</button>
                 </td>
             </tr>`;
     });
 
     renderPagination(json.data);
 }
+
 
 function renderPagination(pageData) {
     const pagination = document.getElementById("pagination");
@@ -223,9 +231,15 @@ async function toggleCurrent(id) {
     }
 }
 
-async function deleteIssue(id, name) {
-    if (!confirm(`Delete issue "${name}"? This cannot be undone.`)) return;
+// ── Delete ────────────────────────────────────────────────────
+function promptDeleteIssue(id, name) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    document.getElementById("deleteIssueName").textContent = name;
+    deleteIssueModal.show();
+}
 
+async function executeDeleteIssue(id) {
     const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
@@ -281,5 +295,19 @@ document
             console.error(json.errors);
         }
     });
+
+document.addEventListener("DOMContentLoaded", function () {
+    deleteIssueModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+
+    document
+        .getElementById("confirmDeleteIssueBtn")
+        .addEventListener("click", function () {
+            if (pendingDeleteId === null) return;
+            deleteIssueModal.hide();
+            executeDeleteIssue(pendingDeleteId);
+            pendingDeleteId = null;
+            pendingDeleteName = null;
+        });
+});
 
 loadIssues();
