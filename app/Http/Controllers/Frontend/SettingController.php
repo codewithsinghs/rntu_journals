@@ -1,7 +1,7 @@
 <?php
 // app/Http/Controllers/Api/SettingController.php
 
-namespace App\Http\Controllers\frontend;
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Services\SiteSettingService;
