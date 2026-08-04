@@ -163,11 +163,7 @@
             </div>
         </div>
     </div>
-<<<<<<< Updated upstream
-
-=======
     
->>>>>>> Stashed changes
     {{-- Delete Confirm Modal --}}
     <div class="modal fade" id="delete_popup" tabindex="-1" aria-labelledby="delete_popupLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
