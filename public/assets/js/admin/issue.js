@@ -4,6 +4,9 @@ const VOLUMES_API = "/api/admin/volumes?page=1&per_page=200";
 const token = localStorage.getItem("token");
 let currentPage = 1;
 let allVolumes = [];
+let deleteIssueModal;
+let pendingDeleteId = null;
+let pendingDeleteName = null;
 
 function authHeaders() {
     return {
@@ -128,7 +131,8 @@ async function loadIssues(page = 1) {
                 <td>
                     <button class="edit-btn" onclick="viewIssue(${i.id})">View</button>
                     <button class="edit-btn" onclick="editIssue(${i.id})">Edit</button>
-                    <button class="delete-btn" onclick="deleteIssue(${i.id}, '${i.issue}')">Delete</button>
+                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#delete_popup"
+                            onclick="promptDeleteIssue(${i.id}, '${i.issue}')">Delete</button>
                 </td>
             </tr>`;
     });
@@ -223,9 +227,15 @@ async function toggleCurrent(id) {
     }
 }
 
-async function deleteIssue(id, name) {
-    if (!confirm(`Delete issue "${name}"? This cannot be undone.`)) return;
+// ── Delete ────────────────────────────────────────────────────
+function promptDeleteIssue(id, name) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    document.getElementById("deleteIssueName").textContent = name;
+    deleteIssueModal.show();
+}
 
+async function executeDeleteIssue(id) {
     const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
@@ -281,5 +291,19 @@ document
             console.error(json.errors);
         }
     });
+
+document.addEventListener("DOMContentLoaded", function () {
+    deleteIssueModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+
+    document
+        .getElementById("confirmDeleteIssueBtn")
+        .addEventListener("click", function () {
+            if (pendingDeleteId === null) return;
+            deleteIssueModal.hide();
+            executeDeleteIssue(pendingDeleteId);
+            pendingDeleteId = null;
+            pendingDeleteName = null;
+        });
+});
 
 loadIssues();

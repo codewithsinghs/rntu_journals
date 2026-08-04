@@ -2,6 +2,9 @@ const API_BASE = "/api/admin/volumes";
 const JOURNALS_API = "/api/admin/journals?page=1&per_page=100";
 const token = localStorage.getItem("token");
 let currentPage = 1;
+let deleteVolumeModal;
+let pendingDeleteId = null;
+let pendingDeleteName = null;
 
 function authHeaders() {
     return {
@@ -13,52 +16,43 @@ function authHeaders() {
 
 // ─── Toast Helper ───────────────────────────────────────────────
 function showToast(message, type = "success", title = null) {
-    const container = document.getElementById("toastContainer");
-
-    const toast = document.createElement("div");
-    toast.className = `custom-toast ${type}`;
+    const el = document.getElementById("ecToast");
+    if (!el) {
+        console.warn("Toast element #ecToast not found in DOM");
+        return;
+    }
 
     const defaultTitle = type === "success" ? "Success" : "Error";
+    document.getElementById("ecToastTitle").textContent = title ?? defaultTitle;
 
-    const icon =
+    const msgEl = document.getElementById("ecToastMsg");
+    msgEl.textContent = message || "";
+    msgEl.style.display = message ? "block" : "none";
+
+    document.getElementById("ecToastIcon").innerHTML =
         type === "success"
-            ? `<div class="toast-status success-icon">✓</div>`
-            : `<div class="toast-status error-icon">!</div>`;
+            ? `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+            : `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`;
 
-    toast.innerHTML = `
-        <div class="toast-header">
-            <div class="toast-top">
-                ${icon}
-                <div class="toast-title">${title ?? defaultTitle}</div>
-            </div>
+    el.classList.remove("bg-success", "bg-danger", "bg-warning", "text-dark");
+    if (type === "success") el.classList.add("bg-success");
+    else if (type === "warning") el.classList.add("bg-warning", "text-dark");
+    else el.classList.add("bg-danger");
 
-            <button class="toast-close" onclick="this.closest('.custom-toast').remove()">
-                &times;
-            </button>
-        </div>
+    const bar = document.getElementById("ecToastBarInner");
+    bar.style.transition = "none";
+    bar.style.width = "100%";
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+            bar.style.transition = "width 4s linear";
+            bar.style.width = "0%";
+        }),
+    );
 
-        <div class="toast-body">
-            ${message}
-        </div>
-
-        <div class="toast-bottom">
-            <button class="toast-btn blue" onclick="this.closest('.custom-toast').remove()">
-                OK
-            </button>
-        </div>
-
-        <div class="toast-progress"></div>
-    `;
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.animation = "toastSlideOut 0.3s ease forwards";
-
-        setTimeout(() => {
-            toast.remove();
-        }, 300);
-    }, 3500);
+    bootstrap.Toast.getOrCreateInstance(el, {
+        delay: 4000,
+        autohide: true,
+    }).show();
 }
 
 async function loadJournalOptions(selectedId = null) {
@@ -91,10 +85,14 @@ async function loadVolumes(page = 1) {
         return;
     }
 
-    json.data.data.forEach((v) => {
+    const perPage = json.data.per_page ?? json.data.data.length;
+    const startSerial = (json.data.current_page - 1) * perPage + 1;
+
+    json.data.data.forEach((v, index) => {
+        const serialNo = startSerial + index;
         tbody.innerHTML += `
             <tr>
-                <td>${v.id}</td>
+                <td>${serialNo}</td>
                 <td>${v.journal?.title ?? "-"}</td>
                 <td>${v.volume}</td>
                 <td>${v.year ?? "-"}</td>
@@ -109,7 +107,8 @@ async function loadVolumes(page = 1) {
                 <td>
                     <button class="edit-btn" onclick="viewVolume(${v.id})">View</button>
                     <button class="edit-btn" onclick="editVolume(${v.id})">Edit</button>
-                    <button class="delete-btn" onclick="deleteVolume(${v.id}, '${v.volume}')">Delete</button>
+                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#delete_popup"
+                            onclick="promptDeleteVolume(${v.id}, '${v.volume}')">Delete</button>
                 </td>
             </tr>`;
     });
@@ -193,9 +192,15 @@ async function toggleCurrent(id) {
     }
 }
 
-async function deleteVolume(id, name) {
-    if (!confirm(`Delete volume "${name}"? This cannot be undone.`)) return;
+// ── Delete ────────────────────────────────────────────────────
+function promptDeleteVolume(id, name) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    document.getElementById("deleteVolumeName").textContent = name;
+    deleteVolumeModal.show();
+}
 
+async function executeDeleteVolume(id) {
     const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
@@ -246,5 +251,19 @@ document
             console.error(json.errors);
         }
     });
+
+document.addEventListener("DOMContentLoaded", function () {
+    deleteVolumeModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+
+    document
+        .getElementById("confirmDeleteVolumeBtn")
+        .addEventListener("click", function () {
+            if (pendingDeleteId === null) return;
+            deleteVolumeModal.hide();
+            executeDeleteVolume(pendingDeleteId);
+            pendingDeleteId = null;
+            pendingDeleteName = null;
+        });
+});
 
 loadVolumes();
