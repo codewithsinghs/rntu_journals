@@ -18,7 +18,7 @@
                     <table class="status-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>S.No.</th>
                                 <th>Journal</th>
                                 <th>Volume</th>
                                 <th>Issue</th>

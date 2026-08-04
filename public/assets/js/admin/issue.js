@@ -95,7 +95,6 @@ function loadVolumeOptions(journalId, selectedVolumeId = null) {
             select.innerHTML += `<option value="${v.id}" ${selected}>${v.volume}</option>`;
         });
 }
-
 async function loadIssues(page = 1) {
     currentPage = page;
     const res = await fetch(`${API_BASE}?page=${page}`, {
@@ -111,10 +110,14 @@ async function loadIssues(page = 1) {
         return;
     }
 
-    json.data.data.forEach((i) => {
+    const perPage = json.data.per_page ?? json.data.data.length;
+    const startSerial = (json.data.current_page - 1) * perPage + 1;
+
+    json.data.data.forEach((i, index) => {
+        const serialNo = startSerial + index;
         tbody.innerHTML += `
             <tr>
-                <td>${i.id}</td>
+                <td>${serialNo}</td>
                 <td>${i.journal?.title ?? "-"}</td>
                 <td>${i.volume?.volume ?? "-"}</td>
                 <td>${i.issue}</td>
@@ -139,6 +142,7 @@ async function loadIssues(page = 1) {
 
     renderPagination(json.data);
 }
+
 
 function renderPagination(pageData) {
     const pagination = document.getElementById("pagination");
