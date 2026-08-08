@@ -94,6 +94,7 @@
                                     <option value="Editor-in-Chief">Editor-in-Chief</option>
                                     <option value="Managing Editor">Managing Editor</option>
                                     <option value="Executive Editor">Executive Editor</option>
+                                    <option value="Advisory Board">Advisory Board</option>
                                     <option value="Editors">Editors</option>
                                     <option value="Associate Editors">Associate Editors</option>
                                     <option value="Members">Members</option>

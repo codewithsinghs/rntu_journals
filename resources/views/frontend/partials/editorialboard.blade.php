@@ -16,5 +16,3 @@
     <div id="boardContent"></div>
 
 </div>
-
-<script src="{{ asset('assets/js/editorial-board.js') }}"></script>

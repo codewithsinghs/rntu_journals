@@ -15,6 +15,7 @@ class EditorialBoardController extends Controller
         'Editor-in-Chief',
         'Managing Editor',
         'Executive Editor',
+        'Advisory Board',
         'Editors',
         'Associate Editors',
         'Members',

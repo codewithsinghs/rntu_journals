@@ -252,7 +252,7 @@ a:hover {
     top: 100%;
     left: 0;
     min-width: 220px;
-    margin-top: 10px;
+    /* margin-top: 10px; */
     padding: 8px;
     background: var(--white);
     border-radius: 12px;
@@ -1786,6 +1786,15 @@ a:hover {
     font-weight: 700;
     font-size: 15px;
 }
+
+.D_footer .out_footer .visitors p span{
+    margin: 0;
+    font-family: Inter;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 15px;
+}
+
 
 .D_footer .out_footer p span {
     color: var(--white);
@@ -3777,3 +3786,84 @@ select {
     padding: 10px;
     border-radius: 10px;
 }
+
+
+/* //Navbar changes in style */
+  /* Root dropdown */
+    .nav-dropdown {
+        position: relative;
+    }
+
+    /* All menus */
+    .nav-dropdown-menu {
+        display: none;
+        position: absolute;
+        background: #fff;
+        min-width: 200px;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0,0,0,.12);
+        z-index: 1000;
+    }
+
+    /* First level */
+    .nav-dropdown-depth-0 > .nav-dropdown-menu {
+        top: 100%;
+        left: 0;
+    }
+
+    /* Second+ levels */
+    .nav-dropdown-depth-1 > .nav-dropdown-menu,
+    .nav-dropdown-depth-2 > .nav-dropdown-menu,
+    .nav-dropdown-depth-3 > .nav-dropdown-menu {
+        top: 0;
+        left: 100%;
+    }
+
+    /* Show on hover */
+    .nav-dropdown:hover > .nav-dropdown-menu {
+        display: block;
+    }
+
+/* Nav items */
+
+    .nav-item {
+        position: relative;
+    }
+
+    .nav-item > a {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 16px;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .nav-dropdown-menu {
+        display: none;
+        position: absolute;
+        min-width: 220px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0,0,0,.15);
+        z-index: 1000;
+    }
+
+    /* First level */
+    .depth-0 > .nav-dropdown-menu {
+        top: 100%;
+        left: 0;
+    }
+
+    /* Every nested level */
+    .nav-dropdown-menu .nav-item.has-children > .nav-dropdown-menu {
+        top: 0;
+        left: 100%;
+    }
+
+    /* Open submenu */
+    .nav-item.has-children:hover > .nav-dropdown-menu {
+        display: block;
+    }
+
+

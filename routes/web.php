@@ -39,11 +39,12 @@ Route::get('/register', function () {
 })->name('register');
 
 Route::get('/{journal}', [JournalDetailController::class, 'show'])->name('journal-details');
-Route::get('/archives/{journal}', [ArchiveController::class, 'show'])->name('archives');
+Route::get('/{journal}/archives', [ArchiveController::class, 'show'])->name('archives');
 Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles');
 Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
 Route::get('/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
-Route::get('/editorial-board/{journal}', [EditorialBoardController::class, 'index'])->name('editorial_board');
+Route::get('/{journal}/editorialboard', [EditorialBoardController::class, 'index'])->name('editorial_board');
+Route::get('/{journal}/guideline', [GuidelinesController::class, 'index'])->name('guidelines');
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 

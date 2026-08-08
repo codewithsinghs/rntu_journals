@@ -37,9 +37,9 @@
 
                                     <!-- Badge / Eyebrow Label -->
                                     <div class="partitions_inner">
-                                        <label>Badge / Eyebrow Label <span class="text-danger">*</span></label>
+                                        <label>Badge / Eyebrow Label</label>
                                         <input type="text" class="content_show" id="about_badge" name="about_badge"
-                                            placeholder="ABOUT" required>
+                                            placeholder="ABOUT">
                                         <div class="invalid-feedback" id="err_about_badge"></div>
                                     </div>
 
@@ -120,9 +120,9 @@
 
                                     <!-- Badge / Eyebrow Label -->
                                     <div class="partitions_inner">
-                                        <label>Badge / Eyebrow Label <span class="text-danger">*</span></label>
+                                        <label>Badge / Eyebrow Label</label>
                                         <input type="text" class="content_show" id="why_badge" name="why_badge"
-                                            placeholder="PUBLISHING" required>
+                                            placeholder="PUBLISHING">
                                         <div class="invalid-feedback" id="err_why_badge"></div>
                                     </div>
 

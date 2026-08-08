@@ -15,10 +15,10 @@
         </div>
     </div>
 
-    {{-- Error Alert --}}
+    {{-- Error Alert: now used ONLY for server/network errors, not client validation --}}
     <div id="rjf-error-alert" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:14px;"></div>
 
-    <form id="submit-article-form" enctype="multipart/form-data">
+    <form id="submit-article-form" enctype="multipart/form-data" novalidate>
         @csrf
 
         <!-- Author Information -->
@@ -29,34 +29,41 @@
             <div class="row mt-4">
                 <div class="col-lg-3 col-md-6">
                     <label>Full Name <span class="text-danger">*</span></label>
-                    <input type="text" name="full_name" class="rjf-input" placeholder="e.g. Dr. Ramesh Kumar">
+                    <input type="text" id="full_name" name="full_name" class="rjf-input" placeholder="e.g. Dr. Ramesh Kumar">
                     <small class="field-hint">Letters, spaces, dots, hyphens only</small>
+                    <small id="full_name-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>Mobile No. <span class="text-danger">*</span></label>
-                    <input type="text" name="mobile_no" class="rjf-input" placeholder="10-digit mobile number" maxlength="10">
+                    <input type="text" id="mobile_no" name="mobile_no" class="rjf-input" placeholder="10-digit mobile number" maxlength="10">
                     <small class="field-hint">Indian mobile number (6/7/8/9 + 9 digits)</small>
+                    <small id="mobile_no-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>Email Address <span class="text-danger">*</span></label>
-                    <input type="email" name="email" class="rjf-input" placeholder="example@domain.com">
+                    <input type="email" id="email" name="email" class="rjf-input" placeholder="example@domain.com">
+                    <small id="email-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>Affiliating Institute <span class="text-danger">*</span></label>
-                    <input type="text" name="affiliating_institute" class="rjf-input" placeholder="e.g. RNTU University">
+                    <input type="text" id="affiliating_institute" name="affiliating_institute" class="rjf-input" placeholder="e.g. RNTU University">
+                    <small id="affiliating_institute-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>Department <span class="text-danger">*</span></label>
-                    <input type="text" name="department" class="rjf-input" placeholder="Computer Science">
+                    <input type="text" id="department" name="department" class="rjf-input" placeholder="Computer Science">
+                    <small id="department-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <label>ORCID ID</label>
-                    <input type="text" name="orcid_id" class="rjf-input" placeholder="0000-0000-0000-0000" maxlength="19">
+                    <input type="text" id="orcid_id" name="orcid_id" class="rjf-input" placeholder="0000-0000-0000-0000" maxlength="19">
                     <small class="field-hint">Format: 0000-0000-0000-0000</small>
+                    <small id="orcid_id-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-12">
                     <label>Affiliating Institute Address <span class="text-danger">*</span></label>
-                    <textarea name="affiliating_institute_address" class="rjf-textarea" placeholder="Bhojpur, Bhopal, Madhya Pradesh "></textarea>
+                    <textarea id="affiliating_institute_address" name="affiliating_institute_address" class="rjf-textarea" placeholder="Bhojpur, Bhopal, Madhya Pradesh "></textarea>
+                    <small id="affiliating_institute_address-error" class="field-error" style="display:none;"></small>
                 </div>
             </div>
         </div>
@@ -72,7 +79,8 @@
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <label>Email Address</label>
-                        <input type="email" name="co_authors[0][email]" class="rjf-input" placeholder="example@domain.com">
+                        <input type="email" id="co_author_email_0" name="co_authors[0][email]" class="rjf-input" placeholder="example@domain.com">
+                        <small id="co_author_email_0-error" class="field-error" style="display:none;"></small>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <label>Affiliation</label>
@@ -98,37 +106,41 @@
                     <select name="journal_id" class="rjf-input" id="journal-select">
                         <option value="">-- Loading Journals... --</option>
                     </select>
+                    <small id="journal-select-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-12">
                     <label>Manuscript Title <span class="text-danger">*</span></label>
-                    <input type="text" name="manuscript_title" class="rjf-input" placeholder="Minimum 10 characters">
+                    <input type="text" id="manuscript_title" name="manuscript_title" class="rjf-input" placeholder="Minimum 10 characters">
+                    <small id="manuscript_title-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-12">
                     <label>Abstract of Research / Project <span class="text-danger">*</span></label>
-                    <textarea rows="8" name="abstract_summary" class="rjf-textarea" placeholder="Minimum 100 characters..."></textarea>
+                    <textarea rows="8" id="abstract_summary" name="abstract_summary" class="rjf-textarea" placeholder="Minimum 100 characters..."></textarea>
                     <small class="field-hint"><span id="abstract-count">0</span> characters (minimum 100)</small>
+                    <small id="abstract_summary-error" class="field-error" style="display:none;"></small>
                 </div>
                 <div class="col-12">
                     <label>Keywords <span class="text-danger">*</span></label>
-                    <div class="row">
+                    <div class="row" id="keywords-container">
                         @for($i = 0; $i < 8; $i++)
                             <div class="col-lg-3 col-md-6">
                             <input type="text" name="keywords[]" class="rjf-input" placeholder="Keyword {{ $i + 1 }}">
                     </div>
                     @endfor
                 </div>
+                <small id="keywords-error" class="field-error" style="display:none;"></small>
             </div>
             <div class="col-xl-6 col-md-6 col-sm-12">
                 <label>Upload Manuscript PDF <span class="text-danger">*</span></label>
                 <input type="file" name="signed_manuscript_pdf" accept=".pdf" class="rjf-input" id="manuscript-pdf" style="padding: 10px 15px;">
                 <small class="field-hint">PDF only • Max 50MB</small>
-                <small id="manuscript-pdf-error" style="color:#e53935;display:none;"></small>
+                <small id="manuscript-pdf-error" class="field-error" style="display:none;"></small>
             </div>
             <div class="col-xl-6 col-md-6 col-sm-12">
                 <label>Upload Source File (DOCX) <span class="text-danger">*</span></label>
                 <input type="file" name="abstract_file" accept=".pdf,.doc,.docx" class="rjf-input" id="abstract-file" style="padding: 10px 15px;">
                 <small class="field-hint">PDF, DOC, DOCX only • Max 50MB</small>
-                <small id="abstract-file-error" style="color:#e53935;display:none;"></small>
+                <small id="abstract-file-error" class="field-error" style="display:none;"></small>
             </div>
         </div>
 </div>
@@ -144,7 +156,8 @@
             </div>
             <div class="col-lg-3 col-md-6">
                 <label>Email Address</label>
-                <input type="email" name="reviewers[0][email]" class="rjf-input" placeholder="example@domain.com">
+                <input type="email" id="reviewer_email_0" name="reviewers[0][email]" class="rjf-input" placeholder="example@domain.com">
+                <small id="reviewer_email_0-error" class="field-error" style="display:none;"></small>
             </div>
             <div class="col-lg-3 col-md-6">
                 <label>Institution</label>
@@ -164,13 +177,14 @@
 <!-- Declaration -->
 <div class="rjf-card">
     <div class="rjf-card-heading">Author Declaration <span class="text-danger">*</span></div>
-    <div class="rjf-checklist">
+    <div class="rjf-checklist" id="declarations-group">
         <label><input type="checkbox" name="declarations[]" value="original"> The manuscript is original and has not been published previously.</label>
         <label><input type="checkbox" name="declarations[]" value="not_under_review"> The manuscript is not under consideration by another journal.</label>
         <label><input type="checkbox" name="declarations[]" value="all_approved"> All authors have approved the submitted manuscript.</label>
         <label><input type="checkbox" name="declarations[]" value="ethical_approval"> Ethical approval has been obtained where required.</label>
         <label><input type="checkbox" name="declarations[]" value="data_accurate"> Data presented are accurate and authentic.</label>
     </div>
+    <small id="declarations-group-error" class="field-error" style="display:none;"></small>
 </div>
 
 <!-- Signature -->
@@ -179,24 +193,27 @@
     <div class="row">
         <div class="col-lg-4">
             <label>Full Name <span class="text-danger">*</span></label>
-            <input type="text" name="author_signature" class="rjf-input" placeholder="e.g. Rajat Pradhan">
+            <input type="text" id="author_signature" name="author_signature" class="rjf-input" placeholder="e.g. Rajat Pradhan">
+            <small id="author_signature-error" class="field-error" style="display:none;"></small>
         </div>
         <div class="col-lg-4">
             <label>Signature (Image)</label>
             <input type="file" name="signature_file" accept="image/jpeg,image/jpg,image/png" class="rjf-input" id="signature-file" style="padding: 10px 15px;">
             <small class="field-hint">JPEG or PNG only • Max 2MB</small>
-            <small id="signature-file-error" style="color:#e53935;display:none;"></small>
+            <small id="signature-file-error" class="field-error" style="display:none;"></small>
         </div>
         <div class="col-lg-4">
             <label>Date <span class="text-danger">*</span></label>
-            <input type="date" name="submission_date" class="rjf-input" value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}">
+            <input type="date" id="submission_date" name="submission_date" class="rjf-input" value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}">
+            <small id="submission_date-error" class="field-error" style="display:none;"></small>
         </div>
     </div>
     <div class="rjf-submit-section">
         <label>
-            <input type="checkbox" name="terms_accepted" value="1">
+            <input type="checkbox" id="terms_accepted" name="terms_accepted" value="1">
             I Have Read All Instructions of RNTU Journals. <span class="text-danger">*</span>
         </label>
+        <small id="terms_accepted-error" class="field-error" style="display:none;"></small>
         <button type="submit" class="rjf-submit-btn" id="submit-btn">Submit</button>
     </div>
 </div>
@@ -212,7 +229,16 @@
         margin-top: 3px;
     }
 
-    .rjf-input.is-invalid {
+    .field-error {
+        color: #e53935;
+        font-size: 12px;
+        display: block;
+        margin-top: 3px;
+        font-weight: 600;
+    }
+
+    .rjf-input.is-invalid,
+    .rjf-textarea.is-invalid {
         border-color: #e53935 !important;
     }
 
@@ -247,7 +273,8 @@
         }
 
         function fieldError(inputEl, msg) {
-            inputEl.classList.add('is-invalid');
+            if (!inputEl) return;
+            if (inputEl.classList) inputEl.classList.add('is-invalid');
             const errEl = document.getElementById(inputEl.id + '-error');
             if (errEl) {
                 errEl.textContent = msg;
@@ -256,12 +283,21 @@
         }
 
         function clearFieldError(inputEl) {
-            inputEl.classList.remove('is-invalid');
+            if (!inputEl) return;
+            if (inputEl.classList) inputEl.classList.remove('is-invalid');
             const errEl = document.getElementById(inputEl.id + '-error');
             if (errEl) {
                 errEl.textContent = '';
                 errEl.style.display = 'none';
             }
+        }
+
+        function clearAllFieldErrors() {
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.field-error').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
         }
 
         // ── Formatters ───────────────────────────────────────────────────
@@ -274,6 +310,7 @@
                 if (val.length > 9) val = val.slice(0, 9) + '-' + val.slice(9);
                 if (val.length > 14) val = val.slice(0, 14) + '-' + val.slice(14);
                 this.value = val.slice(0, 19);
+                clearFieldError(this);
             });
         });
 
@@ -282,6 +319,7 @@
         if (mobileInput) {
             mobileInput.addEventListener('input', function() {
                 this.value = this.value.replace(/\D/g, '').slice(0, 10);
+                clearFieldError(this);
             });
         }
 
@@ -292,8 +330,32 @@
             abstractTextarea.addEventListener('input', function() {
                 abstractCount.textContent = this.value.length;
                 abstractCount.style.color = this.value.length < 100 ? '#e53935' : '#16a34a';
+                clearFieldError(this);
             });
         }
+
+        // Generic: clear the field's own error the moment the user edits it
+        ['full_name', 'email', 'affiliating_institute', 'department',
+            'affiliating_institute_address', 'manuscript_title', 'author_signature',
+            'submission_date'
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => clearFieldError(el));
+        });
+
+        const journalSelect = document.getElementById('journal-select');
+        if (journalSelect) journalSelect.addEventListener('change', () => clearFieldError(journalSelect));
+
+        const termsEl = document.getElementById('terms_accepted');
+        if (termsEl) termsEl.addEventListener('change', () => clearFieldError(termsEl));
+
+        form.querySelectorAll('input[name="declarations[]"]').forEach(cb => {
+            cb.addEventListener('change', () => clearFieldError(document.getElementById('declarations-group')));
+        });
+
+        form.querySelectorAll('input[name="keywords[]"]').forEach(el => {
+            el.addEventListener('input', () => clearFieldError(document.getElementById('keywords-container')));
+        });
 
         // ── File size validation on change ───────────────────────────────
         function attachFileSizeCheck(inputId, maxBytes, maxLabel, allowedExts) {
@@ -327,132 +389,143 @@
         attachFileSizeCheck('abstract-file', MAX_FILE_BYTES, MAX_FILE_MB + 'MB', ['pdf', 'doc', 'docx']);
         attachFileSizeCheck('signature-file', MAX_SIG_BYTES, MAX_SIG_MB + 'MB', ['jpeg', 'jpg', 'png']);
 
-        // ── Client-side validation before submit ─────────────────────────
-        // NOTE: every lookup below is scoped to `form`, not `document`,
-        // so it can never accidentally read a same-named input from a
-        // login popup or other widget elsewhere on the page.
+
         function validateForm() {
-            const errors = [];
+            clearAllFieldErrors();
+            let firstInvalid = null;
 
-            const fullName = form.querySelector('input[name="full_name"]').value.trim();
+            function fail(el, msg) {
+                fieldError(el, msg);
+                if (!firstInvalid) firstInvalid = el;
+            }
+
+            const fullNameEl = document.getElementById('full_name');
+            const fullName = fullNameEl.value.trim();
             if (!fullName) {
-                errors.push('Full name is required.');
+                fail(fullNameEl, 'Full name is required.');
             } else if (!/^[a-zA-Z\s.\-]+$/.test(fullName)) {
-                errors.push('Full name must contain only letters, spaces, dots, or hyphens.');
+                fail(fullNameEl, 'Only letters, spaces, dots, or hyphens are allowed.');
             }
 
-            const mobile = form.querySelector('input[name="mobile_no"]').value.trim();
+            const mobileEl = document.getElementById('mobile_no');
+            const mobile = mobileEl.value.trim();
             if (!mobile) {
-                errors.push('Mobile number is required.');
+                fail(mobileEl, 'Mobile number is required.');
             } else if (!/^[6-9]\d{9}$/.test(mobile)) {
-                errors.push('Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9).');
+                fail(mobileEl, 'Enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9).');
             }
 
-            const email = form.querySelector('input[name="email"]').value.trim();
+            const emailEl = document.getElementById('email');
+            const email = emailEl.value.trim();
             if (!email) {
-                errors.push('Email address is required.');
+                fail(emailEl, 'Email address is required.');
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                errors.push('Please enter a valid email address.');
+                fail(emailEl, 'Enter a valid email address.');
             }
 
-            const requiredFields = [{
-                    name: 'affiliating_institute',
-                    label: 'Affiliating Institute'
+            const simpleRequired = [{
+                    id: 'affiliating_institute',
+                    label: 'Affiliating Institute is required.'
                 },
                 {
-                    name: 'department',
-                    label: 'Department'
+                    id: 'department',
+                    label: 'Department is required.'
                 },
                 {
-                    name: 'affiliating_institute_address',
-                    label: 'Institute Address'
+                    id: 'affiliating_institute_address',
+                    label: 'Institute address is required.'
                 },
                 {
-                    name: 'manuscript_title',
-                    label: 'Manuscript Title'
+                    id: 'manuscript_title',
+                    label: 'Manuscript title is required.'
                 },
                 {
-                    name: 'abstract_summary',
-                    label: 'Abstract'
+                    id: 'abstract_summary',
+                    label: 'Abstract is required.'
                 },
                 {
-                    name: 'author_signature',
-                    label: 'Author Signature Name'
+                    id: 'author_signature',
+                    label: 'Signature name is required.'
                 },
                 {
-                    name: 'submission_date',
-                    label: 'Submission Date'
+                    id: 'submission_date',
+                    label: 'Submission date is required.'
                 },
             ];
-            requiredFields.forEach(f => {
-                const el = form.querySelector(`[name="${f.name}"]`);
-                if (el && !el.value.trim()) errors.push(`${f.label} is required.`);
+            simpleRequired.forEach(f => {
+                const el = document.getElementById(f.id);
+                if (el && !el.value.trim()) fail(el, f.label);
             });
 
-            const title = form.querySelector('input[name="manuscript_title"]').value.trim();
-            if (title && title.length < 10) errors.push('Manuscript title must be at least 10 characters.');
+            const titleEl = document.getElementById('manuscript_title');
+            const title = titleEl.value.trim();
+            if (title && title.length < 10) fail(titleEl, 'Must be at least 10 characters.');
 
-            const abstract = form.querySelector('textarea[name="abstract_summary"]').value.trim();
-            if (abstract && abstract.length < 100) errors.push('Abstract must be at least 100 characters.');
+            const abstractEl = document.getElementById('abstract_summary');
+            const abstract = abstractEl.value.trim();
+            if (abstract && abstract.length < 100) fail(abstractEl, 'Must be at least 100 characters.');
 
-            const journalId = form.querySelector('select[name="journal_id"]').value;
-            if (!journalId) errors.push('Please select a journal.');
+            const journalEl = document.getElementById('journal-select');
+            if (!journalEl.value) fail(journalEl, 'Please select a journal.');
 
+            const keywordsContainer = document.getElementById('keywords-container');
             const keywords = [...form.querySelectorAll('input[name="keywords[]"]')]
                 .map(el => el.value.trim()).filter(Boolean);
-            if (keywords.length === 0) errors.push('Please enter at least one keyword.');
+            if (keywords.length === 0) fail(keywordsContainer, 'Enter at least one keyword.');
 
             const manuscriptFile = document.getElementById('manuscript-pdf');
             if (!manuscriptFile || !manuscriptFile.files.length) {
-                errors.push('Please upload the manuscript PDF.');
+                fail(manuscriptFile, 'Please upload the manuscript PDF.');
             } else if (manuscriptFile.files[0].size > MAX_FILE_BYTES) {
-                errors.push(`Manuscript PDF must not exceed ${MAX_FILE_MB}MB.`);
+                fail(manuscriptFile, `Must not exceed ${MAX_FILE_MB}MB.`);
             }
 
             const abstractFile = document.getElementById('abstract-file');
             if (!abstractFile || !abstractFile.files.length) {
-                errors.push('Please upload the source file (DOCX/PDF).');
+                fail(abstractFile, 'Please upload the source file (DOCX/PDF).');
             } else if (abstractFile.files[0].size > MAX_FILE_BYTES) {
-                errors.push(`Source file must not exceed ${MAX_FILE_MB}MB.`);
+                fail(abstractFile, `Must not exceed ${MAX_FILE_MB}MB.`);
             }
 
             const sigFile = document.getElementById('signature-file');
             if (sigFile && sigFile.files.length && sigFile.files[0].size > MAX_SIG_BYTES) {
-                errors.push(`Signature image must not exceed ${MAX_SIG_MB}MB.`);
+                fail(sigFile, `Must not exceed ${MAX_SIG_MB}MB.`);
             }
 
-            const orcid = form.querySelector('input[name="orcid_id"]').value.trim();
+            const orcidEl = document.getElementById('orcid_id');
+            const orcid = orcidEl.value.trim();
             if (orcid && !/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcid)) {
-                errors.push('ORCID ID must be in format: 0000-0000-0000-0000.');
+                fail(orcidEl, 'Format must be 0000-0000-0000-0000.');
             }
 
+            const declarationsGroup = document.getElementById('declarations-group');
             const declarations = form.querySelectorAll('input[name="declarations[]"]:checked');
-            if (declarations.length === 0) errors.push('Please check at least one declaration.');
+            if (declarations.length === 0) fail(declarationsGroup, 'Please check at least one declaration.');
 
-            const terms = form.querySelector('input[name="terms_accepted"]');
-            if (!terms || !terms.checked) errors.push('You must accept the terms and instructions.');
+            const terms = document.getElementById('terms_accepted');
+            if (!terms || !terms.checked) fail(terms, 'You must accept the terms and instructions.');
 
             form.querySelectorAll('.author-block').forEach((block, i) => {
                 const name = block.querySelector(`input[name="co_authors[${i}][name]"]`);
-                const email = block.querySelector(`input[name="co_authors[${i}][email]"]`);
-                if (name && name.value.trim() && email && email.value.trim()) {
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-                        errors.push(`Co-author ${i + 1}: Please enter a valid email address.`);
+                const emailInput = block.querySelector(`input[name="co_authors[${i}][email]"]`);
+                if (name && name.value.trim() && emailInput && emailInput.value.trim()) {
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
+                        fail(emailInput, 'Enter a valid email address.');
                     }
                 }
             });
 
             form.querySelectorAll('.reviewer-block').forEach((block, i) => {
                 const name = block.querySelector(`input[name="reviewers[${i}][name]"]`);
-                const email = block.querySelector(`input[name="reviewers[${i}][email]"]`);
-                if (name && name.value.trim() && email && email.value.trim()) {
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-                        errors.push(`Reviewer ${i + 1}: Please enter a valid email address.`);
+                const emailInput = block.querySelector(`input[name="reviewers[${i}][email]"]`);
+                if (name && name.value.trim() && emailInput && emailInput.value.trim()) {
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
+                        fail(emailInput, 'Enter a valid email address.');
                     }
                 }
             });
 
-            return errors;
+            return firstInvalid;
         }
 
         // ── Load Journals ────────────────────────────────────────────────
@@ -489,7 +562,8 @@
                 <div class="col-lg-3 col-md-6"><label>Full Name</label>
                     <input type="text" name="co_authors[${i}][name]" class="rjf-input" placeholder="e.g. Dr. Name"></div>
                 <div class="col-lg-3 col-md-6"><label>Email Address</label>
-                    <input type="email" name="co_authors[${i}][email]" class="rjf-input" placeholder="example@domain.com"></div>
+                    <input type="email" id="co_author_email_${i}" name="co_authors[${i}][email]" class="rjf-input" placeholder="example@domain.com">
+                    <small id="co_author_email_${i}-error" class="field-error" style="display:none;"></small></div>
                 <div class="col-lg-3 col-md-6"><label>Affiliation</label>
                     <input type="text" name="co_authors[${i}][affiliation]" class="rjf-input"></div>
                 <div class="col-lg-3 col-md-6"><label>ORCID ID</label>
@@ -498,6 +572,18 @@
                         <button type="button" onclick="removeBlock(this,'author-block')" style="background:#fee2e2;border:none;color:#e53935;border-radius:6px;width:34px;height:38px;cursor:pointer;font-size:16px;flex-shrink:0;">✕</button>
                     </div></div>`;
             document.getElementById('author-container').appendChild(block);
+
+            const newEmail = block.querySelector(`#co_author_email_${i}`);
+            newEmail.addEventListener('input', () => clearFieldError(newEmail));
+            block.querySelectorAll('input[name*="orcid_id"]').forEach(el => {
+                el.addEventListener('input', function() {
+                    let val = this.value.replace(/[^0-9X]/gi, '').toUpperCase();
+                    if (val.length > 4) val = val.slice(0, 4) + '-' + val.slice(4);
+                    if (val.length > 9) val = val.slice(0, 9) + '-' + val.slice(9);
+                    if (val.length > 14) val = val.slice(0, 14) + '-' + val.slice(14);
+                    this.value = val.slice(0, 19);
+                });
+            });
         });
 
         // ── Add Reviewer ─────────────────────────────────────────────────
@@ -510,7 +596,8 @@
                 <div class="col-lg-3 col-md-6"><label>Full Name</label>
                     <input type="text" name="reviewers[${i}][name]" class="rjf-input"></div>
                 <div class="col-lg-3 col-md-6"><label>Email Address</label>
-                    <input type="email" name="reviewers[${i}][email]" class="rjf-input" placeholder="example@domain.com"></div>
+                    <input type="email" id="reviewer_email_${i}" name="reviewers[${i}][email]" class="rjf-input" placeholder="example@domain.com">
+                    <small id="reviewer_email_${i}-error" class="field-error" style="display:none;"></small></div>
                 <div class="col-lg-3 col-md-6"><label>Institution</label>
                     <input type="text" name="reviewers[${i}][institution]" class="rjf-input"></div>
                 <div class="col-lg-3 col-md-6"><label>Area of Expertise</label>
@@ -519,6 +606,9 @@
                         <button type="button" onclick="removeBlock(this,'reviewer-block')" style="background:#fee2e2;border:none;color:#e53935;border-radius:6px;width:34px;height:38px;cursor:pointer;font-size:16px;flex-shrink:0;">✕</button>
                     </div></div>`;
             document.getElementById('reviewer-container').appendChild(block);
+
+            const newEmail = block.querySelector(`#reviewer_email_${i}`);
+            newEmail.addEventListener('input', () => clearFieldError(newEmail));
         });
 
         // ── Remove Row ───────────────────────────────────────────────────
@@ -528,91 +618,116 @@
         };
 
         // ── Submit — direct, no login required ───────────────────────────
-// ── Submit — direct, no login required ───────────────────────────
-form.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    hideError();
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
 
-    const errors = validateForm();
-    if (errors.length > 0) {
-        showError(errors.join('<br>'));
-        return;
-    }
-
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
-    btn.textContent = 'Submitting...';
-
-    try {
-        const formData = new FormData(this);
-
-        // ── Strip blank optional entries so backend never sees empty placeholders ──
-
-        // 1. Keywords: only send the ones the user actually filled in
-        formData.delete('keywords[]');
-        [...form.querySelectorAll('input[name="keywords[]"]')]
-            .map(el => el.value.trim())
-            .filter(Boolean)
-            .forEach(val => formData.append('keywords[]', val));
-
-        // 2. Co-author rows: drop any row where every field is blank
-        form.querySelectorAll('.author-block').forEach(block => {
-            const inputs = block.querySelectorAll('input');
-            const allBlank = [...inputs].every(inp => !inp.value.trim());
-            if (allBlank) {
-                inputs.forEach(inp => formData.delete(inp.name));
+            const firstInvalid = validateForm();
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                if (typeof firstInvalid.focus === 'function') firstInvalid.focus();
+                return;
             }
-        });
 
-        // 3. Reviewer rows: drop any row where every field is blank
-        form.querySelectorAll('.reviewer-block').forEach(block => {
-            const inputs = block.querySelectorAll('input');
-            const allBlank = [...inputs].every(inp => !inp.value.trim());
-            if (allBlank) {
-                inputs.forEach(inp => formData.delete(inp.name));
-            }
-        });
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
 
-        const res = await fetch('/api/submit-article', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json'
-            },
-            body: formData,
-        });
-        const json = await res.json();
+            try {
+                const formData = new FormData(this);
 
-        if (res.ok && json.status) {
-            document.getElementById('rjf-success-overlay').style.display = 'flex';
-            this.reset();
-            form.querySelector('input[name="submission_date"]').value = new Date().toISOString().split('T')[0];
-            if (abstractCount) abstractCount.textContent = '0';
 
-            document.getElementById('rjf-success-ok-btn').onclick = function() {
-                document.getElementById('rjf-success-overlay').style.display = 'none';
+                // 1. Keywords: only send the ones the user actually filled in
+                formData.delete('keywords[]');
+                [...form.querySelectorAll('input[name="keywords[]"]')]
+                    .map(el => el.value.trim())
+                    .filter(Boolean)
+                    .forEach(val => formData.append('keywords[]', val));
 
-                const loginPopup = document.getElementById('loginPopup');
-                if (loginPopup) {
-                    loginPopup.style.display = 'flex';
+                // 2. Co-author rows: drop any row where every field is blank
+                form.querySelectorAll('.author-block').forEach(block => {
+                    const inputs = block.querySelectorAll('input');
+                    const allBlank = [...inputs].every(inp => !inp.value.trim());
+                    if (allBlank) {
+                        inputs.forEach(inp => formData.delete(inp.name));
+                    }
+                });
+
+                // 3. Reviewer rows: drop any row where every field is blank
+                form.querySelectorAll('.reviewer-block').forEach(block => {
+                    const inputs = block.querySelectorAll('input');
+                    const allBlank = [...inputs].every(inp => !inp.value.trim());
+                    if (allBlank) {
+                        inputs.forEach(inp => formData.delete(inp.name));
+                    }
+                });
+
+                const res = await fetch('/api/submit-article', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    body: formData,
+                });
+                const json = await res.json();
+
+                if (res.ok && json.status) {
+                    document.getElementById('rjf-success-overlay').style.display = 'flex';
+                    this.reset();
+                    document.getElementById('submission_date').value = new Date().toISOString().split('T')[0];
+                    if (abstractCount) abstractCount.textContent = '0';
+                    clearAllFieldErrors();
+
+                    document.getElementById('rjf-success-ok-btn').onclick = function() {
+                        document.getElementById('rjf-success-overlay').style.display = 'none';
+
+                        const loginPopup = document.getElementById('loginPopup');
+                        if (loginPopup) {
+                            loginPopup.style.display = 'flex';
+                        } else {
+                            window.location.href = '/login';
+                        }
+                    };
                 } else {
-                    window.location.href = '/login';
+                    if (json.errors) {
+                        let firstServerInvalid = null;
+                        const unmatched = [];
+                        Object.entries(json.errors).forEach(([key, msgs]) => {
+                            const msg = Array.isArray(msgs) ? msgs[0] : msgs;
+                            // Laravel-style keys: "email", "co_authors.0.email", "keywords.0"
+                            const simpleId = key.split('.')[0];
+                            const el = document.getElementById(simpleId) ||
+                                form.querySelector(`[name="${key}"]`) ||
+                                form.querySelector(`[name="${simpleId}"]`) ||
+                                form.querySelector(`[name="${simpleId}[]"]`);
+                            if (el && document.getElementById(el.id + '-error')) {
+                                fieldError(el, msg);
+                                if (!firstServerInvalid) firstServerInvalid = el;
+                            } else {
+                                unmatched.push(msg);
+                            }
+                        });
+                        if (unmatched.length) showError(unmatched.join('<br>'));
+                        if (firstServerInvalid) {
+                            firstServerInvalid.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+                        }
+                    } else {
+                        showError(json.message ?? 'Something went wrong. Please try again.');
+                    }
                 }
-            };
-        } else {
-            if (json.errors) {
-                const msgs = Object.values(json.errors).flat().join('<br>');
-                showError(msgs);
-            } else {
-                showError(json.message ?? 'Something went wrong. Please try again.');
+            } catch (err) {
+                showError('Network error. Please check your connection and try again.');
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit';
             }
-        }
-    } catch (err) {
-        showError('Network error. Please check your connection and try again.');
-        console.error(err);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Submit';
-    }
-});
+        });
     })();
 </script>

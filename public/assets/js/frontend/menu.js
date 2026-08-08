@@ -6,30 +6,41 @@ function urlPath(url) {
     }
 }
 
+// Recursively checks if this item OR any descendant matches the current path
+function hasActiveDescendant(item, currentPath) {
+    const children = item.children ?? [];
+    return children.some(child =>
+        urlPath(child.url) === currentPath || hasActiveDescendant(child, currentPath)
+    );
+}
+
+function renderMenuItem(item, currentPath, depth = 0) {
+    const itemPath = urlPath(item.url);
+    const isActive = itemPath === currentPath;
+    const children = item.children ?? [];
+    const hasChildren = children.length > 0;
+    const hasActiveChild = hasChildren && hasActiveDescendant(item, currentPath);
+
+    return `
+        <div class="nav-item ${hasChildren ? "has-children" : ""} depth-${depth}">
+            <a href="${item.url}"
+               target="${item.target ?? "_self"}"
+               class="${isActive || hasActiveChild ? "" : ""}">
+                ${item.label}
+                ${hasChildren ? '<span class="arrow">▾</span>' : ""}
+            </a>
+
+            ${hasChildren ? `
+                <div class="nav-dropdown-menu">
+                    ${children.map(child => renderMenuItem(child, currentPath, depth + 1)).join("")}
+                </div>
+            ` : ""}
+        </div>
+    `;
+}
+
 function renderMenu(items, currentPath) {
-    return items.map(item => {
-        const itemPath = urlPath(item.url);
-        const isActive = itemPath === currentPath;
-        const children = item.children ?? [];
-
-        if (children.length === 0) {
-            return `<a href="${item.url}" target="${item.target ?? '_self'}" class="${isActive ? 'active' : ''}">${item.label}</a>`;
-        }
-
-        const hasActiveChild = children.some(c => urlPath(c.url) === currentPath);
-
-        const childLinks = children.map(child => {
-            const childActive = urlPath(child.url) === currentPath;
-            return `<a href="${child.url}" target="${child.target ?? '_self'}" class="${childActive ? 'active' : ''}">${child.label}</a>`;
-        }).join("");
-
-        return `
-            <div class="nav-dropdown">
-                <a href="${item.url}" target="${item.target ?? '_self'}" class="${isActive || hasActiveChild ? 'active' : ''}">${item.label} ▾</a>
-                <div class="nav-dropdown-menu">${childLinks}</div>
-            </div>
-        `;
-    }).join("");
+    return items.map(item => renderMenuItem(item, currentPath, 0)).join("");
 }
 
 // ── Logo ──────────────────────────────────────────────
@@ -55,19 +66,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// ── Header Menu (single source of truth — resolves page key first) ─────
+// ── Header Menu ──────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
     const menuContainer = document.getElementById("header-menu");
     const currentPath = window.location.pathname;
 
     try {
-        // Step 1: resolve page key from current path
-        const pageRes = await fetch(`/api/public/current-page?path=${encodeURIComponent(currentPath)}`);
-        const pageJson = await pageRes.json();
-        const pageKey = pageJson.data?.page || "";
-
-        // Step 2: fetch menu filtered by that page
-        const menuRes = await fetch(`/api/public/menus/location/header?page=${encodeURIComponent(pageKey)}`);
+        const menuRes = await fetch(`/api/public/menus/location/header`);
         const menuJson = await menuRes.json();
 
         if (!menuJson.status) {
@@ -80,4 +85,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
         console.error("Menu load failed:", err);
     }
+}); 
+
+document.addEventListener("DOMContentLoaded", () => {
+    const hamburger = document.getElementById("hamburger");
+    const navbar = document.getElementById("navbar");
+
+    hamburger.addEventListener("click", () => {
+        hamburger.classList.toggle("active");
+        navbar.classList.toggle("active");
+    });
 });

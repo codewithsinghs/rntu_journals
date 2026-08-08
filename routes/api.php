@@ -90,13 +90,13 @@
             Route::post('/about-content/{id}',         [AboutBasicContentController::class, 'update']);
             Route::put('/about-content/{id}',          [AboutBasicContentController::class, 'update']);
 
-            //guidelines    
-            Route::get('/guidelines',               [GuidelinesController::class, 'adminIndex']);
-            Route::post('/guidelines',              [GuidelinesController::class, 'store']);
-            Route::get('/guidelines/{id}',          [GuidelinesController::class, 'show']);
-            Route::post('/guidelines/{id}',         [GuidelinesController::class, 'update']);
-            Route::put('/guidelines/{id}',          [GuidelinesController::class, 'update']);
-
+            //guidelines
+            Route::get('/guidelines',           [GuidelinesController::class, 'adminIndex'])->name('guidelines.data');
+            Route::post('/guidelines',          [GuidelinesController::class, 'store'])->name('guidelines.store');
+            Route::get('/guidelines/{id}',      [GuidelinesController::class, 'show'])->name('guidelines.show');
+            Route::post('/guidelines/{id}',     [GuidelinesController::class, 'update'])->name('guidelines.update.multipart');
+            Route::put('/guidelines/{id}',      [GuidelinesController::class, 'update'])->name('guidelines.update');
+            Route::delete('/guidelines/{id}',   [GuidelinesController::class, 'destroy'])->name('guidelines.destroy');
             //contacts    
             Route::get('/contacts',               [ContactController::class, 'adminIndex']);
             Route::post('/contacts',              [ContactController::class, 'store']);
@@ -148,7 +148,8 @@
             Route::post('submit-articles/{id}/publish', [SubmitArticleController::class, 'publish']);
             Route::get('reviewers', [SubmitArticleController::class, 'reviewers']);
             Route::get('submit-articles-issues', [SubmitArticleController::class, 'issuesForJournal']);
-
+            Route::delete('submit-articles/{id}', [SubmitArticleController::class, 'destroy']);
+            Route::post('submit-articles/{id}/toggle-hide', [SubmitArticleController::class, 'toggleHide']);
 
             // Volumes
             Route::get('/volumes',                       [VolumeController::class, 'adminIndex'])->name('volumes.data');
@@ -176,10 +177,6 @@
             Route::get('/dashboard/latest-publications', [DashboardController::class, 'latestPublications']);
         });
 
-        Route::get('/public/menus', [FrontendMenuController::class, 'index']);
-        Route::get('/public/home-content', [HomeController::class, 'index']);
-        Route::get('/public/about-content', [AboutController::class, 'index']);
-        Route::get('/public/editorial-board', [FrontendEditorialBoardController::class, 'index']);
 
         Route::group(['prefix' => 'public'], function () {
 
@@ -188,7 +185,7 @@
             Route::get('/announcements',   [FrontendHomeController::class, 'announcementsList']);
             Route::get('/latest-articles', [FrontendHomeController::class, 'latestArticles']);
             Route::get('/about', [AboutController::class, 'content']);
-            Route::get('/guidelines', [FrontendGuidelinesController::class, 'content']);
+            Route::get('/guidelines/{journalParam}', [FrontendGuidelinesController::class, 'content']);
             Route::get('/contact', [FrontendContactController::class, 'content']);
             Route::get('/journals/{id}/detail', [JournalDetailController::class, 'detail']);
             Route::get('/journals/{id}/archives', [ArchiveController::class, 'archivesData']);
