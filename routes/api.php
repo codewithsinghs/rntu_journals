@@ -13,6 +13,7 @@
         use App\Http\Controllers\Admin\MediasController;
         use App\Http\Controllers\Admin\MenuController as AdminMenuController;
         use App\Http\Controllers\Admin\PermissionController;
+        use App\Http\Controllers\Admin\PrpController;
         use App\Http\Controllers\Admin\RoleController;
         use App\Http\Controllers\Frontend\MenuController as FrontendMenuController;
         use App\Http\Controllers\Admin\SettingsController;
@@ -32,6 +33,7 @@
         use App\Http\Controllers\frontend\HomeController as FrontendHomeController;
         use App\Http\Controllers\Frontend\JournalDetailController;
         use App\Http\Controllers\frontend\MenuController;
+        use App\Http\Controllers\Frontend\PrpController as FrontendPrpController;
         use Illuminate\Support\Facades\Route;
 
 
@@ -97,6 +99,16 @@
             Route::post('/guidelines/{id}',     [GuidelinesController::class, 'update'])->name('guidelines.update.multipart');
             Route::put('/guidelines/{id}',      [GuidelinesController::class, 'update'])->name('guidelines.update');
             Route::delete('/guidelines/{id}',   [GuidelinesController::class, 'destroy'])->name('guidelines.destroy');
+
+            //prp
+            Route::get('/prp',           [PrpController::class, 'adminIndex'])->name('prp.data');
+            Route::post('/prp',          [PrpController::class, 'store'])->name('prp.store');
+            Route::get('/prp/{id}',      [PrpController::class, 'show'])->name('prp.show');
+            Route::post('/prp/{id}',     [PrpController::class, 'update'])->name('prp.update.multipart');
+            Route::put('/prp/{id}',      [PrpController::class, 'update'])->name('prp.update');
+            Route::delete('/prp/{id}',   [PrpController::class, 'destroy'])->name('prp.destroy');
+
+
             //contacts    
             Route::get('/contacts',               [ContactController::class, 'adminIndex']);
             Route::post('/contacts',              [ContactController::class, 'store']);
@@ -186,6 +198,7 @@
             Route::get('/latest-articles', [FrontendHomeController::class, 'latestArticles']);
             Route::get('/about', [AboutController::class, 'content']);
             Route::get('/guidelines/{journalParam}', [FrontendGuidelinesController::class, 'content']);
+            Route::get('/prp', [FrontendPrpController::class, 'content']);
             Route::get('/contact', [FrontendContactController::class, 'content']);
             Route::get('/journals/{id}/detail', [JournalDetailController::class, 'detail']);
             Route::get('/journals/{id}/archives', [ArchiveController::class, 'archivesData']);

@@ -13,17 +13,19 @@ use App\Http\Controllers\Frontend\ArchiveController;
 use App\Http\Controllers\Frontend\ContactController;
 use App\Http\Controllers\Frontend\CurrentIssuesController;
 use App\Http\Controllers\Frontend\JournalDetailController;
+use App\Http\Controllers\Frontend\PrpController;
 use Illuminate\Support\Facades\Route;
 
-// ── Frontend Routes ───────────────────────────────────────────────
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [AboutController::class, 'index'])->name('about');
 Route::get('/guidelines', [GuidelinesController::class, 'index'])->name('guidelines');
 Route::get('/contact', [ContactController::class, 'index'])->name('contacts');
 Route::get('/submit-article', [SubmitArticleController::class, 'index'])->name('submitarticles');
 Route::get('/menus/{location}', [FrontendMenuController::class, 'byLocation'])->name('menus.byLocation');
-// Route::get('/editorial-board', [EditorialBoardController::class, 'index'])->name('editorial_board');
-
+Route::get('/peer-review-process', [PrpController::class, 'index'])->name('prp');
+Route::get('/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
+Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles');
+Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
 
 Route::post('/password/send-otp', [ForgotPasswordOtpController::class, 'sendOtp'])->name('password.send-otp');
 Route::post('/password/reset-otp', [ForgotPasswordOtpController::class, 'resetWithOtp'])->name('password.reset-otp');
@@ -38,15 +40,14 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-Route::get('/{journal}', [JournalDetailController::class, 'show'])->name('journal-details');
-Route::get('/{journal}/archives', [ArchiveController::class, 'show'])->name('archives');
-Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles');
-Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
-Route::get('/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
-Route::get('/{journal}/editorialboard', [EditorialBoardController::class, 'index'])->name('editorial_board');
-Route::get('/{journal}/guideline', [GuidelinesController::class, 'index'])->name('guidelines');
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+
+
+Route::get('/{journal}/archives', [ArchiveController::class, 'show'])->name('archives');
+Route::get('/{journal}/editorialboard', [EditorialBoardController::class, 'index'])->name('editorial_board');
+Route::get('/{journal}/guideline', [GuidelinesController::class, 'index'])->name('guidelines');
+Route::get('/{journal}', [JournalDetailController::class, 'show'])->name('journal-details');
 
 // ── Protected Admin Routes ────────────────────────────────────────
 Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function () {
@@ -66,6 +67,7 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/contacts', fn() => view('admin.contact'))->middleware('permission:view contacts')->name('contact');
     Route::get('/aboutcontent', fn() => view('admin.aboutcontent'))->middleware('permission:view about')->name('aboutcontent');
     Route::get('/guidelines', fn() => view('admin.guidelines'))->middleware('permission:view guidelines')->name('guidelines');
+    Route::get('/prp', fn() => view('admin.prp'))->middleware('permission:view prp')->name('prp');
     Route::get('/homebasiccontent', fn() => view('admin.homebasiccontent'))->middleware('permission:view home content')->name('homebasiccontent');
     Route::get('/editorial-board', fn() => view('admin.editorialboard'))->middleware('permission:view editorial board')->name('editorial-board');
     Route::get('/all-article-lists', fn() => view('admin.submitarticle'))->middleware('permission:view submit article')->name('submit-article');

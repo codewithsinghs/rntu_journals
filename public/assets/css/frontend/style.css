@@ -282,7 +282,7 @@ a:hover {
     display: flex;
 }
 
-/* Mobile / tablet: open on click instead of hover (handled via JS .open class) */
+/* Mobile / tablet: open on click instead of hover (handled via JS .open class)
 @media only screen and (min-width: 200px) and (max-width: 1000px) {
     .nav-dropdown-menu {
         position: static;
@@ -295,7 +295,59 @@ a:hover {
     .nav-dropdown.open .nav-dropdown-menu {
         display: flex;
     }
+} */
+
+/* =========================================
+   MOBILE MENU - SUBMENU BELOW PARENT
+========================================= */
+
+@media only screen and (max-width: 1000px) {
+
+    .nav-dropdown-menu,
+    .nav-dropdown-menu .nav-dropdown-menu,
+    .nav-item.has-children > .nav-dropdown-menu {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+
+        width: 100% !important;
+        min-width: 100% !important;
+
+        margin: 0 !important;
+        padding: 0 0 0 15px !important;
+
+        box-shadow: none !important;
+        border-radius: 0 !important;
+
+        display: none;
+    }
+
+    /* Open submenu */
+    .nav-dropdown.open > .nav-dropdown-menu,
+    .nav-item.has-children.open > .nav-dropdown-menu {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Child menu links */
+    .nav-dropdown-menu a {
+        width: 100%;
+        padding: 10px 15px !important;
+        white-space: normal;
+    }
+
+    /* Nested child menus also go DOWN */
+    .nav-dropdown-menu .nav-item.has-children > .nav-dropdown-menu {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        padding-left: 15px !important;
+    }
 }
+
 
 /* SEARCH */
 
