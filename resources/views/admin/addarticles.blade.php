@@ -28,6 +28,7 @@
                                         <div class="partitions_inner">
                                             <label>Author / PI Full Name</label>
                                             <input type="text" class="content_show" name="full_name"id="full_name">
+                                            <small class="field_hint">Letters, spaces, dots or hyphens only.</small>
                                             <div class="validation-error-addarticle" data-error-for="full_name"></div>
                                         </div>
 
@@ -44,6 +45,7 @@
                                                 maxlength="10"
                                                 placeholder="10-digit mobile number"
                                                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                                            <small class="field_hint">Exactly 10 digits, must start with 6, 7, 8 or 9.</small>
                                             <div class="validation-error-addarticle" data-error-for="mobile_no"></div>
                                         </div>
 
@@ -58,6 +60,7 @@
                                                 pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
                                                 placeholder="name@example.com"
                                                 title="Enter a valid email address">
+                                            <small class="field_hint">A valid, reachable email address.</small>
                                             <div class="validation-error-addarticle" data-error-for="email"></div>
                                         </div>
 
@@ -65,7 +68,8 @@
                                         <div class="partitions_inner mar_part">
                                             <label>Affiliating Institute</label>
                                             <input type="text" class="content_show" name="affiliating_institute"
-                                                id="affiliating_institute">
+                                                id="affiliating_institute" maxlength="255">
+                                            <small class="field_hint">Max 255 characters.</small>
                                             <div class="validation-error-addarticle" data-error-for="affiliating_institute">
                                             </div>
                                         </div>
@@ -73,14 +77,17 @@
                                         <!-- Department -->
                                         <div class="partitions_inner mar_part">
                                             <label>Department</label>
-                                            <input type="text" class="content_show" name="department" id="department">
+                                            <input type="text" class="content_show" name="department" id="department" maxlength="255">
+                                            <small class="field_hint">Max 255 characters.</small>
                                             <div class="validation-error-addarticle" data-error-for="department"></div>
                                         </div>
 
                                         <!-- ORCID ID -->
                                         <div class="partitions_inner mar_part">
                                             <label>ORCID ID</label>
-                                            <input type="text" class="content_show" name="orcid_id" id="orcid_id">
+                                            <input type="text" class="content_show" name="orcid_id" id="orcid_id"
+                                                placeholder="0000-0000-0000-0000">
+                                            <small class="field_hint">Format: 0000-0000-0000-0000 (last character may be X). Optional.</small>
                                             <div class="validation-error-addarticle" data-error-for="orcid_id"></div>
                                         </div>
 
@@ -89,7 +96,8 @@
                                     <!-- Enter Affiliating Institute Address -->
                                     <div class="content_inner" style="margin: 0;">
                                         <label>Enter Affiliating Institute Address</label>
-                                        <textarea class="content_show" name="affiliating_institute_address" id="affiliating_institute_address" rows="2"></textarea>
+                                        <textarea class="content_show" name="affiliating_institute_address" id="affiliating_institute_address" rows="2" maxlength="1000"></textarea>
+                                        <small class="field_hint">Max 1000 characters.</small>
                                         <div class="validation-error-addarticle"
                                             data-error-for="affiliating_institute_address"></div>
                                     </div>
@@ -100,7 +108,8 @@
                                 <div class="content_inner">
                                     <div class="heading_p">Name / Title of Article </div>
                                     <input type="text" class="content_show" name="manuscript_title"
-                                        id="manuscript_title">
+                                        id="manuscript_title" maxlength="500">
+                                    <small class="field_hint">Keep it concise — around 15 words, 10 to 500 characters.</small>
                                     <div class="validation-error-addarticle" data-error-for="manuscript_title"></div>
                                 </div>
 
@@ -116,7 +125,8 @@
                                 <!-- Abstract of Article -->
                                 <div class="content_inner">
                                     <div class="heading_p">Abstract of Article</div>
-                                    <textarea class="content_show" name="abstract_summary" id="abstract_summary" rows="5"></textarea>
+                                    <textarea class="content_show" name="abstract_summary" id="abstract_summary" rows="5" maxlength="5000"></textarea>
+                                    <small class="field_hint">100 to 5000 characters.</small>
                                     <div class="validation-error-addarticle" data-error-for="abstract_summary"></div>
                                 </div>
 
@@ -125,6 +135,7 @@
                                     <div class="heading_p">Keywords</div>
                                     <input type="text" class="content_show" id="keywordInput"
                                         placeholder="Type a keyword and press Enter">
+                                    <small class="field_hint">1 to 8 keywords. Letters, numbers, spaces or hyphens only.</small>
 
                                     <div class="content_inner">
                                         <div class="content_partitions" id="keywordTags"> </div>
@@ -136,7 +147,8 @@
                                 <!-- References (optional) -->
                                 <div class="content_inner">
                                     <div class="heading_p">References (optional)</div>
-                                    <textarea class="content_show" name="references" id="references" rows="3"></textarea>
+                                    <textarea class="content_show" name="references" id="references" rows="3" maxlength="5000"></textarea>
+                                    <small class="field_hint">Max 5000 characters.</small>
                                     <div class="validation-error-addarticle" data-error-for="references"></div>
                                 </div>
 
@@ -172,6 +184,7 @@
                                             <label>Name of Corresponding Author</label>
                                             <input type="text" class="content_show" name="author_signature"
                                                 id="author_signature">
+                                            <small class="field_hint">Letters, spaces, dots or hyphens only.</small>
                                             <div class="validation-error-addarticle" data-error-for="author_signature">
                                             </div>
                                         </div>
@@ -181,6 +194,7 @@
                                             <label>Signature</label>
                                             <input type="file" class="content_show" name="signature_file"
                                                 id="signature_file" accept=".jpg,.jpeg,.png">
+                                            <small class="field_hint">JPG or PNG image, max 2MB.</small>
                                             <div class="validation-error-addarticle" data-error-for="signature_file">
                                             </div>
                                         </div>
@@ -190,6 +204,7 @@
                                             <label>Date</label>
                                             <input type="date" class="content_show" name="submission_date"
                                                 id="submission_date">
+                                            <small class="field_hint">Cannot be a future date.</small>
                                             <div class="validation-error-addarticle" data-error-for="submission_date">
                                             </div>
                                         </div>
@@ -209,6 +224,7 @@
                                             <label>Upload Article PDF</label>
                                             <input type="file" class="content_show" name="signed_manuscript_pdf"
                                                 id="signed_manuscript_pdf" accept=".pdf">
+                                            <small class="field_hint">PDF only, max 50MB.</small>
                                             <div class="validation-error-addarticle"
                                                 data-error-for="signed_manuscript_pdf"></div>
                                         </div>
@@ -218,6 +234,7 @@
                                             <label>Upload Article Doc</label>
                                             <input type="file" class="content_show" name="abstract_file"
                                                 id="abstract_file" accept=".pdf,.doc,.docx">
+                                            <small class="field_hint">PDF, DOC or DOCX, max 50MB.</small>
                                             <div class="validation-error-addarticle" data-error-for="abstract_file"></div>
                                         </div>
 
@@ -311,6 +328,15 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .field_hint {
+            display: block;
+            color: #6b7280;
+            font-size: 11.5px;
+            margin-top: 2px;
+        }
+    </style>
 @endsection
 
 @section('scripts')

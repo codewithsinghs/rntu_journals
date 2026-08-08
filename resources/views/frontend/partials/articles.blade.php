@@ -17,8 +17,9 @@
         <!-- Top -->
         <div class="jrn-breadcrumb">
 
-            <!-- breadcrumb — static, no Volume/Issue linkage in DB yet -->
-            <div><a href="{{ route('home') }}">Home /</a> <a href="#">Archives /</a> <span class="active">Volume 8, Issue 3, Year 2026</span></div>
+            <div><a href="{{ route('home') }}">Home /</a> <a href="#">Archives /</a>
+                <span class="active" id="articleVolumeIssueYear">Volume –, Issue –, Year –</span>
+            </div>
 
             <!-- DOI — static, no doi column in DB yet -->
             <div class="jrn-top-meta">
@@ -75,7 +76,7 @@
             <div class="col-xl-6 col-md-12 col-sm-12">
 
                 <div class="row">
-                    <!-- Downloads — static, no downloads tracking in DB yet -->
+                    <!-- Downloads -->
                     <div class="col-xl-6 col-md-12 col-sm-12">
                         <div class="jrn-sidebar">
                             <div class="jrn-card">
@@ -89,15 +90,15 @@
 
                                 <div class="jrn-download-box">
                                     <span>Total Downloads</span>
-                                    <strong>20</strong>
+                                    <strong id="articleTotalDownloads">0</strong>
                                 </div>
 
                                 <div class="chart-wrapper">
                                     <canvas id="downloadChart"></canvas>
                                 </div>
 
-                                <button class="jrn-btn">
-                                    Most downloads in May 2026
+                                <button class="jrn-btn" id="mostDownloadsBtn">
+                                    Most downloads —
                                 </button>
 
                             </div>
@@ -127,9 +128,8 @@
                                     <h3>Article Details</h3>
                                 </div>
 
-                                <!-- Volume/Issue — static, no linkage in DB yet -->
-                                <p class="deatils_j">
-                                    Volume 8, Issue 3, Year 2026
+                                <p class="deatils_j" id="articleVolumeIssueYearDetails">
+                                    Volume –, Issue –, Year –
                                 </p>
 
                                 <!-- DOI — static -->
@@ -208,30 +208,5 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- <script>
-    new Chart(document.getElementById('downloadChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                data: [15, 28, 18, 22, 27, 22],
-                backgroundColor: ['#e8edf3', '#e8edf3', '#e8edf3', '#e8edf3', '#0b356b', '#e8edf3'],
-                borderRadius: 8,
-                borderSkipped: false,
-                barThickness: 14
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false } },
-                y: { beginAtZero: true, max: 30, ticks: { stepSize: 10 }, grid: { color: '#e5e5e5' } }
-            }
-        }
-    });
-</script> -->
 
 @endsection

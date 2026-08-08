@@ -16,13 +16,13 @@ class AboutBasicContentController extends Controller
         $imgRule = $isUpdate ? 'nullable' : 'nullable';
 
         return [
-            'about_badge'         => 'required|string|max:255',
+            'about_badge'         => 'nullable|string|max:255',
             'about_heading'       => 'required|string|max:255',
             'about_description_1' => 'required|string',
             'about_description_2' => 'nullable|string',
             'about_section_img1'  => "{$imgRule}|file|mimes:jpg,jpeg,png,webp|max:2048",
             'about_section_img2'  => "{$imgRule}|file|mimes:jpg,jpeg,png,webp|max:2048",
-            'why_badge'           => 'required|string|max:255',
+            'why_badge'           => 'nullable|string|max:255',
             'why_heading'         => 'required|string|max:255',
             'why_description_1'   => 'required|string',
             'why_description_2'   => 'nullable|string',

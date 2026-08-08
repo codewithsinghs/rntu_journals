@@ -988,10 +988,7 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("edit_author_signature").value,
         );
 
-        // Editor-only Volume/Issue override. Only present in the DOM for
-        // users with can_edit_issue, so this is a no-op for regular authors.
-        // Empty string means "Auto" — the backend leaves auto-assignment to
-        // approve()/publish() when this is blank.
+
         const issueSelect = document.getElementById("edit_issue_id");
         if (issueSelect) {
             fd.append("issue_id", issueSelect.value);

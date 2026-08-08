@@ -59,10 +59,7 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── Issues Dropdown for a Journal (Editor override) ────────────
-    // Only editors / users with "view all articles" may see this list —
-    // it powers the manual Volume/Issue override selector on the edit
-    // screen. Regular authors never call this endpoint.
+
     public function issuesForJournal(Request $request)
     {
         try {
@@ -203,6 +200,20 @@ class SubmitArticleController extends Controller
 
         $article->can_edit_issue = $canViewAll;
 
+        // ─── Delete / Hide — editor / admin / superadmin only ───────
+        // Deliberately tied to the same "view all articles" gate as the
+        // rest of the editor-only surface (issue override, reviewer
+        // names, granular stage) rather than a separate permission, so
+        // it can never be granted to an author or a plain reviewer.
+        $article->can_delete = $canViewAll;
+        $article->can_hide   = $canViewAll;
+
+        // Whether this article is actually live on the public site right
+        // now. Distinct from is_hidden: an article can be marked
+        // is_published on the review but still be pulled from public view
+        // via is_hidden — the public controller checks BOTH.
+        $article->is_published = (bool) ($article->review->is_published ?? false);
+
         $article->reviewer_name = $canViewAll
             ? ($article->review?->reviewer?->name ?? null)
             : null;
@@ -234,7 +245,7 @@ class SubmitArticleController extends Controller
 
             $query = SubmitArticle::with([
                 'journal:id,title',
-                'review:id,submit_article_id,editor_id,editor_status,editor_remarks,reviewer_id,forwarded_to_reviewer_date,reviewer_status,reviewer_approval_date,reviewer_remarks,final_status,current_stage,revision_count',
+                'review:id,submit_article_id,editor_id,editor_status,editor_remarks,reviewer_id,forwarded_to_reviewer_date,reviewer_status,reviewer_approval_date,reviewer_remarks,final_status,current_stage,is_published,published_at,revision_count',
                 'review.reviewer:id,name,email',
             ])
                 ->select([
@@ -247,6 +258,8 @@ class SubmitArticleController extends Controller
                     'journal_id',
                     'manuscript_title',
                     'submission_date',
+                    'is_hidden',
+                    'hidden_at',
                     'created_at',
                 ]);
 
@@ -260,6 +273,10 @@ class SubmitArticleController extends Controller
                 } else {
                     $query->where('user_id', $user->id);
                 }
+
+                // Hidden submissions are an editor/admin-only concern —
+                // authors and reviewers never see a hidden row at all.
+                $query->where('is_hidden', false);
             }
 
             if ($request->filled('q')) {
@@ -335,6 +352,13 @@ class SubmitArticleController extends Controller
                     'status'  => false,
                     'message' => 'You are not authorized to view this submission.',
                 ], 403);
+            }
+
+            if (!$canViewAll && $article->is_hidden) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'This submission is not available.',
+                ], 404);
             }
 
             $article = $this->withFileUrls($article);
@@ -1317,6 +1341,8 @@ class SubmitArticleController extends Controller
                     [
                         'final_status'  => 'published',
                         'current_stage' => 'published',
+                        'is_published'  => true,
+                        'published_at'  => now(),
                     ]
                 );
             });
@@ -1338,6 +1364,127 @@ class SubmitArticleController extends Controller
             ], 404);
         } catch (\Exception $e) {
             Log::error('Failed to publish submission', [
+                'submission_id' => $id,
+                'error'         => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Something went wrong.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ─── Delete Submission — editor / admin / superadmin only ───────
+    // Soft-deletes the submission (relies on SoftDeletes on the model /
+    // deleted_at column via migration). Regular Eloquent queries used
+    // everywhere else in this controller automatically exclude it once
+    // deleted, so no further "trashed" scoping is required elsewhere.
+    public function destroy(Request $request, $id)
+    {
+        try {
+            $article = $this->findByUuid($id, ['review']);
+            $user = $request->user('api');
+
+            $canViewAll = $user && $user->can('view all articles');
+
+            if (!$canViewAll) {
+                Log::warning('Unauthorized delete attempt', [
+                    'submission_id' => $id,
+                    'user_id'       => $user?->id,
+                ]);
+
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'You are not authorized to delete this submission.',
+                ], 403);
+            }
+
+            DB::transaction(function () use ($article) {
+                $article->delete();
+            });
+
+            Log::info('Submission deleted', [
+                'submission_id' => $id,
+                'user_id'       => $user->id,
+            ]);
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Submission deleted successfully.',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Submission not found.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete submission', [
+                'submission_id' => $id,
+                'error'         => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Something went wrong.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ─── Hide / Unhide Submission — editor / admin / superadmin only ─
+    // Toggles visibility without deleting anything. Hidden submissions
+    // are excluded from the author's / reviewer's own list view (see
+    // adminIndex / show) but remain fully visible to anyone with
+    // "view all articles".
+    public function toggleHide(Request $request, $id)
+    {
+        try {
+            $article = $this->findByUuid($id);
+            $user = $request->user('api');
+
+            $canViewAll = $user && $user->can('view all articles');
+
+            if (!$canViewAll) {
+                Log::warning('Unauthorized hide/unhide attempt', [
+                    'submission_id' => $id,
+                    'user_id'       => $user?->id,
+                ]);
+
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'You are not authorized to hide this submission.',
+                ], 403);
+            }
+
+            $newState = !$article->is_hidden;
+
+            $article->is_hidden = $newState;
+            $article->hidden_at = $newState ? now() : null;
+            $article->hidden_by = $newState ? $user->id : null;
+            $article->save();
+
+            Log::info('Submission hide state toggled', [
+                'submission_id' => $id,
+                'user_id'       => $user->id,
+                'is_hidden'     => $newState,
+            ]);
+
+            return response()->json([
+                'status'  => true,
+                'message' => $newState
+                    ? 'Submission hidden successfully.'
+                    : 'Submission is visible again.',
+                'data'    => ['is_hidden' => $newState],
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Submission not found.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to toggle hide state', [
                 'submission_id' => $id,
                 'error'         => $e->getMessage(),
             ]);

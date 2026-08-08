@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class SubmitArticle extends Model
 {
     // use HasUuids;
+    use SoftDeletes;
+
     protected $table = 'submit_articles';
 
     protected $fillable = [
@@ -69,12 +72,15 @@ class SubmitArticle extends Model
         ->orWhere($this->getKeyName(), $value)
         ->firstOrFail();
 }
-    
+
     protected $casts = [
         'keywords'        => 'array',
         'declarations'    => 'array',
         'submission_date' => 'date',
         'terms_accepted'  => 'boolean',
+        'is_hidden'       => 'boolean',
+        'hidden_at'       => 'datetime',
+        'deleted_at'      => 'datetime',
     ];
 
     // ─── Relationships ───────────────────────────────────────────────
@@ -110,7 +116,7 @@ class SubmitArticle extends Model
     }
 
     public function downloads()
-{
-    return $this->hasMany(ArticleDownload::class);
-}
+    {
+        return $this->hasMany(ArticleDownload::class);
+    }
 }

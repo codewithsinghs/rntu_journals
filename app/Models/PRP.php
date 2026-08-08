@@ -3,17 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Guideline extends Model
+class PRP extends Model
 {
-    protected $table = 'guidelines';
+    protected $table = 'prp';
 
     protected $fillable = [
-
-        'journal_id',
-
-        // ── Guidelines Author ──────────────────────────────
+        // ── PRPs Author ──────────────────────────────
         'author_badge',
         'author_heading',
         'author_description',
@@ -45,8 +41,4 @@ class Guideline extends Model
         'acknowlegdement_description',
     ];
 
-    public function journal(): BelongsTo
-    {
-        return $this->belongsTo(Journal::class, 'journal_id');
-    }
 }

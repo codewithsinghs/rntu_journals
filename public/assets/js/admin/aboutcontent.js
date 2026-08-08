@@ -336,21 +336,7 @@ async function initEditors() {
         );
     }
 
-    /* ─────────────────────────────────────────────────────────────
-               Render record — description-only cards
-               (Badge / Heading / Images are edited in the modal but are
-               intentionally NOT shown in this summary view — only the
-               descriptions for "About Section" and "Why Researchers
-               Trust Us" are displayed here.)
-            ───────────────────────────────────────────────────────────── */
 
-    /* ─────────────────────────────────────────────────────────────
-               Add modal
-            ───────────────────────────────────────────────────────────── */
-
-    /* ─────────────────────────────────────────────────────────────
-               Load
-            ───────────────────────────────────────────────────────────── */
 
     document
         .getElementById("abcSaveBtn")

@@ -143,6 +143,7 @@
         html += renderThreeUpSection('Editors', roles['Editors']);
         html += renderThreeUpSection('Associate Editors', roles['Associate Editors']);
         html += renderThreeUpSection('Members', roles['Members']);
+        html += renderThreeUpSection('Advisory Board', roles['Advisory Board']);
 
         els.content.innerHTML = html;
         els.loading.classList.add('d-none');

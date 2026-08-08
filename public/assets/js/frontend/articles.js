@@ -22,6 +22,10 @@
         copyright: document.getElementById('articleCopyright'),
         citation: document.getElementById('articleCitation'),
         references: document.getElementById('articleReferences'),
+        volumeIssueYear: document.getElementById('articleVolumeIssueYear'),
+        volumeIssueYearDetails: document.getElementById('articleVolumeIssueYearDetails'),
+        totalDownloads: document.getElementById('articleTotalDownloads'),
+        mostDownloadsBtn: document.getElementById('mostDownloadsBtn'),
     };
 
     function escapeHtml(str) {
@@ -37,6 +41,14 @@
             text += ', ' + names.join(', ');
         }
         return text;
+    }
+
+    function volumeIssueYearLine(article) {
+        const parts = [];
+        if (article.volume) parts.push(`Volume ${article.volume}`);
+        if (article.issue) parts.push(`Issue ${article.issue}`);
+        if (article.year) parts.push(`Year ${article.year}`);
+        return parts.length ? parts.join(', ') : 'Volume –, Issue –, Year –';
     }
 
     function renderArticle(article) {
@@ -57,7 +69,7 @@
         els.publishedDate.textContent = article.published_date || '—';
 
         const authorsCopyright = authorsLine(article);
-        const year = new Date().getFullYear();
+        const year = article.year || new Date().getFullYear();
         els.copyright.textContent = `Copyright (c) ${year} ${authorsCopyright}`;
 
         const citationAuthors = authorsLine(article);
@@ -70,23 +82,41 @@
             ? article.references
             : 'No references provided for this submission.';
 
+        const vij = volumeIssueYearLine(article);
+        if (els.volumeIssueYear) els.volumeIssueYear.textContent = vij;
+        if (els.volumeIssueYearDetails) els.volumeIssueYearDetails.textContent = vij;
+
+        const totalDownloads = article.total_downloads ?? 0;
+        if (els.totalDownloads) els.totalDownloads.textContent = totalDownloads;
+
         els.loading.classList.add('d-none');
         els.content.classList.remove('d-none');
 
-        initChart();
+        initChart(article.downloads_by_month || []);
     }
 
-    function initChart() {
+    function initChart(downloadsByMonth) {
         const canvas = document.getElementById('downloadChart');
         if (!canvas || typeof Chart === 'undefined') return;
+
+        const data = downloadsByMonth.length
+            ? downloadsByMonth
+            : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label) => ({ label, count: 0 }));
+
+        const labels = data.map((d) => d.label);
+        const counts = data.map((d) => d.count);
+        const maxCount = Math.max(...counts);
+        const maxIndex = counts.lastIndexOf(maxCount);
+
+        const barColors = counts.map((_, i) => (i === maxIndex && maxCount > 0 ? '#0b356b' : '#e8edf3'));
 
         new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels,
                 datasets: [{
-                    data: [15, 28, 18, 22, 27, 22],
-                    backgroundColor: ['#e8edf3', '#e8edf3', '#e8edf3', '#e8edf3', '#0b356b', '#e8edf3'],
+                    data: counts,
+                    backgroundColor: barColors,
                     borderRadius: 8,
                     borderSkipped: false,
                     barThickness: 14
@@ -98,10 +128,16 @@
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { beginAtZero: true, max: 30, ticks: { stepSize: 10 }, grid: { color: '#e5e5e5' } }
+                    y: { beginAtZero: true, ticks: { stepSize: Math.max(1, Math.ceil(maxCount / 3)) }, grid: { color: '#e5e5e5' } }
                 }
             }
         });
+
+        if (els.mostDownloadsBtn) {
+            els.mostDownloadsBtn.textContent = maxCount > 0
+                ? `Most downloads in ${labels[maxIndex]}`
+                : 'No downloads yet';
+        }
     }
 
     async function init() {

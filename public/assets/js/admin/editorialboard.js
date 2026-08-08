@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "Editor-in-Chief",
         "Managing Editor",
         "Executive Editor",
+        "Advisory Board",
         "Editors",
         "Associate Editors",
         "Members",

@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     //Aim & Scope + Why RNTU ─────────────────────────────────────────────────────────────
-       
+
     async function loadAimScopeWhy() {
         const loadingEl = document.getElementById('aimScopeLoading');
         if (!loadingEl) return;
@@ -205,17 +205,23 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
             const json = await res.json();
             const announcements = json.data ?? [];
-
+            console.log(announcements);
             if (!announcements.length) {
                 wrapEl.innerHTML = `<div class="announcement-item">No announcements available.</div>`;
                 return;
             }
 
-            const itemHtml = a => `
-                <div class="announcement-item">
-                    <a href="${a.url}" target="_blank">📢 ${a.name}</a>
-                </div>
-            `;
+            const itemHtml = a => {
+                const href = a.link || (a.attachment ? `/storage/${a.attachment}` : null);
+
+                return href
+                    ? `<div class="announcement-item">
+                <a href="${href}" target="_blank">📢 ${a.name}</a>
+           </div>`
+                    : `<div class="announcement-item">
+                <span>📢 ${a.name}</span>
+           </div>`;
+            };
 
             wrapEl.innerHTML = announcements.map(itemHtml).join('') + announcements.map(itemHtml).join('');
         } catch (e) {

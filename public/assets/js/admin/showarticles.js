@@ -9,6 +9,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const id = document.getElementById("saShowPage").dataset.id;
 
+    const saRejectModal = bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("saRejectModal"),
+    );
+    const saForwardModal = bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("saForwardModal"),
+    );
+    const saConfirmModal = bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("saConfirmModal"),
+    );
+
     const esc = (s) =>
         (s ?? "")
             .toString()
@@ -59,6 +69,18 @@ document.addEventListener("DOMContentLoaded", function () {
         published: "Published",
     };
 
+    // Full-sentence wording + order to match the public submission form's
+    // declaration checklist (see screenshot). Keys must match the values
+    // stored in r.declarations from the API.
+    const declLabels = {
+        original: "This work is original and has not been published elsewhere.",
+        not_under_review: "This manuscript is not under review elsewhere.",
+        all_approved: "All co-authors have approved this submission.",
+        ethical_approval: "Required ethical approvals have been obtained.",
+        data_accurate:
+            "All data presented is accurate to the best of my knowledge.",
+    };
+
     function stageChip(stage) {
         if (!stage) return '<span class="text-muted">—</span>';
 
@@ -82,6 +104,247 @@ document.addEventListener("DOMContentLoaded", function () {
                     ${label}
                 </a>`;
     }
+
+    function showToast(type, title, msg) {
+        const el = document.getElementById("saToast");
+        document.getElementById("saToastTitle").textContent = title;
+        const msgEl = document.getElementById("saToastMsg");
+        msgEl.textContent = msg || "";
+        msgEl.style.display = msg ? "block" : "none";
+        const iconEl = document.getElementById("saToastIcon");
+        iconEl.className =
+            type === "success"
+                ? "bi bi-check-circle"
+                : "bi bi-exclamation-circle";
+        el.classList.remove("bg-success", "bg-danger");
+        el.classList.add(type === "success" ? "bg-success" : "bg-danger");
+        bootstrap.Toast.getOrCreateInstance(el, {
+            delay: 4000,
+            autohide: true,
+        }).show();
+    }
+
+    /* ── Generic styled confirm dialog (used for Approve) ──────────────── */
+    let confirmResolver = null;
+
+    function showConfirm({
+        title,
+        desc,
+        okLabel = "Confirm",
+        variant = "warn",
+    }) {
+        document.getElementById("saConfirmTitle").textContent = title;
+        document.getElementById("saConfirmDesc").textContent = desc;
+
+        const okBtn = document.getElementById("saConfirmOkBtn");
+
+        okBtn.textContent = okLabel;
+        okBtn.className =
+            "btn text-white " +
+            (variant === "approve" ? "btn-success" : "btn-danger");
+
+        saConfirmModal.show();
+
+        return new Promise((resolve) => {
+            confirmResolver = resolve;
+        });
+    }
+
+    document.getElementById("saConfirmOkBtn").addEventListener("click", () => {
+        saConfirmModal.hide();
+        if (confirmResolver) {
+            confirmResolver(true);
+            confirmResolver = null;
+        }
+    });
+    document
+        .getElementById("saConfirmCancelBtn")
+        .addEventListener("click", () => {
+            saConfirmModal.hide();
+            if (confirmResolver) {
+                confirmResolver(false);
+                confirmResolver = null;
+            }
+        });
+    document
+        .getElementById("saConfirmModal")
+        .addEventListener("hidden.bs.modal", () => {
+            if (confirmResolver) {
+                confirmResolver(false);
+                confirmResolver = null;
+            }
+        });
+
+    /* ── Workflow action buttons: Approve / Reject / Forward to Reviewer ──
+     * Rendered only when the corresponding permission flag from the API
+     * is true (can_approve, can_reject, can_forward). Markup copied
+     * verbatim from editarticles.js so the same CSS applies identically.
+     */
+    function renderActions(r) {
+        const buttons = [
+            r.can_approve
+                ? `<div class="button_d"> <button type="button" class="green_d" id="saApproveBtn"> Approve </button> </div>`
+                : "",
+            r.can_reject
+                ? `<div class="button_d"> <button type="button" class="red_d" id="saRejectBtn"> Reject </button> </div>`
+                : "",
+            r.can_forward
+                ? `<div class="button_d"><button type="button" id="saForwardBtn"> Send to Reviewer </button> </div>`
+                : "",
+        ]
+            .filter(Boolean)
+            .join("");
+
+        const bar = document.getElementById("saActionsBar");
+        if (!bar) return;
+        bar.innerHTML = buttons;
+
+        if (r.can_approve) {
+            document
+                .getElementById("saApproveBtn")
+                .addEventListener("click", doApprove);
+        }
+        if (r.can_reject) {
+            document
+                .getElementById("saRejectBtn")
+                .addEventListener("click", openReject);
+        }
+        if (r.can_forward) {
+            document
+                .getElementById("saForwardBtn")
+                .addEventListener("click", openForward);
+        }
+    }
+
+    /* ── Approve ─────────────────────────────────────────────────────── */
+    async function doApprove() {
+        const ok = await showConfirm({
+            title: "Approve this submission?",
+            desc: "This manuscript will move forward so it can be forwarded to a reviewer.",
+            okLabel: "Approve",
+            variant: "approve",
+        });
+        if (!ok) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/${id}/approve`, {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.status)
+                throw new Error(json.message || "Approve failed.");
+            showToast("success", "Approved", json.message);
+            load();
+        } catch (e) {
+            showToast("error", "Approve failed", e.message);
+        }
+    }
+
+    /* ── Reject ──────────────────────────────────────────────────────── */
+    function openReject() {
+        document.getElementById("saRejectRemarks").value = "";
+        saRejectModal.show();
+    }
+
+    document
+        .getElementById("saRejectConfirmBtn")
+        .addEventListener("click", async () => {
+            const remarks = document.getElementById("saRejectRemarks").value;
+            if (!remarks.trim()) {
+                showToast("error", "Reject failed", "A reason is required.");
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/${id}/reject`, {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ remarks }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json.status)
+                    throw new Error(json.message || "Reject failed.");
+                showToast("success", "Rejected", json.message);
+                saRejectModal.hide();
+                load();
+            } catch (e) {
+                showToast("error", "Reject failed", e.message);
+            }
+        });
+
+    /* ── Forward to Reviewer ─────────────────────────────────────────── */
+    async function openForward() {
+        document.getElementById("saForwardRemarks").value = "";
+        const select = document.getElementById("saForwardReviewer");
+        select.innerHTML = '<option value="">Loading…</option>';
+        saForwardModal.show();
+
+        try {
+            const res = await fetch("/api/admin/reviewers", {
+                headers: authHeaders(),
+            });
+            const json = await res.json();
+            const list = json.data || [];
+            select.innerHTML = list.length
+                ? list
+                      .map(
+                          (u) =>
+                              `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`,
+                      )
+                      .join("")
+                : '<option value="">No reviewers found</option>';
+        } catch (e) {
+            select.innerHTML =
+                '<option value="">Failed to load reviewers</option>';
+        }
+    }
+
+    document
+        .getElementById("saForwardConfirmBtn")
+        .addEventListener("click", async () => {
+            const reviewerId =
+                document.getElementById("saForwardReviewer").value;
+            const remarks = document.getElementById("saForwardRemarks").value;
+            if (!reviewerId) {
+                showToast(
+                    "error",
+                    "Forward failed",
+                    "Please select a person to forward to.",
+                );
+                return;
+            }
+            try {
+                const res = await fetch(
+                    `${API_BASE}/${id}/forward-to-reviewer`,
+                    {
+                        method: "POST",
+                        headers: {
+                            ...authHeaders(),
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            reviewer_id: reviewerId,
+                            remarks,
+                        }),
+                    },
+                );
+                const json = await res.json();
+                if (!res.ok || !json.status)
+                    throw new Error(json.message || "Forward failed.");
+                showToast("success", "Forwarded", json.message);
+                saForwardModal.hide();
+                load();
+            } catch (e) {
+                showToast("error", "Forward failed", e.message);
+            }
+        });
 
     async function load() {
         try {
@@ -111,10 +374,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 .map((k) => `<span class="sa-decl-chip">${esc(k)}</span>`)
                 .join("") || html(null);
 
-        const declarations =
-            (r.declarations || [])
-                .map((d) => `<span class="sa-decl-chip">${esc(d)}</span>`)
-                .join("") || html(null);
+        // Declaration checklist — same wording/order as the public
+        // submission form, rendered as a disabled (read-only) checkbox
+        // list matching that layout: square checkbox + blue label, one
+        // per line. "terms_accepted" is a separate boolean on the record,
+        // not part of r.declarations, so it's appended as the final row.
+        const declRows = Object.keys(declLabels)
+            .map((key) => {
+                const checked = (r.declarations || []).includes(key)
+                    ? "checked"
+                    : "";
+                return `
+                <div class="sa-decl-row" style="display:flex;align-items:center;gap:10px;padding:10px 0;">
+                    <input type="checkbox" disabled ${checked} style="width:18px;height:18px;">
+                    <label style="margin:0;color:#1e5fbf;font-size:14px;">${esc(declLabels[key])}</label>
+                </div>`;
+            })
+            .join("");
+
+        const termsRow = `
+                <div class="sa-decl-row" style="display:flex;align-items:center;gap:10px;padding:10px 0;">
+                    <input type="checkbox" disabled ${r.terms_accepted ? "checked" : ""} style="width:18px;height:18px;">
+                    <label style="margin:0;color:#1e5fbf;font-size:14px;">I accept the terms and instructions.</label>
+                </div>`;
+
+        const declarations = declRows + termsRow;
 
         const coAuthorsRows = (r.co_authors || []).length
             ? r.co_authors
@@ -126,7 +410,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         <td>${esc(c.affiliation)}</td>
                         <td>${esc(c.orcid_id || "—")}</td>
                     </tr>
-                    
                     `,
                   )
                   .join("")
@@ -146,7 +429,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         <td>${esc(rv.institution)}</td>
                         <td>${esc(rv.area_of_expertise)}</td>
                     </tr>
-
                     `,
                   )
                   .join("")
@@ -158,7 +440,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const review = r.review || {};
 
+        // Wrapped in a <form> (no submit handler needed here) purely so
+        // the button/section CSS — which in editarticles.blade.php is
+        // scoped under <form id="saEditForm">...<section class="term_con">
+        // — applies identically on this read-only page.
         document.getElementById("saShowBody").innerHTML = `
+            <form id="saShowForm" onsubmit="return false;">
 
                 <div class="inner_fp">
 
@@ -327,7 +614,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         <div class="inner_fp mt-4"> 
 
-                            <div class="ssid">Co Author Details</div>
+                            <div class="ssid">Reviewer Details</div>
 
                             <div class="content_container">
 
@@ -426,17 +713,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             <div class="content_container">
                                 <div class="content_inner">
-                                    <div class="paper_dowmload">
-                                        <div class="content_show">${declarations}</div>
-                                    </div>
+                                    ${declarations}
                                 </div>
 
                             </div>
 
                         </div>
 
+                        <!-- Workflow Actions -->
+                        <section class="term_con">
+                            <div id="saActionsBar"></div>
+                            <div class="button_d"><button type="button"><a href="/admin/submit-articles">Back</button></div>
+                        </section>
 
+            </form>
                         `;
+
+        renderActions(r);
     }
 
     load();

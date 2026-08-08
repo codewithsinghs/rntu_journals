@@ -172,6 +172,18 @@
             </li>
         @endif
 
+         <!-- Guidelines Page -->
+        @if ($can('view prp'))
+            <li>
+                <a href="{{ route('admin.prp') }}"
+                    class="{{ request()->routeIs('admin.prp*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bookmark"></i>
+                    PRP Page
+                </a>
+            </li>
+        @endif
+
+
         <!-- Media -->
         @if ($can('view medias'))
             <li>

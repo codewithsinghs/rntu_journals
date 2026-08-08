@@ -70,6 +70,7 @@ class JournalDetailController extends Controller
             $articles = DB::table('submit_articles as sa')
                 ->join('article_reviews as ar', 'ar.submit_article_id', '=', 'sa.id')
                 ->where('sa.journal_id', $journal->id)
+                ->where('sa.is_hidden', false)
                 ->where('ar.editor_status', 'approved')
                 ->whereYear('ar.created_at', now()->year)
                 ->orderByDesc('ar.created_at')
