@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\frontend;
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class AnnoncementsController extends Controller
 {

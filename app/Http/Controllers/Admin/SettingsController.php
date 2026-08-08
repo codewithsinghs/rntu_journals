@@ -47,6 +47,7 @@ class SettingsController extends Controller
     public function update(Request $request)
     {
         try {
+             Log::info('request', $request->all());
             $validated = $request->validate([
                 'address'       => 'nullable|string|max:500',
                 'email'         => 'nullable|email|max:255',
@@ -108,102 +109,230 @@ class SettingsController extends Controller
         }
     }
 
-    public function uploadMedia(Request $request, string $key)
-    {
-        try {
-            if (!in_array($key, self::ALLOWED_MEDIA_KEYS, true)) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'Invalid media slot key.',
-                    'errors'  => ['key' => ["'{$key}' is not an allowed media slot."]],
-                ], 422);
-            }
+    // public function uploadMedia(Request $request, string $key)
+    // {
+    //     try {
 
-            $request->validate([
-                'file' => 'required|file|max:10240|mimes:' . self::ALLOWED_MIMES,
-            ]);
 
-            $file   = $request->file('file');
-            $userId = Auth::id();
+    //         if (!in_array($key, self::ALLOWED_MEDIA_KEYS, true)) {
+    //             return response()->json([
+    //                 'status'  => false,
+    //                 'message' => 'Invalid media slot key.',
+    //                 'errors'  => ['key' => ["'{$key}' is not an allowed media slot."]],
+    //             ], 422);
+    //         }
 
-            $settings = Setting::firstOrCreate([]);
+    //         $request->validate([
+    //             'file' => 'required|file|max:10240|mimes:' . self::ALLOWED_MIMES,
+    //         ]);
 
-            DB::beginTransaction();
+    //         $file   = $request->file('file');
+    //         $userId = Auth::id();
 
-            $ext      = strtolower($file->getClientOriginalExtension());
-            $baseName = Str::slug($key . '-' . pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-            $baseName = $baseName ?: $key;
-            $filename = $baseName . '-' . Str::random(8) . '.' . $ext;
-            $path     = $file->storeAs('media/settings', $filename, 'public');
+    //         $settings = Setting::firstOrCreate([]);
 
-            $media = Media::create([
-                'user_id'       => $userId,
-                'filename'      => $filename,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type'     => $file->getMimeType(),
-                'size'          => $file->getSize(),
-                'disk'          => 'public',
-                'path'          => $path,
-                'url'           => Storage::disk('public')->url($path),
-                'meta'          => ['settings_key' => $key],
-            ]);
+    //         DB::beginTransaction();
 
-            $previousMedia = $settings->getMedia($key);
+    //         $ext      = strtolower($file->getClientOriginalExtension());
+    //         $baseName = Str::slug($key . '-' . pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+    //         $baseName = $baseName ?: $key;
+    //         $filename = $baseName . '-' . Str::random(8) . '.' . $ext;
+    //         $path     = $file->storeAs('media/settings', $filename, 'public');
 
-            $slot = $settings->setMedia($key, $media->id);
+    //         Log::info('path'. json_encode($path));
 
-            if ($previousMedia && $previousMedia->id !== $media->id) {
-                if ($previousMedia->path && Storage::disk($previousMedia->disk)->exists($previousMedia->path)) {
-                    Storage::disk($previousMedia->disk)->delete($previousMedia->path);
-                }
-                $previousMedia->delete();
-            }
+    //         $media = Media::create([
+    //             'user_id'       => $userId,
+    //             'filename'      => $filename,
+    //             'original_name' => $file->getClientOriginalName(),
+    //             'mime_type'     => $file->getMimeType(),
+    //             'size'          => $file->getSize(),
+    //             'disk'          => 'public',
+    //             'path'          => $path,
+    //             'url'           => Storage::disk('public')->url($path),
+    //             'meta'          => ['settings_key' => $key],
+    //         ]);
 
-            DB::commit();
+    //         Log::info('media'. json_encode($media));
 
-            Log::info('Settings media uploaded', [
-                'settings_id' => $settings->id,
-                'key'         => $key,
-                'media_id'    => $media->id,
-                'user_id'     => $userId,
-            ]);
+    //         $previousMedia = $settings->getMedia($key);
 
-            return response()->json([
-                'status'  => true,
-                'message' => ucfirst($key) . ' uploaded successfully.',
-                'data'    => [
-                    'key'   => $key,
-                    'media' => $media,
-                    'slot'  => $slot,
-                ],
-            ], 201);
+    //         $slot = $settings->setMedia($key, $media->id);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+    //         if ($previousMedia && $previousMedia->id !== $media->id) {
+    //             if ($previousMedia->path && Storage::disk($previousMedia->disk)->exists($previousMedia->path)) {
+    //                 Storage::disk($previousMedia->disk)->delete($previousMedia->path);
+    //             }
+    //             $previousMedia->delete();
+    //         }
+
+    //         DB::commit();
+
+    //         Log::info('Settings media uploaded', [
+    //             'settings_id' => $settings->id,
+    //             'key'         => $key,
+    //             'media_id'    => $media->id,
+    //             'user_id'     => $userId,
+    //         ]);
+
+    //         return response()->json([
+    //             'status'  => true,
+    //             'message' => ucfirst($key) . ' uploaded successfully.',
+    //             'data'    => [
+    //                 'key'   => $key,
+    //                 'media' => $media,
+    //                 'slot'  => $slot,
+    //             ],
+    //         ], 201);
+
+    //     } catch (\Illuminate\Validation\ValidationException $e) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => 'Validation failed.',
+    //             'errors'  => $e->errors(),
+    //         ], 422);
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+
+    //         if (isset($path) && Storage::disk('public')->exists($path)) {
+    //             Storage::disk('public')->delete($path);
+    //         }
+
+    //         Log::error('Settings media upload failed: ' . $e->getMessage(), [
+    //             'key'     => $key,
+    //             'user_id' => Auth::id(),
+    //         ]);
+
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => 'Failed to upload media.',
+    //             'error'   => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+
+   public function uploadMedia(Request $request, string $key)
+{
+    try {
+        Log::debug('Step 1: Received upload request', ['key' => $key]);
+
+        if (!in_array($key, self::ALLOWED_MEDIA_KEYS, true)) {
+            Log::warning('Step 2: Invalid media key', ['key' => $key]);
             return response()->json([
                 'status'  => false,
-                'message' => 'Validation failed.',
-                'errors'  => $e->errors(),
+                'message' => 'Invalid media slot key.',
+                'errors'  => ['key' => ["'{$key}' is not an allowed media slot."]],
             ], 422);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            if (isset($path) && Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
-
-            Log::error('Settings media upload failed: ' . $e->getMessage(), [
-                'key'     => $key,
-                'user_id' => Auth::id(),
-            ]);
-
-            return response()->json([
-                'status'  => false,
-                'message' => 'Failed to upload media.',
-                'error'   => $e->getMessage(),
-            ], 500);
         }
+
+        Log::debug('Step 3: Validating request file');
+        $request->validate([
+            'file' => 'required|file|max:10240|mimes:' . self::ALLOWED_MIMES,
+        ]);
+
+        $file   = $request->file('file');
+        $userId = Auth::id();
+        Log::debug('Step 4: File received', [
+            'user_id' => $userId,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        $settings = Setting::firstOrCreate([]);
+        Log::debug('Step 5: Settings retrieved or created', ['settings_id' => $settings->id]);
+
+        DB::beginTransaction();
+        Log::debug('Step 6: Transaction started');
+
+        $ext      = strtolower($file->getClientOriginalExtension());
+        $baseName = Str::slug($key . '-' . pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+        $baseName = $baseName ?: $key;
+        $filename = $baseName . '-' . Str::random(8) . '.' . $ext;
+
+        Log::debug('Step 7: Filename generated', ['filename' => $filename]);
+
+        $path = $file->storeAs('media/settings', $filename, 'public');
+        Log::debug('Step 8: File stored', ['path' => $path]);
+
+        if (!$path) {
+            throw new \Exception('File storage failed.');
+        }
+
+        $url = Storage::disk('public')->url($path);
+        Log::debug('Step 9: URL generated', ['url' => $url]);
+
+        $media = Media::create([
+            'user_id'       => $userId,
+            'filename'      => $filename,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type'     => $file->getMimeType(),
+            'size'          => $file->getSize(),
+            'disk'          => 'public',
+            'path'          => $path,
+            'url'           => $url,
+            'meta'          => ['settings_key' => $key],
+        ]);
+        Log::debug('Step 10: Media record created', ['media_id' => $media->id]);
+
+        $previousMedia = $settings->getMedia($key);
+        Log::debug('Step 11: Previous media fetched', ['previous_media_id' => $previousMedia->id ?? null]);
+
+        $slot = $settings->setMedia($key, $media->id);
+        Log::debug('Step 12: Media slot updated', ['slot' => $slot]);
+
+        if ($previousMedia && $previousMedia->id !== $media->id) {
+            Log::debug('Step 13: Removing previous media', ['previous_media_id' => $previousMedia->id]);
+            if ($previousMedia->path && Storage::disk($previousMedia->disk)->exists($previousMedia->path)) {
+                Storage::disk($previousMedia->disk)->delete($previousMedia->path);
+                Log::debug('Step 14: Previous media file deleted');
+            }
+            $previousMedia->delete();
+            Log::debug('Step 15: Previous media record deleted');
+        }
+
+        DB::commit();
+        Log::debug('Step 16: Transaction committed');
+
+        return response()->json([
+            'status'  => true,
+            'message' => ucfirst($key) . ' uploaded successfully.',
+            'data'    => [
+                'key'   => $key,
+                'media' => $media,
+                'slot'  => $slot,
+            ],
+        ], 201);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::error('Validation failed', ['errors' => $e->errors()]);
+        return response()->json([
+            'status'  => false,
+            'message' => 'Validation failed.',
+            'errors'  => $e->errors(),
+        ], 422);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Step X: Exception caught', ['error' => $e->getMessage()]);
+
+        if (isset($path) && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+            Log::debug('Step Y: Rolled back file deletion', ['path' => $path]);
+        }
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Failed to upload media.',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
+
+
+
 
     public function removeMedia(Request $request, string $key)
     {

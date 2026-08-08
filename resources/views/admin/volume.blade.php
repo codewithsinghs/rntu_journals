@@ -18,7 +18,7 @@
                     <table class="status-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>S.No.</th>
                                 <th>Journal</th>
                                 <th>Volume</th>
                                 <th>Year</th>
@@ -45,11 +45,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Toast Container -->
-    <div id="toastContainer">
-    </div>
-
 
     <!-- Create / Edit Modal -->
     <div class="modal fade" id="volumeModal" tabindex="-1" aria-labelledby="volumeModallabel" style="display: none;"
@@ -84,15 +79,33 @@
                             <!-- Volume -->
                             <span class="input-set">
                                 <label>Volume <span class="text-danger">*</span></label>
-                                <input type="text" class="content_show" name="volume" id="volume"
-                                    placeholder="e.g. Volume 12" required>
+                                <input
+                                    type="text"
+                                    class="content_show"
+                                    name="volume"
+                                    id="volume"
+                                    placeholder="e.g. 6"
+                                    inputmode="numeric"
+                                    pattern="\d{1}"
+                                    maxlength="1"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                    required>
                             </span>
 
                             <!-- Year -->
                             <span class="input-set">
                                 <label>Year <span class="text-danger">*</span></label>
-                                <input type="text" class="content_show" name="year" id="year"
-                                    placeholder="e.g. 2025">
+                                <input
+                                    type="text"
+                                    class="content_show"
+                                    name="year"
+                                    id="year"
+                                    placeholder="e.g. 2025"
+                                    inputmode="numeric"
+                                    pattern="\d{4}"
+                                    maxlength="4"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)"
+                                    required>
                             </span>
 
                             <!-- Status -->
@@ -150,6 +163,67 @@
             </div>
         </div>
     </div>
+<<<<<<< HEAD
+@endsection
+
+@section('scripts')
+    <script src="{{ asset('assets/js/admin/volume.js') }}"></script>
+=======
+    
+    {{-- Delete Confirm Modal --}}
+    <div class="modal fade" id="delete_popup" tabindex="-1" aria-labelledby="delete_popupLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="top">
+                        <div class="pop-title-remove">Confirm Delete</div>
+                    </div>
+
+                    <div class="middle-content">
+                        <span>
+                            Do you want to delete volume "<strong id="deleteVolumeName"></strong>"?
+                        </span>
+                    </div>
+
+                    <div class="bottom-btn">
+                        <button type="button" class="red" id="confirmDeleteVolumeBtn"> Delete </button>
+                        <button type="button" class="blue" data-bs-dismiss="modal" aria-label="Close"> Keep it
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- Toast --}}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index:9999">
+        <div id="ecToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive"
+            aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <span id="ecToastIcon"></span>
+                    <div>
+                        <div id="ecToastTitle" class="fw-semibold" style="font-size:14px; color:white;"></div>
+                        <div id="ecToastMsg" class="opacity-75" style="font-size:13px; color:white;"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+            <div style="height:3px;width:100%;background:rgba(255,255,255,0.3);border-radius:0 0 6px 6px;">
+                <div id="ecToastBarInner"
+                    style="height:100%;width:100%;background:rgba(255,255,255,0.7);transition:width 4s linear;"></div>
+            </div>
+        </div>
+    </div>
+>>>>>>> main
 @endsection
 
 @section('scripts')

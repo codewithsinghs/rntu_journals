@@ -345,7 +345,11 @@ document.addEventListener("DOMContentLoaded", function () {
             })
                 .then((res) => res.json())
                 .then((res) => {
+<<<<<<< HEAD
                     spinner.classList.add("d-none");
+=======
+                    // spinner.classList.add("d-none");
+>>>>>>> main
                     if (res.status) {
                         bootstrap.Modal.getInstance(
                             document.getElementById("editAnnouncementModal"),

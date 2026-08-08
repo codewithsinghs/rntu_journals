@@ -1,12 +1,31 @@
 document.addEventListener("DOMContentLoaded", function () {
     const API_BASE = window.APP_CONFIG.API_BASE;
     const JOURNALS_API = window.APP_CONFIG.JOURNALS_API;
+<<<<<<< HEAD
     const TOKEN = localStorage.getItem("jwt_token") || "";
     const authHeaders = () => ({
         Accept: "application/json",
         Authorization: `Bearer ${TOKEN}`,
     });
 
+=======
+
+    const authHeaders = () => ({
+        Accept: "application/json",
+    });
+
+    async function apiFetch(url, options = {}) {
+        return fetch(url, {
+            ...options,
+            credentials: "include",
+            headers: {
+                ...authHeaders(),
+                ...(options.headers || {}),
+            },
+        });
+    }
+
+>>>>>>> main
     const ebModalEl = document.getElementById("ebModal");
     const ebDeleteModalEl = document.getElementById("ebDeleteModal");
     let deleteTargetId = null;
@@ -22,9 +41,58 @@ document.addEventListener("DOMContentLoaded", function () {
         "Members",
     ];
 
+<<<<<<< HEAD
     /* ── Toast ──────────────────────────────────────────────────── */
     function showToast(type, title, msg) {
         const el = document.getElementById("ebToast");
+=======
+    /* ── Toast (built in JS, no Blade markup required) ────────────── */
+    function ensureToastEl() {
+        let el = document.getElementById("ebToast");
+        if (el) return el;
+
+        let container = document.getElementById("ebToastContainer");
+        if (!container) {
+            container = document.createElement("div");
+            container.id = "ebToastContainer";
+            container.className =
+                "toast-container position-fixed top-0 end-0 p-3";
+            container.style.zIndex = "1080";
+            document.body.appendChild(container);
+        }
+
+        el = document.createElement("div");
+        el.id = "ebToast";
+        el.className = "toast align-items-center border-0 text-white";
+        el.setAttribute("role", "alert");
+        el.setAttribute("aria-live", "assertive");
+        el.setAttribute("aria-atomic", "true");
+        el.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-start gap-2">
+                    <span id="ebToastIcon" class="flex-shrink-0"></span>
+                    <div>
+                        <div id="ebToastTitle" class="fw-semibold"></div>
+                        <div id="ebToastMsg" class="small"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div style="height:3px;background:rgba(255,255,255,.25);">
+                <div id="ebToastBar" style="height:100%;background:rgba(255,255,255,.8);width:100%;"></div>
+            </div>
+        `;
+        container.appendChild(el);
+        return el;
+    }
+
+    // Build the toast element up front, before anything that might need it
+    ensureToastEl();
+
+    /* ── Toast ──────────────────────────────────────────────────── */
+    function showToast(type, title, msg) {
+        const el = ensureToastEl();
+>>>>>>> main
         document.getElementById("ebToastTitle").textContent = title;
         const msgEl = document.getElementById("ebToastMsg");
         msgEl.textContent = msg || "";
@@ -117,9 +185,13 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── Load journals for dropdowns ───────────────────────────── */
     async function loadJournals() {
         try {
+<<<<<<< HEAD
             const res = await fetch(JOURNALS_API, {
                 headers: authHeaders(),
             });
+=======
+            const res = await apiFetch(JOURNALS_API);
+>>>>>>> main
             const json = await res.json();
             // JournalsController::adminIndex() paginates, so the array
             // is nested at json.data.data (Laravel paginate() shape).
@@ -167,6 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
             img.classList.remove("d-none");
         });
 
+<<<<<<< HEAD
     /* ── Save (Create / Update) ────────────────────────────────── */
     document.getElementById("ebSaveBtn").addEventListener("click", async () => {
         clearErrors();
@@ -231,6 +304,71 @@ document.addEventListener("DOMContentLoaded", function () {
             btnText.textContent = method === "PUT" ? "Update" : "Save";
         }
     });
+=======
+    /* ── Save (form submit, not button click) ──────────────────── */
+    document
+        .getElementById("ebForm")
+        .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            clearErrors();
+
+            const id = document.getElementById("ebId").value;
+            const method = document.getElementById("ebMethod").value;
+            const spinner = document.getElementById("ebSaveSpinner");
+            const btnText = document.getElementById("ebSaveBtnText");
+
+            spinner.classList.remove("d-none");
+            btnText.textContent = method === "PUT" ? "Updating…" : "Saving…";
+
+            const formData = new FormData(document.getElementById("ebForm"));
+            formData.set(
+                "is_active",
+                document.getElementById("is_active").checked ? "1" : "0",
+            );
+            if (method === "PUT") formData.append("_method", "PUT");
+
+            const url = method === "PUT" ? `${API_BASE}/${id}` : API_BASE;
+
+            try {
+                const res = await apiFetch(url, {
+                    method: "POST",
+                    body: formData,
+                });
+                const json = await res.json();
+
+                if (!res.ok) {
+                    if (res.status === 422 && json.errors) {
+                        showErrors(json.errors);
+                        showToast(
+                            "error",
+                            "Validation failed",
+                            "Please fix the highlighted fields.",
+                        );
+                    } else {
+                        showToast(
+                            "error",
+                            "Error",
+                            json.message ?? "Something went wrong.",
+                        );
+                    }
+                    return;
+                }
+
+                bootstrap.Modal.getOrCreateInstance(ebModalEl).hide();
+                showToast(
+                    "success",
+                    method === "PUT" ? "Updated!" : "Created!",
+                    json.message ?? "",
+                );
+                loadMembers();
+            } catch (err) {
+                showToast("error", "Request failed", err.message);
+            } finally {
+                spinner.classList.add("d-none");
+                btnText.textContent = method === "PUT" ? "Update" : "Save";
+            }
+        });
+>>>>>>> main
 
     /* ── Delete flow ────────────────────────────────────────────── */
     function askDelete(id) {
@@ -246,9 +384,14 @@ document.addEventListener("DOMContentLoaded", function () {
             spinner.classList.remove("d-none");
 
             try {
+<<<<<<< HEAD
                 const res = await fetch(`${API_BASE}/${deleteTargetId}`, {
                     method: "DELETE",
                     headers: authHeaders(),
+=======
+                const res = await apiFetch(`${API_BASE}/${deleteTargetId}`, {
+                    method: "DELETE",
+>>>>>>> main
                 });
                 const json = await res.json();
 
@@ -275,9 +418,14 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── Toggle status ──────────────────────────────────────────── */
     async function toggleStatus(id) {
         try {
+<<<<<<< HEAD
             const res = await fetch(`${API_BASE}/${id}/toggle`, {
                 method: "PATCH",
                 headers: authHeaders(),
+=======
+            const res = await apiFetch(`${API_BASE}/${id}/toggle`, {
+                method: "PATCH",
+>>>>>>> main
             });
             const json = await res.json();
 
@@ -389,9 +537,24 @@ document.addEventListener("DOMContentLoaded", function () {
             : API_BASE;
 
         try {
+<<<<<<< HEAD
             const res = await fetch(url, {
                 headers: authHeaders(),
             });
+=======
+            const res = await apiFetch(url);
+
+            if (res.status === 401) {
+                showToast(
+                    "error",
+                    "Session expired",
+                    "Please log in again.",
+                );
+                document.getElementById("ebLoading").classList.add("d-none");
+                return;
+            }
+
+>>>>>>> main
             const json = await res.json();
             cachedMembers = json.data || [];
             renderPage(cachedMembers);
@@ -417,4 +580,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     loadJournals();
     loadMembers();
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> main

@@ -55,8 +55,6 @@
 
 /* END */
 
-/* ----------------------- */
-
 /* Add Article Page CSS */
 
 .validation-error-addarticle {
@@ -386,9 +384,22 @@
 }
 
 .ck.ck-editor__editable_inline[dir=ltr] {
-    text-align: justify;
+    /* text-align: justify; */
+    /* overflow: visible;
+    padding-left: 1rem; */
     font-size: 14px;
 }
+
+.ck-content ul,
+.ck-content ol {
+    padding-left: 1.5em;   
+    margin-left: 0;
+}
+
+.ck-content li {
+    list-style-position: outside; 
+}
+
 
 .journal-page-img-show {
     width: 100px;
@@ -776,6 +787,19 @@
 }
 
 
+
+#ecToast {
+    min-width: 320px;
+    border-radius: 14px;
+    overflow: hidden;
+    color: #fff;
+}
+
+#ecToastBarInner {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
 .error-icon {
     background: #feecec;
     color: #dc2626;
@@ -793,7 +817,7 @@
 
 .toast-body {
     padding: 10px 20px 20px;
-    color: #666;
+    color: white;
     font-size: 14px;
     line-height: 1.5;
 }

@@ -7,14 +7,18 @@ const CSRF_TOKEN =
 let addJournalModal, deletePopupModal;
 let isEditMode = false;
 let pendingDeleteId = null;
+<<<<<<< HEAD
 let descEditor = null;
 let aimScopeEditor = null;
+=======
+>>>>>>> main
 
 let allJournals = [];
 let filteredJournals = [];
 let currentPage = 1;
 let perPage = 10;
 
+<<<<<<< HEAD
 const TOOLBAR = [
     "heading",
     "|",
@@ -34,6 +38,139 @@ const TOOLBAR = [
 
 // ── Boot ─────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", function () {
+=======
+/* ─────────────────────────────────────────────────────────────
+           CKEditor fields
+        ───────────────────────────────────────────────────────────── */
+const CK_FIELDS = [
+    {
+        id: "description",
+        required: false,
+    },
+    {
+        id: "aim_and_scope",
+        required: false,
+    },
+];
+
+const editors = {};
+let editorsReady = false;
+
+const TOOLBAR = [
+    "undo",
+    "redo",
+    "|",
+    "heading",
+    "|",
+    "fontFamily",
+    "fontSize",
+    "fontColor",
+    "fontBackgroundColor",
+    "|",
+    "bold",
+    "italic",
+    "underline",
+    "strikethrough",
+    "|",
+    "alignment",
+    "|",
+    "bulletedList",
+    "numberedList",
+    "outdent",
+    "indent",
+    "|",
+    "link",
+    "blockQuote",
+    "insertTable",
+    "|",
+    "imageUpload",
+    "mediaEmbed",
+    "|",
+    "code",
+    "codeBlock",
+    "horizontalLine",
+];
+
+async function initEditors() {
+    for (const { id } of CK_FIELDS) {
+        if (editors[id]) {
+            await editors[id].destroy();
+            delete editors[id];
+        }
+
+        editors[id] = await CKEDITOR.ClassicEditor.create(
+            document.getElementById(`ck_${id}`),
+            {
+                licenseKey: "GPL",
+
+                removePlugins: [
+                    "CKBox",
+                    "CKFinder",
+                    "EasyImage",
+                    "RealTimeCollaborativeComments",
+                    "RealTimeCollaborativeTrackChanges",
+                    "RealTimeCollaborativeRevisionHistory",
+                    "PresenceList",
+                    "Comments",
+                    "TrackChanges",
+                    "TrackChangesData",
+                    "RevisionHistory",
+                    "Pagination",
+                    "WProofreader",
+                    "MathType",
+                    "SlashCommand",
+                    "Template",
+                    "DocumentOutline",
+                    "FormatPainter",
+                    "TableOfContents",
+                    "PasteFromOfficeEnhanced",
+                    "AIAssistant",
+                    "MultiLevelList",
+                    "CaseChange",
+                ],
+
+                toolbar: {
+                    items: TOOLBAR,
+                },
+
+                alignment: {
+                    options: ["left", "center", "right", "justify"],
+                },
+
+                fontSize: {
+                    options: [8, 10, 12, 14, "default", 18, 24, 32, 48],
+                },
+
+                table: {
+                    contentToolbar: [
+                        "tableColumn",
+                        "tableRow",
+                        "mergeTableCells",
+                        "tableProperties",
+                        "tableCellProperties",
+                    ],
+                },
+
+                placeholder: "Enter content…",
+            },
+        );
+
+        editors[id].model.document.on("change:data", () => {
+            document.getElementById(id).value = editors[id].getData();
+        });
+    }
+}
+
+function syncEditors() {
+    CK_FIELDS.forEach(({ id }) => {
+        if (editors[id])
+            document.getElementById(id).value = editors[id].getData();
+    });
+}
+
+// ── Boot ─────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", async function () {
+>>>>>>> main
     addJournalModal = new bootstrap.Modal(
         document.getElementById("AddJournal"),
     );
@@ -44,6 +181,7 @@ document.addEventListener("DOMContentLoaded", function () {
     perPage = parseInt(document.getElementById("perPage").value, 10);
     loadJournals();
 
+<<<<<<< HEAD
     ClassicEditor.create(document.getElementById("description"), {
         toolbar: {
             items: TOOLBAR,
@@ -72,6 +210,12 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         })
         .catch((err) => console.error("CKEditor init failed:", err));
+=======
+    if (!editorsReady) {
+        await initEditors();
+        editorsReady = true;
+    }
+>>>>>>> main
 
     document
         .getElementById("journalForm")
@@ -97,7 +241,14 @@ document.addEventListener("DOMContentLoaded", function () {
 // ── Toast ──────────────────────────────────────────────────────
 function showToast(type, title, msg) {
     const el = document.getElementById("ecToast");
+<<<<<<< HEAD
     if (!el) return;
+=======
+    if (!el) {
+        console.warn("Toast element #ecToast not found in DOM");
+        return;
+    }
+>>>>>>> main
     document.getElementById("ecToastTitle").textContent = title;
     const msgEl = document.getElementById("ecToastMsg");
     msgEl.textContent = msg || "";
@@ -106,7 +257,13 @@ function showToast(type, title, msg) {
         type === "success"
             ? `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
             : `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`;
+<<<<<<< HEAD
     el.classList.remove("bg-success", "bg-danger", "bg-warning", "text-dark");
+=======
+
+    el.classList.remove("bg-success", "bg-danger", "bg-warning", "text-dark");
+
+>>>>>>> main
     if (type === "success") el.classList.add("bg-success");
     else if (type === "warning") el.classList.add("bg-warning", "text-dark");
     else el.classList.add("bg-danger");
@@ -338,8 +495,14 @@ function openCreateModal() {
     document.getElementById("is_active").value = "1";
     document.getElementById("sequence").value = "0";
 
+<<<<<<< HEAD
     if (descEditor) descEditor.setData("");
     if (aimScopeEditor) aimScopeEditor.setData("");
+=======
+    CK_FIELDS.forEach(({ id }) => {
+        if (editors[id]) editors[id].setData("");
+    });
+>>>>>>> main
 
     document.getElementById("fieldsCoveredContainer").innerHTML = "";
     addFieldRow();
@@ -395,8 +558,14 @@ function openEditModal(id) {
         journal.title_2 || journal.heading_1 || "";
     document.getElementById("is_active").value = journal.is_active ? "1" : "0";
 
+<<<<<<< HEAD
     if (descEditor) descEditor.setData(journal.description || "");
     if (aimScopeEditor) aimScopeEditor.setData(journal.aim_and_scope || "");
+=======
+    CK_FIELDS.forEach(({ id }) => {
+        if (editors[id]) editors[id].setData(journal[id] ?? "");
+    });
+>>>>>>> main
 
     document.getElementById("coverPreviewCurrent").style.display = "none";
     if (journal.cover_image) {
@@ -414,6 +583,11 @@ function openEditModal(id) {
 
 // ── Save ───────────────────────────────────────────────────────
 function saveJournal() {
+<<<<<<< HEAD
+=======
+    syncEditors();
+
+>>>>>>> main
     const id = document.getElementById("journal_id").value;
 
     const formData = new FormData();
@@ -422,7 +596,14 @@ function saveJournal() {
         "heading_1",
         document.getElementById("heading_1").value.trim(),
     );
+<<<<<<< HEAD
     formData.append("description", descEditor ? descEditor.getData() : "");
+=======
+    formData.append(
+        "description",
+        document.getElementById("description").value,
+    );
+>>>>>>> main
     formData.append(
         "abbreviation",
         document.getElementById("abbreviation").value.trim(),
@@ -478,7 +659,11 @@ function saveJournal() {
     );
     formData.append(
         "aim_and_scope",
+<<<<<<< HEAD
         aimScopeEditor ? aimScopeEditor.getData() : "",
+=======
+        document.getElementById("aim_and_scope").value,
+>>>>>>> main
     );
     formData.append(
         "view_all_issues_label",
@@ -642,4 +827,8 @@ function escAttr(s) {
         .replace(/&/g, "&amp;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> main

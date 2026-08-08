@@ -267,5 +267,10 @@
 
 @section('scripts')
     <script type="application/json" id="pageKeysData">{!! json_encode($pageKeys ?? []) !!}</script>
-    <script src="{{ asset('assets/js/admin/Menus.js') }}"></script>
+    <script src="{{ asset('assets/js/admin/menus.js') }}"></script>
 @endsection
+
+
+
+
+

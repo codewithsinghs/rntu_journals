@@ -158,7 +158,9 @@ function renderTable() {
 
         const sizeKb = item.size ? (item.size / 1024).toFixed(2) + " KB" : "—";
         const viewLink = item.url
-            ? `<a href="${item.url}" target="_blank" rel="noopener" class="small">View</a>`
+            ? `<a href="${item.url}" target="_blank" rel="noopener" class="small" style="color: black;">View</a>
+                &nbsp;|&nbsp;
+                <a href="#" class="small" onclick="copyMediaLink('${item.url.replace(/'/g, "\\'")}'); return false;" style="color: black;">Copy Link</a>`
             : '<span class="adm-pill-muted">N/A</span>';
 
         rows += `
@@ -205,18 +207,18 @@ function renderPagination() {
     let html = "";
 
     html += `<li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-                                                                                                                                        <a class="page-link" href="#" onclick="goToPage(${currentPage - 1}); return false;">Previous</a>
-                                                                                                                                     </li>`;
+                <a class="page-link" href="#" onclick="goToPage(${currentPage - 1}); return false;">Previous</a>
+             </li>`;
 
     for (let p = 1; p <= totalPages; p++) {
         html += `<li class="page-item ${p === currentPage ? "active" : ""}">
-                                                                                                                                            <a class="page-link" href="#" onclick="goToPage(${p}); return false;">${p}</a>
-                                                                                                                                         </li>`;
+                    <a class="page-link" href="#" onclick="goToPage(${p}); return false;">${p}</a>
+                 </li>`;
     }
 
     html += `<li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
-                                                                                                                                        <a class="page-link" href="#" onclick="goToPage(${currentPage + 1}); return false;">Next</a>
-                                                                                                                                     </li>`;
+                <a class="page-link" href="#" onclick="goToPage(${currentPage + 1}); return false;">Next</a>
+             </li>`;
 
     ul.innerHTML = html;
 }
@@ -471,6 +473,35 @@ function deleteMedia(id, name) {
     pendingDeleteId = id;
     document.getElementById("deleteMediaName").textContent = name;
     confirmDeleteModal.show();
+}
+
+// ── Copy Link ────────────────────────────────────────────────────
+function copyMediaLink(url) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard
+            .writeText(url)
+            .then(() => showToast("Link copied to clipboard.", "success"))
+            .catch(() => fallbackCopyLink(url));
+    } else {
+        fallbackCopyLink(url);
+    }
+}
+
+function fallbackCopyLink(url) {
+    const textarea = document.createElement("textarea");
+    textarea.value = url;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+        document.execCommand("copy");
+        showToast("Link copied to clipboard.", "success");
+    } catch (err) {
+        showToast("Could not copy link.", "danger");
+    }
+    document.body.removeChild(textarea);
 }
 
 function executeDelete(id) {

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+<!-- @extends('layouts.admin')
 
 @section('content')
     {{-- Page Start --}}
@@ -149,10 +149,10 @@
             aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
-                    <span id="ecToastIcon"></span>
+                    <span id="ecToastIcon" style="color:white;"></span>
                     <div>
-                        <div id="ecToastTitle" class="fw-semibold" style="font-size:14px;"></div>
-                        <div id="ecToastMsg" class="opacity-75" style="font-size:13px;"></div>
+                        <div id="ecToastTitle" class="fw-semibold" style="font-size:14px; color:white;"></div>
+                        <div id="ecToastMsg" class="opacity-75" style="font-size:13px; color:white;"></div>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -167,4 +167,8 @@
 
 @section('scripts')
     <script src="{{ asset('assets/js/admin/contact.js') }}"></script>
+<<<<<<< HEAD
 @endsection
+=======
+@endsection -->
+>>>>>>> main

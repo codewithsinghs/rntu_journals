@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<<<<<<< HEAD
     @include('frontend.partials.AllPageHeader')
 
     <section class="s__container_custom">
@@ -10,3 +11,18 @@
     </section>
     
 @endSection
+=======
+
+
+<section class="s__container_custom">
+    <div class="rntu-contact-wrapper">
+
+        @include('frontend.partials.contactdetails')
+    </div>
+</section>
+
+@endSection
+@section('scripts')
+<script src="{{ asset('assets/js/frontend/contact.js') }}"></script>
+@endsection
+>>>>>>> main

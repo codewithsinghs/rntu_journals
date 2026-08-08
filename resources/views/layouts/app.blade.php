@@ -12,13 +12,15 @@
     <meta name="description" content="{{ $meta->description }}">
     <meta name="keywords" content="{{ is_array($meta->keywords) ? implode(',', $meta->keywords) : $meta->keywords }}">
 
-    <!-- Robots -->
     <meta name="robots" content="index, follow">
 
     <!-- Canonical -->
     <link rel="canonical" href="{{ url()->current() ?? 'https://rntujournals.aisect.org/' }}">
+<<<<<<< HEAD
 
     <!-- CSS -->
+=======
+>>>>>>> main
     <link rel="stylesheet" href="{{ asset('assets/css/frontend/bootstrap.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/frontend/style.css') }}">
 
@@ -28,7 +30,24 @@
 
 <body>
 
-    @include('frontend.partials.topbar')
+    @if (request()->is('/'))
+    <div class=" hero_section">
+
+        <div class=" hero_container">
+
+            @include('frontend.partials.header')
+
+            @include('frontend.partials.journals')
+            @include('frontend.partials.announcements')
+
+
+        </div>
+    </div>
+    @endif
+
+    @if (!request()->is('/'))
+    @include('frontend.partials.allpageheader')
+    @endif
 
     <main>
         @yield('content')
@@ -37,5 +56,8 @@
     @include('frontend.partials.footer')
 
 </body>
-
+ <script src="{{ asset('assets/js/frontend/menu.js') }}"></script>
+<script src="{{ asset('assets/js/frontend/home.js') }}"></script>
+<script src="{{ asset('assets/js/frontend/footer.js') }}"></script>
+@yield('scripts')
 </html>

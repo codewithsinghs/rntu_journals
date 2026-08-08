@@ -1,66 +1,18 @@
 <header class="header">
 
-    {{-- Logo --}}
-    <div class="logo">
-        @if ($logoIcon)
-            <img src="{{ $logoIcon->url }}" alt="{{ $settings->website_name ?? 'Logo' }}">
-        @endif
+    <div class="logo" id="siteLogo">
+
     </div>
 
-    {{-- Hamburger --}}
     <div class="hamburger" id="hamburger">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
     </div>
 
-    {{-- Navbar --}}
     <div class="navbar_custom" id="navbar">
 
         <div id="header-menu" class="nav-links">
-            @php
-                $currentPath = trim(request()->path(), '/'); // e.g. "about", "" for home
-            @endphp
-
-            @foreach ($menuItems as $item)
-                @php
-                    $itemPath = trim(parse_url($item->url, PHP_URL_PATH) ?? $item->url, '/');
-                @endphp
-
-                @if ($item->children->isEmpty())
-                    <a href="{{ $item->url }}" target="{{ $item->target ?? '_self' }}"
-                        class="{{ $currentPath === $itemPath ? 'active' : '' }}">
-                        {{ $item->label }}
-                    </a>
-                @else
-                    @php
-                        $hasActiveChild = $item->children->contains(function ($child) use ($currentPath) {
-                            $childPath = trim(parse_url($child->url, PHP_URL_PATH) ?? $child->url, '/');
-                            return $childPath === $currentPath;
-                        });
-                    @endphp
-                    <div class="nav-dropdown">
-                        <a href="{{ $item->url }}" target="{{ $item->target ?? '_self' }}"
-                            class="{{ $currentPath === $itemPath || $hasActiveChild ? 'active' : '' }}">
-                            {{ $item->label }} ▾
-                        </a>
-                        <div class="nav-dropdown-menu">
-                            @foreach ($item->children as $child)
-                                @php
-                                    $childPath = trim(parse_url($child->url, PHP_URL_PATH) ?? $child->url, '/');
-                                @endphp
-                                <a href="{{ $child->url }}" target="{{ $child->target ?? '_self' }}"
-                                    class="{{ $currentPath === $childPath ? 'active' : '' }}">
-                                    {{ $child->label }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-            @endforeach
         </div>
 
-        {{-- Search --}}
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search.....">
             <button class="search-btn" id="searchBtn">
@@ -68,7 +20,6 @@
             </button>
         </div>
 
-        {{-- Login / Register --}}
         <a href="#" class="login-btn" id="btn-login" data-has-login-errors="{{ $errors->any() ? '1' : '0' }}">
             <img src="{{ asset('/storage/home_page/login_icon.png') }}" alt="Login">
             Login / Register
@@ -102,13 +53,13 @@
                             @csrf
 
                             @if ($errors->any())
-                                <div class="alert alert-danger py-2 small">
-                                    <ul class="mb-0 ps-3">
-                                        @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
+                            <div class="alert alert-danger py-2 small">
+                                <ul class="mb-0 ps-3">
+                                    @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
                             @endif
 
                             <label>Email</label>

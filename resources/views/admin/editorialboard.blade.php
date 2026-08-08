@@ -259,10 +259,10 @@
             aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
-                    <span id="ebToastIcon"></span>
+                    <span id="ebToastIcon" style="color:white;"></span>
                     <div>
-                        <div id="ebToastTitle" class="fw-semibold" style="font-size:14px;"></div>
-                        <div id="ebToastMsg" class="opacity-75" style="font-size:13px;"></div>
+                        <div id="ebToastTitle" class="fw-semibold" style="font-size:14px;color:white;"></div>
+                        <div id="ebToastMsg" class="opacity-75" style="font-size:13px;color:white;"></div>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>

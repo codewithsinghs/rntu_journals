@@ -18,7 +18,7 @@
                     <table class="status-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>S.No.</th>
                                 <th>Journal</th>
                                 <th>Volume</th>
                                 <th>Issue</th>
@@ -90,16 +90,30 @@
                             <!-- Issue -->
                             <span class="input-set">
                                 <label>Issue <span class="text-danger">*</span></label>
-                                <input type="text" class="content_show" name="issue" id="issue"
-                                    placeholder="e.g. Issue 3" required>
+                                <input type="text"
+                                    class="content_show" name="issue" id="issue"
+                                    placeholder="e.g. 3" inputmode="numeric"
+                                    pattern="\d{1}"
+                                    maxlength="1"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                    required>
                             </span>
 
-                            <!-- Year -->
                             <span class="input-set">
                                 <label>Year <span class="text-danger">*</span></label>
-                                <input type="text" class="content_show" name="year" id="year"
-                                    placeholder="e.g. 2025">
+                                <input
+                                    type="text"
+                                    class="content_show"
+                                    name="year"
+                                    id="year"
+                                    placeholder="e.g. 2025"
+                                    inputmode="numeric"
+                                    pattern="\d{4}"
+                                    maxlength="4"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)"
+                                    required>
                             </span>
+
 
                             <!-- Published Date -->
                             <span class="input-set">
@@ -163,6 +177,46 @@
         </div>
     </div>
 
+<<<<<<< HEAD
+@endsection
+
+@section('scripts')
+    <script src="{{ asset('assets/js/admin/issue.js') }}"></script>
+=======
+    {{-- Delete Confirm Modal --}}
+    <div class="modal fade" id="delete_popup" tabindex="-1" aria-labelledby="delete_popupLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="top">
+                        <div class="pop-title-remove">Confirm Delete</div>
+                    </div>
+
+                    <div class="middle-content">
+                        <span>
+                            Do you want to delete issue "<strong id="deleteIssueName"></strong>"?
+                        </span>
+                    </div>
+
+                    <div class="bottom-btn">
+                        <button type="button" class="red" id="confirmDeleteIssueBtn"> Delete </button>
+                        <button type="button" class="blue" data-bs-dismiss="modal" aria-label="Close"> Keep it
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+>>>>>>> main
 @endsection
 
 @section('scripts')

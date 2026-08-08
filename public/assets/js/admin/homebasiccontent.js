@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+<<<<<<< HEAD
     document.addEventListener(
         "keydown",
         function (e) {
@@ -15,6 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
         true,
     );
 
+=======
+>>>>>>> main
     const API_BASE = "/api/admin/home-content";
     const TOKEN = localStorage.getItem("jwt_token") || "";
 
@@ -52,6 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const editors = {};
     let editorsReady = false;
+<<<<<<< HEAD
     let pendingFill = null;
     let cachedRecord = null;
     const formModalEl = document.getElementById("formModal");
@@ -71,6 +75,42 @@ document.addEventListener("DOMContentLoaded", function () {
         "|",
         "undo",
         "redo",
+=======
+
+    const TOOLBAR = [
+        "undo",
+        "redo",
+        "|",
+        "heading",
+        "|",
+        "fontFamily",
+        "fontSize",
+        "fontColor",
+        "fontBackgroundColor",
+        "|",
+        "bold",
+        "italic",
+        "underline",
+        "strikethrough",
+        "|",
+        "alignment",
+        "|",
+        "bulletedList",
+        "numberedList",
+        "outdent",
+        "indent",
+        "|",
+        "link",
+        "blockQuote",
+        "insertTable",
+        "|",
+        "imageUpload",
+        "mediaEmbed",
+        "|",
+        "code",
+        "codeBlock",
+        "horizontalLine",
+>>>>>>> main
     ];
 
     async function initEditors() {
@@ -79,10 +119,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 await editors[id].destroy();
                 delete editors[id];
             }
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
             editors[id] = await CKEDITOR.ClassicEditor.create(
                 document.getElementById(`ck_${id}`),
                 {
                     licenseKey: "GPL",
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
                     removePlugins: [
                         "CKBox",
                         "CKFinder",
@@ -107,6 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         "AIAssistant",
                         "MultiLevelList",
                         "CaseChange",
+<<<<<<< HEAD
                         "RestrictedEditingMode",
                         "RestrictedEditingModeEditing",
                         "RestrictedEditingModeUI",
@@ -117,13 +166,49 @@ document.addEventListener("DOMContentLoaded", function () {
                     placeholder: "Enter content…",
                 },
             );
+=======
+                    ],
+
+                    toolbar: {
+                        items: TOOLBAR,
+                    },
+
+                    alignment: {
+                        options: ["left", "center", "right", "justify"],
+                    },
+
+                    fontSize: {
+                        options: [8, 10, 12, 14, "default", 18, 24, 32, 48],
+                    },
+
+                    table: {
+                        contentToolbar: [
+                            "tableColumn",
+                            "tableRow",
+                            "mergeTableCells",
+                            "tableProperties",
+                            "tableCellProperties",
+                        ],
+                    },
+
+                    placeholder: "Enter content…",
+                },
+            );
+
+>>>>>>> main
             editors[id].model.document.on("change:data", () => {
                 document.getElementById(id).value = editors[id].getData();
             });
         }
     }
 
+<<<<<<< HEAD
     /*  Plain (non-CK) form fields */
+=======
+    /* ─────────────────────────────────────────────────────────────
+               Plain (non-CK) text fields
+            ───────────────────────────────────────────────────────────── */
+>>>>>>> main
     const PLAIN_FIELDS = [
         "aim_and_scope_title_1",
         "aim_and_scope_title_2",
@@ -147,10 +232,78 @@ document.addEventListener("DOMContentLoaded", function () {
         "latest_journal_heading",
     ];
 
+<<<<<<< HEAD
     /*  Toast */
     function showToast(type, title, msg) {
         const el = document.getElementById("ecToast");
         if (!el) return;
+=======
+    /* ─────────────────────────────────────────────────────────────
+               Image preview helpers
+            ───────────────────────────────────────────────────────────── */
+    const IMAGE_FIELDS = [
+        {
+            input: "aim_section_image",
+            preview: "currentImagePreview",
+            thumb: "currentImageThumb",
+        },
+    ];
+
+    function showImagePreview(previewId, thumbId, url) {
+        if (url) {
+            document.getElementById(thumbId).src = url;
+            document.getElementById(previewId).classList.remove("d-none");
+        } else {
+            document.getElementById(previewId).classList.add("d-none");
+            document.getElementById(thumbId).src = "";
+        }
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+               Toast
+            ───────────────────────────────────────────────────────────── */
+    function ensureToastEl() {
+        let el = document.getElementById("ecToast");
+        if (el) return el;
+
+        let container = document.getElementById("ecToastContainer");
+        if (!container) {
+            container = document.createElement("div");
+            container.id = "ecToastContainer";
+            container.className =
+                "toast-container position-fixed top-0 end-0 p-3";
+            container.style.zIndex = "1080";
+            document.body.appendChild(container);
+        }
+
+        el = document.createElement("div");
+        el.id = "ecToast";
+        el.className = "toast align-items-center border-0 text-white";
+        el.setAttribute("role", "alert");
+        el.setAttribute("aria-live", "assertive");
+        el.setAttribute("aria-atomic", "true");
+        el.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-start gap-2">
+                    <span id="ecToastIcon" class="flex-shrink-0"></span>
+                    <div>
+                        <div id="ecToastTitle" class="fw-semibold"></div>
+                        <div id="ecToastMsg" class="small"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div style="height:3px;background:rgba(255,255,255,.25);">
+                <div id="ecToastBarInner" style="height:100%;background:rgba(255,255,255,.8);width:100%;"></div>
+            </div>
+        `;
+        container.appendChild(el);
+        return el;
+    }
+
+    function showToast(type, title, msg) {
+        const el = ensureToastEl();
+>>>>>>> main
         document.getElementById("ecToastTitle").textContent = title;
         const msgEl = document.getElementById("ecToastMsg");
         msgEl.textContent = msg || "";
@@ -176,7 +329,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }).show();
     }
 
+<<<<<<< HEAD
     /* Error helpers */
+=======
+    /* ─────────────────────────────────────────────────────────────
+               Error helpers
+            ───────────────────────────────────────────────────────────── */
+>>>>>>> main
     function clearErrors() {
         document.querySelectorAll('[id^="err_"]').forEach((el) => {
             el.textContent = "";
@@ -194,7 +353,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const msg = Array.isArray(msgs) ? msgs[0] : msgs;
             const errEl = document.getElementById(`err_${field}`);
             if (errEl) errEl.textContent = msg;
+<<<<<<< HEAD
             if (editors[field]) {
+=======
+            if (CK_FIELDS.some((f) => f.id === field)) {
+>>>>>>> main
                 document
                     .getElementById(`ck_${field}`)
                     ?.classList.add("is-invalid");
@@ -204,7 +367,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+<<<<<<< HEAD
     /*  Form helpers */
+=======
+    /* ─────────────────────────────────────────────────────────────
+               Form helpers
+            ───────────────────────────────────────────────────────────── */
+>>>>>>> main
     function resetForm() {
         document.getElementById("hbcForm").reset();
         document.getElementById("hbcId").value = "";
@@ -214,8 +383,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const ta = document.getElementById(id);
             if (ta) ta.value = "";
         });
+<<<<<<< HEAD
         document.getElementById("currentImagePreview").classList.add("d-none");
         document.getElementById("currentImageThumb").src = "";
+=======
+        IMAGE_FIELDS.forEach(({ preview, thumb }) =>
+            showImagePreview(preview, thumb, null),
+        );
+>>>>>>> main
         clearErrors();
     }
 
@@ -231,6 +406,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         document.getElementById("hbcId").value = r.id;
         document.getElementById("hbcMethod").value = "PUT";
+<<<<<<< HEAD
         const imgUrl = r.aim_section_image_url || r.aim_section_image || null;
         if (imgUrl) {
             document.getElementById("currentImageThumb").src = imgUrl;
@@ -242,6 +418,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 .getElementById("currentImagePreview")
                 .classList.add("d-none");
         }
+=======
+        showImagePreview(
+            "currentImagePreview",
+            "currentImageThumb",
+            r.aim_section_image_url || r.aim_section_image || null,
+        );
+>>>>>>> main
     }
 
     function syncEditors() {
@@ -251,6 +434,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+<<<<<<< HEAD
     /* Render helpers */
     function esc(s) {
         if (!s) return "";
@@ -268,6 +452,8 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
+=======
+>>>>>>> main
     function extractRecord(json) {
         const raw = json.data;
         if (!raw) return null;
@@ -277,11 +463,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return null;
     }
 
+<<<<<<< HEAD
     /* Load */
 
     document
         .getElementById("hbcSaveBtn")
         .addEventListener("click", async () => {
+=======
+    /* ─────────────────────────────────────────────────────────────
+               Save / Update
+            ───────────────────────────────────────────────────────────── */
+    document
+        .getElementById("hbcSaveBtn")
+        .addEventListener("click", async (e) => {
+            e.preventDefault();
+>>>>>>> main
             clearErrors();
             syncEditors();
 
@@ -358,6 +554,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+<<<<<<< HEAD
+=======
+    /* ─────────────────────────────────────────────────────────────
+               Load
+            ───────────────────────────────────────────────────────────── */
+>>>>>>> main
     async function loadRecord() {
         document.getElementById("hbcLoading").classList.remove("d-none");
         document.getElementById("hbcFormContainer").classList.add("d-none");
@@ -366,6 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 headers: authHeaders(),
             });
             const json = await res.json();
+<<<<<<< HEAD
             const raw = json.data;
             let record = null;
             if (raw) {
@@ -373,6 +576,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 else if (Array.isArray(raw.data)) record = raw.data[0] ?? null;
                 else if (raw.id) record = raw;
             }
+=======
+            const record = extractRecord(json);
+>>>>>>> main
 
             if (!editorsReady) {
                 await initEditors();
@@ -399,4 +605,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     loadRecord();
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> main

@@ -4,6 +4,12 @@ const VOLUMES_API = "/api/admin/volumes?page=1&per_page=200";
 const token = localStorage.getItem("token");
 let currentPage = 1;
 let allVolumes = [];
+<<<<<<< HEAD
+=======
+let deleteIssueModal;
+let pendingDeleteId = null;
+let pendingDeleteName = null;
+>>>>>>> main
 
 function authHeaders() {
     return {
@@ -13,6 +19,48 @@ function authHeaders() {
     };
 }
 
+<<<<<<< HEAD
+=======
+// ── Lightweight toast (no HTML dependency) ──────────────────────
+function showToast(message, type = "success") {
+    let container = document.getElementById("issueToastContainer");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "issueToastContainer";
+        container.style.cssText =
+            "position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px;";
+        document.body.appendChild(container);
+    }
+
+    const colors = {
+        success: { bg: "#16a34a", text: "#fff" },
+        danger: { bg: "#dc2626", text: "#fff" },
+    };
+    const c = colors[type] || colors.success;
+
+    const toast = document.createElement("div");
+    toast.style.cssText = `
+        background:${c.bg};color:${c.text};padding:12px 18px;
+        border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);
+        font-size:14px;min-width:260px;opacity:0;
+        transform:translateX(20px);transition:opacity .25s,transform .25s;
+    `;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateX(0)";
+    });
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(20px)";
+        setTimeout(() => toast.remove(), 250);
+    }, 3000);
+}
+
+>>>>>>> main
 async function loadJournalOptions(selectedId = null) {
     const res = await fetch(JOURNALS_API, {
         headers: authHeaders(),
@@ -53,7 +101,10 @@ function loadVolumeOptions(journalId, selectedVolumeId = null) {
             select.innerHTML += `<option value="${v.id}" ${selected}>${v.volume}</option>`;
         });
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 async function loadIssues(page = 1) {
     currentPage = page;
     const res = await fetch(`${API_BASE}?page=${page}`, {
@@ -69,10 +120,21 @@ async function loadIssues(page = 1) {
         return;
     }
 
+<<<<<<< HEAD
     json.data.data.forEach((i) => {
         tbody.innerHTML += `
             <tr>
                 <td>${i.id}</td>
+=======
+    const perPage = json.data.per_page ?? json.data.data.length;
+    const startSerial = (json.data.current_page - 1) * perPage + 1;
+
+    json.data.data.forEach((i, index) => {
+        const serialNo = startSerial + index;
+        tbody.innerHTML += `
+            <tr>
+                <td>${serialNo}</td>
+>>>>>>> main
                 <td>${i.journal?.title ?? "-"}</td>
                 <td>${i.volume?.volume ?? "-"}</td>
                 <td>${i.issue}</td>
@@ -89,7 +151,12 @@ async function loadIssues(page = 1) {
                 <td>
                     <button class="edit-btn" onclick="viewIssue(${i.id})">View</button>
                     <button class="edit-btn" onclick="editIssue(${i.id})">Edit</button>
+<<<<<<< HEAD
                     <button class="delete-btn" onclick="deleteIssue(${i.id}, '${i.issue}')">Delete</button>
+=======
+                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#delete_popup"
+                            onclick="promptDeleteIssue(${i.id}, '${i.issue}')">Delete</button>
+>>>>>>> main
                 </td>
             </tr>`;
     });
@@ -97,6 +164,10 @@ async function loadIssues(page = 1) {
     renderPagination(json.data);
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 function renderPagination(pageData) {
     const pagination = document.getElementById("pagination");
     pagination.innerHTML = "";
@@ -126,7 +197,14 @@ async function editIssue(id) {
         headers: authHeaders(),
     });
     const json = await res.json();
+<<<<<<< HEAD
     if (!json.status) return alert("Failed to load issue.");
+=======
+    if (!json.status) {
+        showToast(json.message ?? "Failed to load issue.", "danger");
+        return;
+    }
+>>>>>>> main
 
     const i = json.data;
     await loadJournalOptions(i.journal_id);
@@ -149,7 +227,14 @@ async function viewIssue(id) {
         headers: authHeaders(),
     });
     const json = await res.json();
+<<<<<<< HEAD
     if (!json.status) return alert("Failed to load issue.");
+=======
+    if (!json.status) {
+        showToast(json.message ?? "Failed to load issue.", "danger");
+        return;
+    }
+>>>>>>> main
 
     const i = json.data;
     document.getElementById("viewModalBody").innerHTML = `
@@ -170,6 +255,7 @@ async function toggleCurrent(id) {
         headers: authHeaders(),
     });
     const json = await res.json();
+<<<<<<< HEAD
     if (json.status) loadIssues(currentPage);
     else alert(json.message ?? "Failed to update current issue.");
 }
@@ -177,13 +263,41 @@ async function toggleCurrent(id) {
 async function deleteIssue(id, name) {
     if (!confirm(`Delete issue "${name}"? This cannot be undone.`)) return;
 
+=======
+    if (json.status) {
+        loadIssues(currentPage);
+        showToast(json.message ?? "Status updated.", "success");
+    } else {
+        showToast(json.message ?? "Failed to update current issue.", "danger");
+    }
+}
+
+// ── Delete ────────────────────────────────────────────────────
+function promptDeleteIssue(id, name) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    document.getElementById("deleteIssueName").textContent = name;
+    deleteIssueModal.show();
+}
+
+async function executeDeleteIssue(id) {
+>>>>>>> main
     const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
     });
     const json = await res.json();
+<<<<<<< HEAD
     if (json.status) loadIssues(currentPage);
     else alert(json.message ?? "Failed to delete issue.");
+=======
+    if (json.status) {
+        loadIssues(currentPage);
+        showToast(json.message ?? "Issue deleted.", "success");
+    } else {
+        showToast(json.message ?? "Failed to delete issue.", "danger");
+    }
+>>>>>>> main
 }
 
 document
@@ -219,10 +333,37 @@ document
                 document.getElementById("issueModal"),
             ).hide();
             loadIssues(currentPage);
+<<<<<<< HEAD
         } else {
             alert(json.message ?? "Something went wrong.");
+=======
+            showToast(
+                json.message ?? (id ? "Issue updated." : "Issue created."),
+                "success",
+            );
+        } else {
+            showToast(json.message ?? "Something went wrong.", "danger");
+>>>>>>> main
             console.error(json.errors);
         }
     });
 
+<<<<<<< HEAD
 loadIssues();
+=======
+document.addEventListener("DOMContentLoaded", function () {
+    deleteIssueModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+
+    document
+        .getElementById("confirmDeleteIssueBtn")
+        .addEventListener("click", function () {
+            if (pendingDeleteId === null) return;
+            deleteIssueModal.hide();
+            executeDeleteIssue(pendingDeleteId);
+            pendingDeleteId = null;
+            pendingDeleteName = null;
+        });
+});
+
+loadIssues();
+>>>>>>> main

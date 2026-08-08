@@ -2,6 +2,12 @@ const API_BASE = "/api/admin/volumes";
 const JOURNALS_API = "/api/admin/journals?page=1&per_page=100";
 const token = localStorage.getItem("token");
 let currentPage = 1;
+<<<<<<< HEAD
+=======
+let deleteVolumeModal;
+let pendingDeleteId = null;
+let pendingDeleteName = null;
+>>>>>>> main
 
 function authHeaders() {
     return {
@@ -13,6 +19,7 @@ function authHeaders() {
 
 // ─── Toast Helper ───────────────────────────────────────────────
 function showToast(message, type = "success", title = null) {
+<<<<<<< HEAD
     const container = document.getElementById("toastContainer");
 
     const toast = document.createElement("div");
@@ -59,6 +66,45 @@ function showToast(message, type = "success", title = null) {
             toast.remove();
         }, 300);
     }, 3500);
+=======
+    const el = document.getElementById("ecToast");
+    if (!el) {
+        console.warn("Toast element #ecToast not found in DOM");
+        return;
+    }
+
+    const defaultTitle = type === "success" ? "Success" : "Error";
+    document.getElementById("ecToastTitle").textContent = title ?? defaultTitle;
+
+    const msgEl = document.getElementById("ecToastMsg");
+    msgEl.textContent = message || "";
+    msgEl.style.display = message ? "block" : "none";
+
+    document.getElementById("ecToastIcon").innerHTML =
+        type === "success"
+            ? `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+            : `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`;
+
+    el.classList.remove("bg-success", "bg-danger", "bg-warning", "text-dark");
+    if (type === "success") el.classList.add("bg-success");
+    else if (type === "warning") el.classList.add("bg-warning", "text-dark");
+    else el.classList.add("bg-danger");
+
+    const bar = document.getElementById("ecToastBarInner");
+    bar.style.transition = "none";
+    bar.style.width = "100%";
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+            bar.style.transition = "width 4s linear";
+            bar.style.width = "0%";
+        }),
+    );
+
+    bootstrap.Toast.getOrCreateInstance(el, {
+        delay: 4000,
+        autohide: true,
+    }).show();
+>>>>>>> main
 }
 
 async function loadJournalOptions(selectedId = null) {
@@ -91,10 +137,21 @@ async function loadVolumes(page = 1) {
         return;
     }
 
+<<<<<<< HEAD
     json.data.data.forEach((v) => {
         tbody.innerHTML += `
             <tr>
                 <td>${v.id}</td>
+=======
+    const perPage = json.data.per_page ?? json.data.data.length;
+    const startSerial = (json.data.current_page - 1) * perPage + 1;
+
+    json.data.data.forEach((v, index) => {
+        const serialNo = startSerial + index;
+        tbody.innerHTML += `
+            <tr>
+                <td>${serialNo}</td>
+>>>>>>> main
                 <td>${v.journal?.title ?? "-"}</td>
                 <td>${v.volume}</td>
                 <td>${v.year ?? "-"}</td>
@@ -109,7 +166,12 @@ async function loadVolumes(page = 1) {
                 <td>
                     <button class="edit-btn" onclick="viewVolume(${v.id})">View</button>
                     <button class="edit-btn" onclick="editVolume(${v.id})">Edit</button>
+<<<<<<< HEAD
                     <button class="delete-btn" onclick="deleteVolume(${v.id}, '${v.volume}')">Delete</button>
+=======
+                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#delete_popup"
+                            onclick="promptDeleteVolume(${v.id}, '${v.volume}')">Delete</button>
+>>>>>>> main
                 </td>
             </tr>`;
     });
@@ -193,9 +255,21 @@ async function toggleCurrent(id) {
     }
 }
 
+<<<<<<< HEAD
 async function deleteVolume(id, name) {
     if (!confirm(`Delete volume "${name}"? This cannot be undone.`)) return;
 
+=======
+// ── Delete ────────────────────────────────────────────────────
+function promptDeleteVolume(id, name) {
+    pendingDeleteId = id;
+    pendingDeleteName = name;
+    document.getElementById("deleteVolumeName").textContent = name;
+    deleteVolumeModal.show();
+}
+
+async function executeDeleteVolume(id) {
+>>>>>>> main
     const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
@@ -247,4 +321,22 @@ document
         }
     });
 
+<<<<<<< HEAD
 loadVolumes();
+=======
+document.addEventListener("DOMContentLoaded", function () {
+    deleteVolumeModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+
+    document
+        .getElementById("confirmDeleteVolumeBtn")
+        .addEventListener("click", function () {
+            if (pendingDeleteId === null) return;
+            deleteVolumeModal.hide();
+            executeDeleteVolume(pendingDeleteId);
+            pendingDeleteId = null;
+            pendingDeleteName = null;
+        });
+});
+
+loadVolumes();
+>>>>>>> main

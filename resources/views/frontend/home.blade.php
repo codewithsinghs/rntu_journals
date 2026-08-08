@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<<<<<<< HEAD
     <div class=" hero_section">
 
         <div class=" hero_container">
@@ -18,3 +19,10 @@
 @endSection
 
 
+=======
+
+@include('frontend.partials.aimandscope')
+@include('frontend.partials.latestjournal')
+
+@endSection
+>>>>>>> main

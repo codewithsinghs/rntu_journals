@@ -39,7 +39,11 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .finally(() => {
                 logoutPopup?.hide();
+<<<<<<< HEAD
                 window.location.href = "/login";
+=======
+                window.location.href = "/";
+>>>>>>> main
             });
     }
 });

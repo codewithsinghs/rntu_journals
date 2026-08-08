@@ -277,6 +277,7 @@
                         {{-- Description (CKEditor) --}}
                         <div class="reason">
                             <label>Journal Description</label>
+                            <div id="ck_description" class="ckeditor-wrapper"></div>
                             <textarea class="d-none" id="description"></textarea>
                         </div>
 
@@ -289,6 +290,7 @@
 
                         <div class="reason">
                             <label>Aim & Scope</label>
+                            <div id="ck_aim_and_scope" class="ckeditor-wrapper"></div>
                             <textarea class="d-none" id="aim_and_scope"></textarea>
                         </div>
 
@@ -356,8 +358,8 @@
                 <div class="toast-body d-flex align-items-center gap-2">
                     <span id="ecToastIcon"></span>
                     <div>
-                        <div id="ecToastTitle" class="fw-semibold" style="font-size:14px;"></div>
-                        <div id="ecToastMsg" class="opacity-75" style="font-size:13px;"></div>
+                        <div id="ecToastTitle" class="fw-semibold" style="font-size:14px; color:white;"></div>
+                        <div id="ecToastMsg" class="opacity-75" style="font-size:13px; color:white;"></div>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -371,7 +373,13 @@
 @endsection
 
 @section('scripts')
+<<<<<<< HEAD
     {{-- CKEditor 5 CDN --}}
     <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
     <script src="{{ asset('assets/js/admin/journals.js') }}"></script>
 @endsection
+=======
+
+    <script src="{{ asset('assets/js/admin/journals.js') }}"></script>
+@endsection
+>>>>>>> main
