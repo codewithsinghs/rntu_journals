@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\View;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
-class JwtWebMiddleware
+class ShareAuthUserToViews
 {
     public function handle(Request $request, Closure $next)
     {
@@ -19,7 +19,7 @@ class JwtWebMiddleware
             if (!$token) {
                 Log::warning('JwtWebMiddleware: no jwt_token cookie', [
                     'path' => $request->path(),
-                    'ip'   => $request->ip(),
+                    'ip' => $request->ip(),
                 ]);
 
                 session()->put('url.intended', $request->fullUrl());
@@ -27,16 +27,16 @@ class JwtWebMiddleware
             }
 
             $user = JWTAuth::setToken($token)->authenticate();
-/** @var \App\Models\User $user */
+            /** @var \App\Models\User $user */
             // ── Share to all Blade views ──────────────────────────
-            View::share('authUser',      $user);
+            View::share('authUser', $user);
             View::share('authUserRoles', $user->getRoleNames()->toArray());
             View::share('authUserPerms', $user->getAllPermissions()->pluck('name')->toArray());
 
         } catch (JWTException $e) {
             Log::warning('JwtWebMiddleware: ' . $e->getMessage(), [
                 'path' => $request->path(),
-                'ip'   => $request->ip(),
+                'ip' => $request->ip(),
             ]);
 
             return redirect()->route('login')
