@@ -108,6 +108,11 @@ class Journal extends Model
         return $this->hasMany(EditorialBoard::class, 'journal_id');
     }
 
+    public function guidelines(): HasMany
+    {
+        return $this->hasMany(Guideline::class, 'journal_id');
+    }
+
     public function getRouteKeyName()
     {
         return 'slug';

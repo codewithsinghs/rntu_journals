@@ -88,18 +88,19 @@ document.addEventListener("DOMContentLoaded", function () {
     function stageChip(article) {
         const stage = article.review?.current_stage || "submitted";
         const label = STAGE_LABELS[stage] || stage;
-        const reviewerStages = [
-            "with_reviewer",
-            "reviewer_approved",
-            "reviewer_correction",
-            "reviewer_rejected",
-        ];
-        // const reviewerSuffix = (reviewerStages.includes(stage) && article.reviewer_name) ?
-        //     ` <span class="sa-stage-reviewer">(${esc(article.reviewer_name)})</span>` :
-        //     '';
 
-        // return `<span class="sa-stage-chip ${esc(stage)}">${esc(label)}</span>${reviewerSuffix}`;
-        return `<span class="sa-stage-chip ${esc(stage)}">${esc(label)}</span>`;
+        const hiddenBadge = article.is_hidden
+            ? ` <span class="sa-stage-chip is_hidden" title="Hidden from the author's own list">Hidden</span>`
+            : "";
+
+        // "Live" reflects exactly what the public ArticleController checks:
+        // review.is_published === true AND is_hidden === false.
+        const liveBadge =
+            article.is_published && !article.is_hidden
+                ? ` <span class="sa-stage-chip is_live" title="Visible on the public site">Live</span>`
+                : "";
+
+        return `<span class="sa-stage-chip ${esc(stage)}">${esc(label)}</span>${hiddenBadge}${liveBadge}`;
     }
 
     /* ── Generic styled confirm dialog (replaces window.confirm) ──── */
@@ -159,6 +160,92 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+    function actionDropdown(r) {
+        const items = [
+            {
+                action: "show",
+                label: "View Article",
+                show: true,
+            },
+            {
+                action: "edit",
+                label: "Edit",
+                show: r.can_edit,
+            },
+            // {
+            //     action: "approve",
+            //     label: "Approve",
+            //     show: r.can_approve,
+            // },
+            // {
+            //     action: "reject",
+            //     label: "Reject",
+            //     show: r.can_reject,
+            // },
+            {
+                action: "forward",
+                label: "Forward to Reviewer",
+                show: r.can_forward,
+            },
+            {
+                action: "review-decide",
+                label: "Submit Review",
+                show: r.can_review_decide,
+            },
+            {
+                action: "final-decide",
+                label: "Final Decision",
+                show: r.can_editor_final_decide,
+            },
+            {
+                action: "forward-revision",
+                label: "Send Back to Author",
+                show: r.can_forward_to_author_revision,
+            },
+            {
+                action: "publish",
+                label: "Publish",
+                show: r.can_publish,
+            },
+            {
+                action: "toggle-hide",
+                label: r.is_hidden ? "Unhide" : "Hide",
+                show: r.can_hide,
+                extraAttrs: `data-hidden="${r.is_hidden ? "1" : "0"}"`,
+            },
+            {
+                action: "delete",
+                label: "Delete",
+                show: r.can_delete,
+                danger: true,
+            },
+        ];
+
+        const menuItems = items
+            .filter((i) => i.show)
+            .map(
+                (i) => `
+                    <li>
+                        <a class="dropdown-item sa-dropdown-item${i.danger ? " text-danger" : ""}"
+                           href="#" data-action="${i.action}" data-id="${r.uuid}" ${i.extraAttrs || ""}>
+                            ${i.label}
+                        </a>
+                    </li>`,
+            )
+            .join("");
+
+        return `
+            <div class="dropdown sa-action-dropdown">
+                <button class="btn btn-sm sa-action-toggle dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    Action
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end sa-dropdown-menu">
+                    ${menuItems}
+                </ul>
+            </div>`;
+    }
+
     async function loadList(page = 1) {
         currentPage = page;
         document.getElementById("saLoading").classList.remove("d-none");
@@ -202,72 +289,6 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("saTableWrap").classList.remove("d-none");
             document.getElementById("saTableBody").innerHTML = rows
                 .map((r) => {
-                    const buttons = [
-                        // Show — always available, redirects to the read-only detail page
-                        `
-                                                <button type="button" class="sa-action-btn show" title="View" data-action="show" data-id="${r.uuid}">
-                                                    <i class="fa fa-eye"></i>
-                                                </button>`,
-                        // Edit — owner while submitted/with_author, or full access any time
-                        r.can_edit
-                            ? `
-                                                <button type="button" class="sa-action-btn edit" title="Edit" data-action="edit" data-id="${r.uuid}">
-                                                    <i class="fa fa-pencil-alt"></i>
-                                                </button>`
-                            : "",
-                        // Approve — editor, stage "submitted"
-                        r.can_approve
-                            ? `
-                                                <button type="button" class="sa-action-btn approve" title="Approve" data-action="approve" data-id="${r.uuid}">
-                                                    <i class="fa fa-check"></i>
-                                                </button>`
-                            : "",
-                        // Reject — editor, stage "submitted"
-                        r.can_reject
-                            ? `
-                                                <button type="button" class="sa-action-btn reject" title="Reject" data-action="reject" data-id="${r.uuid}">
-                                                    <i class="fa fa-times"></i>
-                                                </button>`
-                            : "",
-                        // Forward to Reviewer — editor, stage "editor_approved"
-                        r.can_forward
-                            ? `
-                                                <button type="button" class="sa-action-btn forward" title="Forward to Reviewer" data-action="forward" data-id="${r.uuid}">
-                                                    <i class="fa fa-paper-plane"></i>
-                                                </button>`
-                            : "",
-                        // Submit Review — reviewer's own 3-way decision, stage "with_reviewer"
-                        r.can_review_decide
-                            ? `
-                                                <button type="button" class="sa-action-btn review-decide" title="Submit Review" data-action="review-decide" data-id="${r.uuid}">
-                                                    <i class="fa fa-clipboard-check"></i>
-                                                </button>`
-                            : "",
-                        // Editor Final Decision — stage "reviewer_approved" or "reviewer_rejected"
-                        r.can_editor_final_decide
-                            ? `
-                                                <button type="button" class="sa-action-btn final-decide" title="Final Decision" data-action="final-decide" data-id="${r.uuid}">
-                                                    <i class="fa fa-check-circle"></i>
-                                                </button>`
-                            : "",
-                        // Forward to Author (Revision) — stage "reviewer_correction"
-                        r.can_forward_to_author_revision
-                            ? `
-                                                <button type="button" class="sa-action-btn forward-author" title="Send Back to Author (Revision)" data-action="forward-revision" data-id="${r.uuid}">
-                                                    <i class="fa fa-undo"></i>
-                                                </button>`
-                            : "",
-                        // Publish — stage "with_author_payment"
-                        r.can_publish
-                            ? `
-                                                <button type="button" class="sa-action-btn publish" title="Publish" data-action="publish" data-id="${r.uuid}">
-                                                    <i class="fa fa-arrow-up"></i>
-                                                </button>`
-                            : "",
-                    ]
-                        .filter(Boolean)
-                        .join("");
-
                     const reviewDateCells = canViewReviewDates
                         ? `
                                                 <td>${fmtDate(r.review?.forwarded_to_reviewer_date)}</td>
@@ -275,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         : "";
 
                     return `
-                                        <tr data-id="${r.uuid}">
+                                        <tr data-id="${r.uuid}" class="${r.is_hidden ? "sa-row-hidden" : ""}">
                                             <td>${esc(r.full_name)}</td>
                                             <td>${esc(r.email)}</td>
                                             <td>${r.journal ? `<span class="edit-btn">${esc(r.journal.title)}</span>` : "—"}</td>
@@ -285,28 +306,27 @@ document.addEventListener("DOMContentLoaded", function () {
                                             <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
                                             ${reviewDateCells}
                                             <td>
-                                                <div class="sa-actions">
-                                                    ${buttons}
-                                                </div>
+                                                ${actionDropdown(r)}
                                             </td>
                                         </tr>
                                     `;
                 })
                 .join("");
 
-            // Row click also redirects to the detail page (ignored when clicking an action button)
+
             document.querySelectorAll("#saTableBody tr").forEach((tr) => {
                 tr.addEventListener("click", (e) => {
-                    if (e.target.closest("[data-action]")) return;
+                    if (e.target.closest(".sa-action-dropdown")) return;
                     goToShow(tr.dataset.id);
                 });
             });
 
-            // Action buttons
+            // Dropdown menu item clicks
             document
                 .querySelectorAll("#saTableBody [data-action]")
                 .forEach((btn) => {
                     btn.addEventListener("click", (e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         const id = btn.dataset.id;
                         const action = btn.dataset.action;
@@ -320,6 +340,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (action === "forward-revision")
                             openForwardRevision(id);
                         if (action === "publish") doPublish(id);
+                        if (action === "toggle-hide")
+                            doToggleHide(id, btn.dataset.hidden === "1");
+                        if (action === "delete") doDelete(id);
                     });
                 });
 
@@ -712,6 +735,71 @@ document.addEventListener("DOMContentLoaded", function () {
             loadList(currentPage);
         } catch (e) {
             showToast("error", "Publish failed", e.message);
+        }
+    }
+
+    /* ── Hide / Unhide — editor / admin / superadmin only ───────── */
+    async function doToggleHide(id, isCurrentlyHidden) {
+        const ok = await showConfirm({
+            title: isCurrentlyHidden
+                ? "Unhide this submission?"
+                : "Hide this submission?",
+            desc: isCurrentlyHidden
+                ? "It will reappear in the author's submissions list, and — if it was published — become visible on the public site again."
+                : "It will disappear from the author's submissions list and, if it was published, be pulled from the public site immediately. Editors and admins can still see and manage it here.",
+            okLabel: isCurrentlyHidden ? "Unhide" : "Hide",
+            variant: isCurrentlyHidden ? "approve" : "warn",
+        });
+        if (!ok) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/${id}/toggle-hide`, {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.status)
+                throw new Error(json.message || "Action failed.");
+            showToast(
+                "success",
+                json.data?.is_hidden ? "Hidden" : "Unhidden",
+                json.message,
+            );
+            loadList(currentPage);
+        } catch (e) {
+            showToast("error", "Action failed", e.message);
+        }
+    }
+
+    /* ── Delete — editor / admin / superadmin only ──────────────── */
+    async function doDelete(id) {
+        const ok = await showConfirm({
+            title: "Delete this submission?",
+            desc: "This will remove the submission from the list. This action cannot be undone from here.",
+            okLabel: "Delete",
+            variant: "warn",
+        });
+        if (!ok) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/${id}`, {
+                method: "DELETE",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+            });
+            const json = await res.json();
+            if (!res.ok || !json.status)
+                throw new Error(json.message || "Delete failed.");
+            showToast("success", "Deleted", json.message);
+            loadList(currentPage);
+        } catch (e) {
+            showToast("error", "Delete failed", e.message);
         }
     }
 

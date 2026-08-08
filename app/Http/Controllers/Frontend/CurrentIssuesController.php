@@ -31,6 +31,7 @@ class CurrentIssuesController extends Controller
 
             $articles = SubmitArticle::with(['journal:id,title', 'coAuthors'])
                 ->where('issue_id', $issue->id)
+                ->where('is_hidden', false)
                 ->whereHas('review', function ($q) {
                     $q->where('editor_status', 'approved');
                 })
@@ -43,7 +44,7 @@ class CurrentIssuesController extends Controller
                     'uuid' => $article->uuid,
                     'manuscript_title' => $article->manuscript_title,
                     'full_name' => $article->full_name,
-                    'co_authors' => $article->coAuthors->map(fn ($c) => ['name' => $c->name])->values(),
+                    'co_authors' => $article->coAuthors->map(fn($c) => ['name' => $c->name])->values(),
                     'pdf_url' => $article->signed_manuscript_pdf
                         ? route('article.download-manuscript', $article->uuid)
                         : null,

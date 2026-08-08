@@ -211,6 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .getElementById("addAnnouncementModal")
         .addEventListener("hidden.bs.modal", function () {
             document.getElementById("addForm").reset();
+            document.getElementById("add-spinner").classList.add("d-none");
             document.getElementById("add_link").disabled = false;
             document.getElementById("add_attachment").disabled = false;
             document.getElementById("add_link_wrapper").style.opacity = "1";
@@ -223,6 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .getElementById("editAnnouncementModal")
         .addEventListener("hidden.bs.modal", function () {
             document.getElementById("editForm").reset();
+            document.getElementById("edit-spinner").classList.add("d-none");
             document.getElementById("edit_link").disabled = false;
             document.getElementById("edit_attachment").disabled = false;
             document.getElementById("edit_link_wrapper").style.opacity = "1";
@@ -345,11 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
                 .then((res) => res.json())
                 .then((res) => {
-<<<<<<< HEAD
-                    spinner.classList.add("d-none");
-=======
                     // spinner.classList.add("d-none");
->>>>>>> main
                     if (res.status) {
                         bootstrap.Modal.getInstance(
                             document.getElementById("editAnnouncementModal"),

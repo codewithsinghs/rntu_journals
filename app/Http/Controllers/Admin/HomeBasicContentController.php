@@ -20,7 +20,7 @@ class HomeBasicContentController extends Controller
 
         return [
             // Aim & Scope
-            'aim_and_scope_title_1'          => 'required|string|max:255',   // badge / eyebrow
+            'aim_and_scope_title_1'          => 'nullable|string|max:255',   // badge / eyebrow
             'aim_and_scope_title_2'          => 'required|string|max:255',   // H1 heading
             'aim_and_scope_title_3'          => 'required|string|max:255',   // H2 sub-heading
             'aim_and_scope_description'      => 'required|string',
@@ -29,7 +29,7 @@ class HomeBasicContentController extends Controller
             'aim_section_image'              => $imageRule,
 
             // Why RNTU Stats
-            'why_rntu_title_1'               => 'required|string|max:255',   // section heading
+            'why_rntu_title_1'               => 'nullable|string|max:255',   // section heading
             'why_rntu_title_2'               => 'nullable|string|max:255',   // sub-heading
             'why_rntu_years'                 => 'required|string|max:50',
             'why_rntu_years_label'           => 'required|string|max:100',
@@ -49,7 +49,7 @@ class HomeBasicContentController extends Controller
             'support_section_description'    => 'required|string',
 
             // Latest Journal Section
-            'latest_journal_title'           => 'required|string|max:255',   // eyebrow/badge
+            'latest_journal_title'           => 'nullable|string|max:255',   // eyebrow/badge
             'latest_journal_heading'         => 'required|string|max:255',
             'latest_journal_description'     => 'required|string',
 

@@ -36,9 +36,9 @@
                                     <div class="content_partitions">
 
                                         <div class="partitions_inner">
-                                            <label>Badge / Eyebrow Label <span class="text-danger">*</span></label>
+                                            <label>Badge / Eyebrow Label</label>
                                             <input type="text" class="content_show" id="aim_and_scope_title_1"
-                                                name="aim_and_scope_title_1" placeholder="RNTU JOURNAL" required>
+                                                name="aim_and_scope_title_1" placeholder="RNTU JOURNAL" >
                                             <div class="invalid-feedback" id="err_aim_and_scope_title_1"></div>
                                         </div>
 
@@ -116,7 +116,7 @@
                                 <div class="partitions_inner">
                                     <label>Stats Section Heading</label>
                                     <input type="text" class="content_show" id="why_rntu_title_1" name="why_rntu_title_1"
-                                        placeholder="Why Choose RNTU Journals?" required>
+                                        placeholder="Why Choose RNTU Journals?">
                                     <div class="invalid-feedback" id="err_why_rntu_title_1"></div>
                                 </div>
 
@@ -210,9 +210,9 @@
                             <div class="content_partitions">
 
                                 <div class="partitions_inner">
-                                    <label>Badge / Eyebrow <span class="text-danger">*</span></label>
+                                    <label>Badge / Eyebrow</label>
                                     <input type="text" class="content_show" id="latest_journal_title"
-                                        name="latest_journal_title" placeholder="LATEST ISSUES" required>
+                                        name="latest_journal_title" placeholder="LATEST ISSUES">
                                     <div class="invalid-feedback" id="err_latest_journal_title"></div>
                                 </div>
 

@@ -1,10 +1,20 @@
 document.addEventListener("DOMContentLoaded", function () {
     const API_BASE = "/api/admin/guidelines";
+    const JOURNALS_API = "/api/admin/journals";
     const TOKEN = localStorage.getItem("jwt_token") || "";
     const authHeaders = () => ({
         Accept: "application/json",
         Authorization: `Bearer ${TOKEN}`,
     });
+
+    let currentPage = 1;
+    let perPage = 10;
+    let searchTerm = "";
+    let deleteTargetId = null;
+    let cachedJournals = [];
+
+    const guidelineModalEl = document.getElementById("GuidelineModal");
+    const deleteModalEl = document.getElementById("glDeleteModal");
 
     /* ── CKEditor fields ────────────────────────────────────────── */
     const editors = {};
@@ -76,16 +86,13 @@ document.addEventListener("DOMContentLoaded", function () {
         "code",
         "codeBlock",
         "horizontalLine",
->>>>>>> main
     ];
 
-    /*
-     * KEY FIX: CKEditor CANNOT mount into hidden (display:none) elements.
-     * We initialise editors only once — on the first 'shown.bs.modal' event,
-     * then reuse them on subsequent opens.
-     */
+    // CKEditor cannot mount into a hidden (display:none) element — the
+    // modal starts hidden, so editors are only created once, on the
+    // FIRST time the modal is shown, then reused/cleared on every
+    // subsequent open (add or edit).
     let editorsReady = false;
-    let pendingFill = null;
 
     async function initEditors() {
 <<<<<<< HEAD
@@ -110,48 +117,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 {
                     licenseKey: "GPL",
                     removePlugins: [
-                        "CKBox",
-                        "CKFinder",
-                        "EasyImage",
-                        "RealTimeCollaborativeComments",
-                        "RealTimeCollaborativeTrackChanges",
-                        "RealTimeCollaborativeRevisionHistory",
-                        "PresenceList",
-                        "Comments",
-                        "TrackChanges",
-                        "TrackChangesData",
-                        "RevisionHistory",
-                        "Pagination",
-                        "WProofreader",
-                        "MathType",
-                        "SlashCommand",
-                        "Template",
-                        "DocumentOutline",
-                        "FormatPainter",
-                        "TableOfContents",
-                        "PasteFromOfficeEnhanced",
-                        "AIAssistant",
-                        "MultiLevelList",
-                        "CaseChange",
+                        "CKBox", "CKFinder", "EasyImage",
+                        "RealTimeCollaborativeComments", "RealTimeCollaborativeTrackChanges",
+                        "RealTimeCollaborativeRevisionHistory", "PresenceList", "Comments",
+                        "TrackChanges", "TrackChangesData", "RevisionHistory", "Pagination",
+                        "WProofreader", "MathType", "SlashCommand", "Template",
+                        "DocumentOutline", "FormatPainter", "TableOfContents",
+                        "PasteFromOfficeEnhanced", "AIAssistant", "MultiLevelList", "CaseChange",
                     ],
                     toolbar: {
-<<<<<<< HEAD
-                        items: [
-                            "heading",
-                            "|",
-                            "bold",
-                            "italic",
-                            "underline",
-                            "|",
-                            "bulletedList",
-                            "numberedList",
-                            "|",
-                            "blockQuote",
-                            "link",
-                            "|",
-                            "undo",
-                            "redo",
-=======
                         items: TOOLBAR,
                     },
                     alignment: {
@@ -167,7 +141,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             "mergeTableCells",
                             "tableProperties",
                             "tableCellProperties",
->>>>>>> main
                         ],
                     },
                     placeholder: "Enter content…",
@@ -188,13 +161,10 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── Toast ──────────────────────────────────────────────────── */
     function showToast(type, title, msg) {
         const el = document.getElementById("glToast");
-<<<<<<< HEAD
-=======
         if (!el) {
             console.warn("Toast element #glToast not found in DOM");
             return;
         }
->>>>>>> main
         document.getElementById("glToastTitle").textContent = title;
         const msgEl = document.getElementById("glToastMsg");
         msgEl.textContent = msg || "";
@@ -214,23 +184,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 bar.style.width = "0%";
             }),
         );
-        bootstrap.Toast.getOrCreateInstance(el, {
-            delay: 4000,
-            autohide: true,
-        }).show();
+        bootstrap.Toast.getOrCreateInstance(el, { delay: 4000, autohide: true }).show();
     }
 
     /* ── Errors ─────────────────────────────────────────────────── */
     function clearErrors() {
-        document
-            .querySelectorAll('[id^="err_"]')
-            .forEach((el) => (el.textContent = ""));
-        document
-            .querySelectorAll(".is-invalid")
-            .forEach((el) => el.classList.remove("is-invalid"));
-        document
-            .querySelectorAll(".gl-ck-wrap.is-invalid")
-            .forEach((el) => el.classList.remove("is-invalid"));
+        document.querySelectorAll('[id^="err_"]').forEach((el) => (el.textContent = ""));
+        document.querySelectorAll(".is-invalid").forEach((el) => el.classList.remove("is-invalid"));
     }
 
     function showErrors(errors) {
@@ -242,7 +202,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (CK_FIELDS.includes(field)) {
 =======
             if (CK_FIELDS.some((f) => f.id === field)) {
->>>>>>> main
                 document
                     .getElementById(`ck_${field}`)
                     ?.classList.add("is-invalid");
@@ -257,7 +216,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const TEXT_FIELDS = [
 =======
     const PLAIN_FIELDS = [
->>>>>>> main
         "author_badge",
         "author_heading",
         "process_badge",
@@ -277,11 +235,6 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("glForm").reset();
         document.getElementById("glId").value = "";
         document.getElementById("glMethod").value = "POST";
-<<<<<<< HEAD
-        CK_FIELDS.forEach((f) => {
-            if (editors[f]) editors[f].setData("");
-            document.getElementById(f).value = "";
-=======
         CK_FIELDS.forEach(({ id }) => {
             if (editors[id]) editors[id].setData("");
             const ta = document.getElementById(id);
@@ -292,15 +245,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function fillForm(r) {
-<<<<<<< HEAD
-        TEXT_FIELDS.forEach((f) => {
-            const el = document.getElementById(f);
-            if (el) el.value = r[f] ?? "";
-        });
-        CK_FIELDS.forEach((f) => {
-            if (editors[f]) editors[f].setData(r[f] ?? "");
-            document.getElementById(f).value = r[f] ?? "";
-=======
         PLAIN_FIELDS.forEach((f) => {
             const el = document.getElementById(f);
             if (el) el.value = r[f] ?? "";
@@ -324,15 +268,41 @@ document.addEventListener("DOMContentLoaded", function () {
         CK_FIELDS.forEach(({ id }) => {
             if (editors[id])
                 document.getElementById(id).value = editors[id].getData();
->>>>>>> main
         });
+    });
+
+    /* ── Edit ───────────────────────────────────────────────────── */
+    async function editGuideline(id) {
+        try {
+            const res = await fetch(`${API_BASE}/${id}`, { headers: authHeaders() });
+            const json = await res.json();
+            if (!json.status) {
+                showToast("error", "Error", json.message ?? "Failed to load record.");
+                return;
+            }
+            resetForm();
+            fillForm(json.data);
+            document.getElementById("glModalTitle").textContent = "Edit Guideline";
+            document.getElementById("glSaveBtnText").textContent = "Update";
+            bootstrap.Modal.getOrCreateInstance(guidelineModalEl).show();
+        } catch (e) {
+            showToast("error", "Load failed", e.message);
+        }
     }
 
+    /* ── Save (create or update) ───────────────────────────────── */
     document.getElementById("glSaveBtn").addEventListener("click", async () => {
         clearErrors();
         syncEditors();
 
         let hasError = false;
+
+        if (!document.getElementById("journal_id").value) {
+            document.getElementById("journal_id").classList.add("is-invalid");
+            document.getElementById("err_journal_id").textContent = "Please select a journal.";
+            hasError = true;
+        }
+
         CK_FIELDS.forEach((f) => {
 <<<<<<< HEAD
             const val = editors[f] ? editors[f].getData() : "";
@@ -345,9 +315,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (f.required) {
                 const val = editors[f.id] ? editors[f.id].getData() : "";
                 if (!val.trim() || val === "<p>&nbsp;</p>") {
-                    document
-                        .getElementById(`ck_${f.id}`)
-                        ?.classList.add("is-invalid");
+                    document.getElementById(`ck_${f.id}`)?.classList.add("is-invalid");
                     const errEl = document.getElementById(`err_${f.id}`);
                     if (errEl) errEl.textContent = "This field is required.";
                     hasError = true;
@@ -373,10 +341,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const res = await fetch(url, {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${TOKEN}`,
-                    Accept: "application/json",
-                },
+                headers: { Authorization: `Bearer ${TOKEN}`, Accept: "application/json" },
                 body: formData,
             });
             const json = await res.json();
@@ -384,27 +349,16 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!res.ok) {
                 if (res.status === 422 && json.errors) {
                     showErrors(json.errors);
-                    showToast(
-                        "error",
-                        "Validation failed",
-                        "Please fix the highlighted fields.",
-                    );
+                    showToast("error", "Validation failed", "Please fix the highlighted fields.");
                 } else {
-                    showToast(
-                        "error",
-                        "Error",
-                        json.message ?? "Something went wrong.",
-                    );
+                    showToast("error", "Error", json.message ?? "Something went wrong.");
                 }
                 return;
             }
 
-            showToast(
-                "success",
-                method === "PUT" ? "Updated!" : "Created!",
-                json.message ?? "",
-            );
-            loadRecord();
+            bootstrap.Modal.getOrCreateInstance(guidelineModalEl).hide();
+            showToast("success", method === "PUT" ? "Updated!" : "Created!", json.message ?? "");
+            loadTable();
         } catch (err) {
             showToast("error", "Request failed", err.message);
         } finally {
@@ -413,48 +367,122 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    async function loadRecord() {
-        document.getElementById("glLoading").classList.remove("d-none");
-        document.getElementById("glFormContainer").classList.add("d-none");
+    /* ── Delete flow ────────────────────────────────────────────── */
+    function askDelete(id, journalName) {
+        deleteTargetId = id;
+        document.getElementById("deleteGuidelineJournal").textContent = journalName;
+        bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+    }
+
+    document.getElementById("glConfirmDeleteBtn").addEventListener("click", async () => {
+        if (!deleteTargetId) return;
+        const spinner = document.getElementById("glDeleteSpinner");
+        spinner.classList.remove("d-none");
+
         try {
-            const res = await fetch(API_BASE, {
+            const res = await fetch(`${API_BASE}/${deleteTargetId}`, {
+                method: "DELETE",
                 headers: authHeaders(),
             });
             const json = await res.json();
-            const raw = json.data;
-            let record = null;
-            if (raw) {
-                if (Array.isArray(raw)) record = raw[0] ?? null;
-                else if (Array.isArray(raw.data)) record = raw.data[0] ?? null;
-                else if (raw.id) record = raw;
+
+            if (!res.ok) {
+                showToast("error", "Error", json.message ?? "Failed to delete guideline.");
+                return;
             }
 
-            if (!editorsReady) {
-                await initEditors();
-                editorsReady = true;
+            bootstrap.Modal.getOrCreateInstance(deleteModalEl).hide();
+            showToast("success", "Deleted!", json.message ?? "");
+            loadTable();
+        } catch (err) {
+            showToast("error", "Request failed", err.message);
+        } finally {
+            spinner.classList.add("d-none");
+            deleteTargetId = null;
+        }
+    });
+
+    /* ── Render table ───────────────────────────────────────────── */
+    function renderRows(records) {
+        return records
+            .map((r) => {
+                const jTitle = r.journal?.title ?? journalTitle(r.journal_id);
+                const created = r.created_at ? new Date(r.created_at).toLocaleDateString() : "—";
+                return `
+                <tr>
+                    <td>${jTitle}</td>
+                    <td>${r.author_heading ?? "—"}</td>
+                    <td>${r.process_heading ?? "—"}</td>
+                    <td>${r.manuscript_heading ?? "—"}</td>
+                    <td>${created}</td>
+                    <td>
+                        <div class="d-flex">
+                            <button class="edit-btn" onclick="window.__glEdit(${r.id})">Edit</button>
+                            <button class="delete-btn" onclick="window.__glDelete(${r.id}, '${jTitle.replace(/'/g, "\\'")}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>`;
+            })
+            .join("");
+    }
+
+    function renderPagination(meta) {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+        if (!meta || meta.last_page <= 1) return;
+
+        for (let i = 1; i <= meta.last_page; i++) {
+            const li = document.createElement("li");
+            li.className = `page-item ${i === meta.current_page ? "active" : ""}`;
+            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            li.addEventListener("click", (e) => {
+                e.preventDefault();
+                currentPage = i;
+                loadTable();
+            });
+            pagination.appendChild(li);
+        }
+    }
+
+    /* ── Load table (paginated list) ───────────────────────────── */
+    async function loadTable() {
+        document.getElementById("tableLoading").style.display = "block";
+        document.getElementById("tableWrap").style.display = "none";
+        document.getElementById("tableEmpty").style.display = "none";
+
+        const params = new URLSearchParams({
+            page: currentPage,
+            per_page: perPage,
+        });
+        if (searchTerm) params.set("q", searchTerm);
+
+        try {
+            const res = await fetch(`${API_BASE}?${params}`, { headers: authHeaders() });
+            const json = await res.json();
+
+            document.getElementById("tableLoading").style.display = "none";
+
+            const records = json.data?.data ?? [];
+            const meta = json.data;
+
+            if (!records.length) {
+                document.getElementById("tableEmpty").style.display = "block";
+                return;
             }
 
-            if (record && record.id) {
-                fillForm(record);
-                document.getElementById("glSaveBtnText").textContent = "Update";
-            } else {
-                resetForm();
-                document.getElementById("glSaveBtnText").textContent = "Save";
-            }
+            document.getElementById("guidelinesTableBody").innerHTML = renderRows(records);
+            document.getElementById("tableWrap").style.display = "block";
 
-            document.getElementById("glLoading").classList.add("d-none");
-            document
-                .getElementById("glFormContainer")
-                .classList.remove("d-none");
+            document.getElementById("entriesInfo").textContent =
+                `Showing ${meta.from ?? 0} to ${meta.to ?? 0} of ${meta.total ?? 0} entries`;
+
+            renderPagination(meta);
         } catch (e) {
-            document.getElementById("glLoading").classList.add("d-none");
+            document.getElementById("tableLoading").style.display = "none";
             showToast("error", "Load failed", e.message);
         }
     }
 
     loadRecord();
-<<<<<<< HEAD
-});
-=======
 });
 >>>>>>> main

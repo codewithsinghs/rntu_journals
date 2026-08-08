@@ -1,0 +1,48 @@
+/* Add this to your admin stylesheet (or paste into a <style> block
+   in submitarticle.blade.php) */
+
+.sa-action-dropdown {
+    display: inline-block;
+}
+
+.sa-action-toggle {
+    background: #0b356b;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sa-action-toggle:hover,
+.sa-action-toggle:focus {
+    background: #092a54;
+    color: #fff;
+}
+
+.sa-dropdown-menu {
+    min-width: 200px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 6px 0;
+}
+
+.sa-dropdown-item {
+    font-size: 13.5px;
+    padding: 8px 16px;
+    color: #333;
+}
+
+.sa-dropdown-item:hover,
+.sa-dropdown-item:focus {
+    background: #f4f6f9;
+    color: #0b356b;
+}
+
+.sa-dropdown-item.text-danger:hover,
+.sa-dropdown-item.text-danger:focus {
+    background: #fee2e2;
+    color: #dc2626;
+}

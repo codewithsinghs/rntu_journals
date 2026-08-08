@@ -234,8 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             showToast("Article submitted successfully!", false);
             setTimeout(() => {
-                window.location.href =
-                    "{{ route('admin.submit-articles.index') }}";
+                window.location.href = "/admin/all-article-lists";
             }, 1200);
         } catch (err) {
             showToast(err.message || "Something went wrong.");

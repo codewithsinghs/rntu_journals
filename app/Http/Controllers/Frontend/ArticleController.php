@@ -9,17 +9,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ArticleController extends Controller
 {
-    /**
-     * Web route: renders the Blade shell page.
-     * Route: GET /article/{uuid}
-     */
+   
     public function show($uuid)
     {
-        // Just confirm the article exists before rendering the shell;
-        // the actual data is fetched by the JS via data().
         SubmitArticle::where('uuid', $uuid)->firstOrFail();
 
         return view('frontend.articles', [
@@ -27,16 +23,38 @@ class ArticleController extends Controller
         ]);
     }
 
-    /**
-     * API route: returns full article details as JSON.
-     * Route: GET /api/public/articles/{uuid}
-     */
     public function data($uuid)
     {
         try {
-            $article = SubmitArticle::with(['journal:id,title', 'coAuthors', 'review'])
+            $article = SubmitArticle::with(['journal:id,title', 'coAuthors', 'review', 'issue.volume'])
                 ->where('uuid', $uuid)
+                ->where('is_hidden', false)
                 ->firstOrFail();
+
+            $volume = $article->issue?->volume?->volume;
+            $issue  = $article->issue?->issue;
+            $year   = $article->issue?->volume?->year
+                ?? optional($article->review?->updated_at ?? $article->submission_date)->year;
+
+            // ── Downloads: total + trailing 6 months, oldest → newest ───
+            $totalDownloads = DB::table('article_downloads')
+                ->where('submit_article_id', $article->id)
+                ->count();
+
+            $downloadsByMonth = collect(range(5, 0))->map(function ($monthsAgo) use ($article) {
+                $monthStart = Carbon::now()->subMonths($monthsAgo)->startOfMonth();
+                $monthEnd = $monthStart->copy()->endOfMonth();
+
+                $count = DB::table('article_downloads')
+                    ->where('submit_article_id', $article->id)
+                    ->whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->count();
+
+                return [
+                    'label' => $monthStart->format('M'),
+                    'count' => $count,
+                ];
+            })->values();
 
             return response()->json([
                 'status' => true,
@@ -54,6 +72,11 @@ class ArticleController extends Controller
                     'pdf_url' => $article->signed_manuscript_pdf
                         ? route('article.download-manuscript', $article->uuid)
                         : null,
+                    'volume' => $volume,
+                    'issue' => $issue,
+                    'year' => $year,
+                    'total_downloads' => $totalDownloads,
+                    'downloads_by_month' => $downloadsByMonth,
                 ],
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -64,11 +87,6 @@ class ArticleController extends Controller
         }
     }
 
-    /**
-     * Unchanged in behavior — still a real file download, not JSON.
-     * Route: GET /article/{uuid}/download  (name: article.download-manuscript)
-     * Now consistently keyed by uuid everywhere it's called from.
-     */
     public function downloadManuscript($uuid)
     {
         $article = SubmitArticle::where('uuid', $uuid)->firstOrFail();
