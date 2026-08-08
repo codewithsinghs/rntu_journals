@@ -30,9 +30,9 @@
         use App\Http\Controllers\Frontend\FooterController;
         use App\Http\Controllers\Frontend\GuidelinesController as FrontendGuidelinesController;
         use App\Http\Controllers\Frontend\HomeController;
-        use App\Http\Controllers\frontend\HomeController as FrontendHomeController;
+        use App\Http\Controllers\Frontend\HomeController as FrontendHomeController;
         use App\Http\Controllers\Frontend\JournalDetailController;
-        use App\Http\Controllers\frontend\MenuController;
+        use App\Http\Controllers\Frontend\MenuController;
         use App\Http\Controllers\Frontend\PrpController as FrontendPrpController;
         use Illuminate\Support\Facades\Route;
 
