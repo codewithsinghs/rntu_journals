@@ -136,6 +136,7 @@
             Route::post('/users',        [UserController::class, 'store']);
             Route::put('/users/{id}',    [UserController::class, 'updateRoles']);
             Route::delete('/users/{id}', [UserController::class, 'destroy']);
+            Route::get('/users/me', [UserController::class, 'me']);
 
             Route::get('/editorial-board',                   [AdminEditorialBoardController::class, 'adminIndex']);
             Route::post('/editorial-board',                  [AdminEditorialBoardController::class, 'store']);

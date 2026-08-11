@@ -1,11 +1,33 @@
 const API_BASE = "/api/admin/users";
 const META_API = "/api/admin/users/meta";
+const ME_API = "/api/admin/users/me";
 
 let currentPage = 1;
 let currentSearch = "";
 let currentPerPage = 10;
 let searchTimer = null;
 let allRoles = [];
+let currentUserRoles = [];
+
+// role -> list of role names that role is NOT allowed to assign to others
+const ROLE_ASSIGN_RESTRICTIONS = {
+    editor: ["admin", "super-admin"],
+    reviewer: ["admin", "super-admin"],
+    author: ["admin", "super-admin"],
+};
+
+function getHiddenRoleNames() {
+    const hidden = new Set();
+    currentUserRoles.forEach((r) => {
+        (ROLE_ASSIGN_RESTRICTIONS[r] || []).forEach((x) => hidden.add(x));
+    });
+    return hidden;
+}
+
+function getVisibleRoles() {
+    const hidden = getHiddenRoleNames();
+    return allRoles.filter((r) => !hidden.has((r.name || "").toLowerCase()));
+}
 
 async function authFetch(url, options = {}) {
     options.credentials = "same-origin";
@@ -81,23 +103,48 @@ function getChecked(containerId) {
 }
 
 async function fetchMeta() {
-    if (allRoles.length) return;
-    try {
-        const res = await authFetch(META_API);
-        const json = await res.json();
-        if (json.status) allRoles = json.roles;
-    } catch (err) {
-        console.error("Failed to fetch meta", err);
+    const tasks = [];
+
+    if (!allRoles.length) {
+        tasks.push(
+            authFetch(META_API)
+                .then((res) => res.json())
+                .then((json) => {
+                    if (json.status) allRoles = json.roles;
+                })
+                .catch((err) => console.error("Failed to fetch meta", err)),
+        );
     }
+
+    if (!currentUserRoles.length) {
+        tasks.push(
+            authFetch(ME_API)
+                .then((res) => res.json())
+                .then((json) => {
+                    if (json.status) {
+                        currentUserRoles = (json.roles || []).map((r) =>
+                            r.toLowerCase(),
+                        );
+                    }
+                })
+                .catch((err) =>
+                    console.error("Failed to fetch current user roles", err),
+                ),
+        );
+    }
+
+    await Promise.all(tasks);
 }
 
 function renderRoleCheckboxes(containerId, checkedIds = []) {
     const box = document.getElementById(containerId);
-    if (!allRoles.length) {
+    const roles = getVisibleRoles();
+
+    if (!roles.length) {
         box.innerHTML = `<div class="col-12 text-muted text-center py-2">No roles available.</div>`;
         return;
     }
-    box.innerHTML = allRoles
+    box.innerHTML = roles
         .map(
             (role) => `
                 <div class="col-md-3 mb-1">
