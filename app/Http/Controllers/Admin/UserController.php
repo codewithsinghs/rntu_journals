@@ -20,25 +20,31 @@ class UserController extends Controller
     }
 
     // ─── Helper: role names a given set of role-names is NOT allowed to assign ──
-    private function restrictedRoleNamesFor(array $userRoleNames): array
-    {
-        $restrictions = [
-            'editor'   => ['admin', 'super-admin'],
-            'reviewer' => ['admin', 'super-admin'],
-            'author'   => ['admin', 'super-admin'],
-        ];
+private function restrictedRoleNamesFor(array $userRoleNames): array
+{
+    $restrictions = [
+        'super-admin' => [],                        
+        'admin'       => ['super-admin'],             
+        'editor'      => ['admin', 'super-admin'],
+        'reviewer'    => ['admin', 'super-admin'],
+        'author'      => ['admin', 'super-admin'],
+    ];
 
-        $forbidden = [];
-        foreach ($userRoleNames as $roleName) {
-            $roleName = strtolower($roleName);
-            if (isset($restrictions[$roleName])) {
-                $forbidden = array_merge($forbidden, $restrictions[$roleName]);
-            }
-        }
-
-        return array_unique($forbidden);
+    if (empty($userRoleNames)) {
+        return [];
     }
 
+    $forbiddenSets = array_map(function ($roleName) use ($restrictions) {
+        $roleName = strtolower($roleName);
+        return $restrictions[$roleName] ?? [];
+    }, $userRoleNames);
+
+    $intersection = array_reduce($forbiddenSets, function ($carry, $set) {
+        return $carry === null ? $set : array_intersect($carry, $set);
+    }, null);
+
+    return array_values($intersection ?? []);
+}
     // ─── Web view only ─────────────────────────────────────────────
     public function index()
     {

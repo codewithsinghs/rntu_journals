@@ -9,19 +9,26 @@ let searchTimer = null;
 let allRoles = [];
 let currentUserRoles = [];
 
-// role -> list of role names that role is NOT allowed to assign to others
 const ROLE_ASSIGN_RESTRICTIONS = {
+    "super-admin": [],                          
+    admin: ["super-admin"],                      
     editor: ["admin", "super-admin"],
     reviewer: ["admin", "super-admin"],
     author: ["admin", "super-admin"],
 };
 
 function getHiddenRoleNames() {
-    const hidden = new Set();
-    currentUserRoles.forEach((r) => {
-        (ROLE_ASSIGN_RESTRICTIONS[r] || []).forEach((x) => hidden.add(x));
-    });
-    return hidden;
+    if (!currentUserRoles.length) return new Set();
+    const restrictionSets = currentUserRoles.map(
+        (r) => new Set(ROLE_ASSIGN_RESTRICTIONS[r] || []),
+    );
+
+    const [first, ...rest] = restrictionSets;
+    const intersection = new Set(
+        [...first].filter((roleName) => rest.every((s) => s.has(roleName))),
+    );
+
+    return intersection;
 }
 
 function getVisibleRoles() {
