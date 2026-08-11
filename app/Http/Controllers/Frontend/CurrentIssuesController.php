@@ -32,6 +32,7 @@ class CurrentIssuesController extends Controller
             $articles = SubmitArticle::with(['journal:id,title', 'coAuthors'])
                 ->where('issue_id', $issue->id)
                 ->where('is_hidden', false)
+                ->where('deleted_at', null)
                 ->whereHas('review', function ($q) {
                     $q->where('editor_status', 'approved');
                 })

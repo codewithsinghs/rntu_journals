@@ -71,6 +71,7 @@ class JournalDetailController extends Controller
                 ->join('article_reviews as ar', 'ar.submit_article_id', '=', 'sa.id')
                 ->where('sa.journal_id', $journal->id)
                 ->where('sa.is_hidden', false)
+                ->where('sa.deleted_at', null)
                 ->where('ar.editor_status', 'approved')
                 ->whereYear('ar.created_at', now()->year)
                 ->orderByDesc('ar.created_at')

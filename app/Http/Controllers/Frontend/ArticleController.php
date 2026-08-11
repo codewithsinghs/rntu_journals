@@ -28,6 +28,7 @@ class ArticleController extends Controller
         try {
             $article = SubmitArticle::with(['journal:id,title', 'coAuthors', 'review', 'issue.volume'])
                 ->where('uuid', $uuid)
+                ->where('deleted_at', null)
                 ->where('is_hidden', false)
                 ->firstOrFail();
 
