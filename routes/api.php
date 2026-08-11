@@ -20,6 +20,7 @@
         use App\Http\Controllers\Admin\SubmitArticleController;
         use App\Http\Controllers\Admin\UserController;
         use App\Http\Controllers\Admin\VolumeController;
+        use App\Http\Controllers\Admin\WebsiteVisitorController;
         use App\Http\Controllers\Frontend\PageResolverController;
         use App\Http\Controllers\Frontend\SettingController;
         use App\Http\Controllers\Frontend\AboutController;
@@ -187,6 +188,12 @@
             Route::get('/dashboard/article-downloads', [DashboardController::class, 'articleDownloads']);
             Route::get('/dashboard/recent-submissions', [DashboardController::class, 'recentSubmissions']);
             Route::get('/dashboard/latest-publications', [DashboardController::class, 'latestPublications']);
+
+
+            //website visitor
+            Route::get('/website-visitors',      [WebsiteVisitorController::class, 'adminIndex'])->name('website-visitors.data');
+            Route::get('/website-visitors/{id}', [WebsiteVisitorController::class, 'show'])->name('website-visitors.show');
+            Route::delete('/website-visitors/{id}', [WebsiteVisitorController::class, 'destroy'])->name('website-visitors.destroy');
         });
 
 
@@ -210,4 +217,5 @@
             Route::get('/settings/logo', [SettingController::class, 'logo']);
             Route::get('/current-page', [PageResolverController::class, 'resolve']);
             Route::get('/footer', [FooterController::class, 'index']);
+            Route::get('/visitor-count', [FrontendHomeController::class, 'visitorCount']);
         });

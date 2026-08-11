@@ -35,9 +35,14 @@
     {{-- ===== BOTTOM BAR ===== --}}
     <div class="out_footer">
 
-        <div class="visitors">
+        <!-- <div class="visitors">
             <img src="{{ asset('/storage/home_page/visitor.png') }}" alt="Visitors">
             <p>Website Visitor : <span id="visitor-count">12563</span></p>
+        </div> -->
+
+        <div class="visitors">
+            <img src="{{ asset('/storage/home_page/visitor.png') }}" alt="Visitors">
+            <p>Website Visitor : <span id="visitor-count">0</span></p>
         </div>
 
         <p>Copyright {{ date('Y') }} <span id="footerWebsiteName">RNTU Journal</span>. All Rights Reserved.</p>

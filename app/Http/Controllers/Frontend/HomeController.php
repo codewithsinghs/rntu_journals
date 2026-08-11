@@ -9,6 +9,9 @@ use App\Models\Journal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\WebsiteVisitor;
+use Illuminate\Http\JsonResponse;
+
 
 class HomeController extends Controller
 {
@@ -102,4 +105,33 @@ class HomeController extends Controller
             return response()->json(['status' => false, 'message' => 'Failed to fetch articles.'], 500);
         }
     }
+
+
+public function visitorCount(): JsonResponse
+{
+    try {
+        $ip = request()->ip();
+
+        $alreadyVisited = WebsiteVisitor::where('ip_address', $ip)->exists();
+
+        if (!$alreadyVisited) {
+            WebsiteVisitor::create([
+                'ip_address' => $ip,
+                'user_agent' => request()->userAgent(),
+                'url'        => request()->fullUrl(),
+                'referrer'   => request()->headers->get('referer'),
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'count' => WebsiteVisitor::count(),
+            ],
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Failed to log visitor / fetch count', ['error' => $e->getMessage()]);
+        return response()->json(['status' => false, 'message' => 'Failed to fetch visitor count.'], 500);
+    }
+}
 }
