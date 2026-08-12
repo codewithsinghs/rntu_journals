@@ -7,8 +7,8 @@
     if (!app) return;
 
     const issueUuid = app.dataset.issueUuid || null;
-    const apiBase = app.dataset.apiBase; 
-    const articlesRouteBase = app.dataset.articlesRouteBase; 
+    const apiBase = app.dataset.apiBase;
+    const articlesRouteBase = app.dataset.articlesRouteBase;
 
     const els = {
         heading: document.getElementById('issueHeading'),
@@ -29,7 +29,7 @@
         if (!dateStr) return '-';
         const d = new Date(dateStr);
         if (isNaN(d)) return dateStr;
-        return d.toISOString().slice(0, 10); 
+        return d.toISOString().slice(0, 10);
     }
 
     function renderIssueHeading(issue) {

@@ -106,15 +106,18 @@ class HomeController extends Controller
         }
     }
 
-
 public function visitorCount(): JsonResponse
 {
     try {
         $ip = request()->ip();
 
-        $alreadyVisited = WebsiteVisitor::where('ip_address', $ip)->exists();
+        // Scope to TODAY only — otherwise once an IP is logged once,
+        // it's never counted again on any future day.
+        $alreadyVisitedToday = WebsiteVisitor::where('ip_address', $ip)
+            ->whereDate('created_at', now()->toDateString())
+            ->exists();
 
-        if (!$alreadyVisited) {
+        if (!$alreadyVisitedToday) {
             WebsiteVisitor::create([
                 'ip_address' => $ip,
                 'user_agent' => request()->userAgent(),

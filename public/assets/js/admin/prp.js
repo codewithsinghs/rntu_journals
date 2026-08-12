@@ -13,11 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const editors = {};
     const CK_FIELDS = [
         { id: "author_description", required: true },
-        { id: "process_description", required: true },
-        { id: "manuscript_description", required: true },
-        { id: "formatting_description", required: true },
-        { id: "layout_description", required: true },
-        { id: "acknowlegdement_description", required: true },
     ];
 
     const TOOLBAR = [
@@ -108,13 +103,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Form helpers ───────────────────────────────────────────── */
+    // Only fields that actually exist as plain inputs in the blade file.
     const PLAIN_FIELDS = [
-        "author_badge", "author_heading",
-        "process_badge", "process_heading",
-        "manuscript_badge", "manuscript_heading",
-        "formatting_badge1", "formatting_badge2", "formatting_heading",
-        "layout_badge1", "layout_heading",
-        "acknowlegdement_badge1", "acknowlegdement_heading",
+        "author_heading",
     ];
 
     function fillForm(r) {
@@ -162,6 +153,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let hasError = false;
 
+        // Required plain fields
+        PLAIN_FIELDS.forEach((f) => {
+            const el = document.getElementById(f);
+            if (el && el.hasAttribute("required") && !el.value.trim()) {
+                el.classList.add("is-invalid");
+                const errEl = document.getElementById(`err_${f}`);
+                if (errEl) errEl.textContent = "This field is required.";
+                hasError = true;
+            }
+        });
+
+        // Required CKEditor fields
         CK_FIELDS.forEach((f) => {
             if (f.required) {
                 const val = editors[f.id] ? editors[f.id].getData() : "";

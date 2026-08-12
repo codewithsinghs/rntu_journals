@@ -69,9 +69,6 @@ document.addEventListener("DOMContentLoaded", function () {
         published: "Published",
     };
 
-    // Full-sentence wording + order to match the public submission form's
-    // declaration checklist (see screenshot). Keys must match the values
-    // stored in r.declarations from the API.
     const declLabels = {
         original: "This work is original and has not been published elsewhere.",
         not_under_review: "This manuscript is not under review elsewhere.",
@@ -124,7 +121,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }).show();
     }
 
-    /* ── Generic styled confirm dialog (used for Approve) ──────────────── */
     let confirmResolver = null;
 
     function showConfirm({
@@ -175,11 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-    /* ── Workflow action buttons: Approve / Reject / Forward to Reviewer ──
-     * Rendered only when the corresponding permission flag from the API
-     * is true (can_approve, can_reject, can_forward). Markup copied
-     * verbatim from editarticles.js so the same CSS applies identically.
-     */
+
     function renderActions(r) {
         const buttons = [
             r.can_approve
@@ -216,7 +208,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    /* ── Approve ─────────────────────────────────────────────────────── */
     async function doApprove() {
         const ok = await showConfirm({
             title: "Approve this submission?",
@@ -245,7 +236,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    /* ── Reject ──────────────────────────────────────────────────────── */
     function openReject() {
         document.getElementById("saRejectRemarks").value = "";
         saRejectModal.show();
@@ -279,7 +269,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-    /* ── Forward to Reviewer ─────────────────────────────────────────── */
     async function openForward() {
         document.getElementById("saForwardRemarks").value = "";
         const select = document.getElementById("saForwardReviewer");
@@ -374,11 +363,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 .map((k) => `<span class="sa-decl-chip">${esc(k)}</span>`)
                 .join("") || html(null);
 
-        // Declaration checklist — same wording/order as the public
-        // submission form, rendered as a disabled (read-only) checkbox
-        // list matching that layout: square checkbox + blue label, one
-        // per line. "terms_accepted" is a separate boolean on the record,
-        // not part of r.declarations, so it's appended as the final row.
         const declRows = Object.keys(declLabels)
             .map((key) => {
                 const checked = (r.declarations || []).includes(key)
@@ -440,10 +424,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const review = r.review || {};
 
-        // Wrapped in a <form> (no submit handler needed here) purely so
-        // the button/section CSS — which in editarticles.blade.php is
-        // scoped under <form id="saEditForm">...<section class="term_con">
-        // — applies identically on this read-only page.
         document.getElementById("saShowBody").innerHTML = `
             <form id="saShowForm" onsubmit="return false;">
 

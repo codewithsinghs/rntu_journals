@@ -31,13 +31,11 @@ class SubmitArticleController extends Controller
 
     private const OWNER_EDITABLE_STAGES = ['submitted', 'with_author', 'reviewer_correction'];
 
-    // ─── Frontend Submission Form ──────────────────────────────────
     public function index()
     {
         return view('frontend.submit');
     }
 
-    // ─── Journal Dropdown (Frontend) ───────────────────────────────
     public function journals()
     {
         try {
@@ -149,95 +147,163 @@ class SubmitArticleController extends Controller
         return $user->can('view all articles') || $user->can($permission);
     }
 
+
     private function attachPermissionFlags(SubmitArticle $article, $user): void
-    {
-        $canViewAll = $user && $user->can('view all articles');
-        $isOwner    = $user && $article->user_id === $user->id;
+{
+    $canViewAll = $user && $user->can('view all articles');
+    $isOwner    = $user && $article->user_id === $user->id;
 
-        $allowedActions = $this->allowedActionsFor($article);
-        $stage = $article->review->current_stage ?? 'submitted';
+    $allowedActions = $this->allowedActionsFor($article);
+    $stage = $article->review->current_stage ?? 'submitted';
 
-        $isOwnerEditable = in_array($stage, self::OWNER_EDITABLE_STAGES, true);
+    $isOwnerEditable = in_array($stage, self::OWNER_EDITABLE_STAGES, true);
 
-        $hasApprove         = $canViewAll || ($user?->can('approve article') ?? false);
-        $hasReject          = $canViewAll || ($user?->can('reject article') ?? false);
-        $hasForward         = $canViewAll || ($user?->can('forward article') ?? false);
-        $hasForwardToAuthor = $canViewAll || ($user?->can('forward article to author') ?? false);
-        $hasPublish         = $canViewAll || ($user?->can('publish article') ?? false);
-        $hasReview          = $canViewAll || ($user?->can('review article') ?? false);
+    $hasApprove         = $canViewAll || ($user?->can('approve article') ?? false);
+    $hasReject          = $canViewAll || ($user?->can('reject article') ?? false);
+    $hasForward         = $canViewAll || ($user?->can('forward article') ?? false);
+    $hasForwardToAuthor = $canViewAll || ($user?->can('forward article to author') ?? false);
+    $hasPublish         = $canViewAll || ($user?->can('publish article') ?? false);
+    $hasReview          = $canViewAll || ($user?->can('review article') ?? false);
 
-        $isAssignedReviewer = $hasReview
-            && $article->review
-            && $article->review->reviewer_id === $user?->id;
+    $isAssignedReviewer = $hasReview
+        && $article->review
+        && $article->review->reviewer_id === $user?->id;
 
-        $isPostApproval = in_array($stage, ['approved', 'with_author_payment', 'published', 'rejected', 'reviewer_rejected'], true);
+    $isPostApproval = in_array($stage, ['approved', 'with_author_payment', 'published', 'rejected', 'reviewer_rejected'], true);
 
-        $article->can_edit = !$isPostApproval && (($isOwner && $isOwnerEditable) || $canViewAll);
+    // FIX: previously `!$isPostApproval` gated the WHOLE expression, so
+    // editors ($canViewAll) lost edit access once a submission passed
+    // approval. Now the post-approval restriction only applies to the
+    // owner/author — editors can edit at any stage.
+    $article->can_edit = ($isOwner && $isOwnerEditable && !$isPostApproval) || $canViewAll;
 
-        $article->can_approve = !$isPostApproval && $hasApprove && in_array('approve', $allowedActions, true);
-        $article->can_reject  = !$isPostApproval && $hasReject && in_array('reject', $allowedActions, true);
-        $article->can_forward = !$isPostApproval && $hasForward && in_array('forward', $allowedActions, true);
+    $article->can_approve = !$isPostApproval && $hasApprove && in_array('approve', $allowedActions, true);
+    $article->can_reject  = !$isPostApproval && $hasReject && in_array('reject', $allowedActions, true);
+    $article->can_forward = !$isPostApproval && $hasForward && in_array('forward', $allowedActions, true);
 
-        $article->can_review        = $hasReview;
-        $article->can_review_decide = !$isPostApproval && $isAssignedReviewer && $stage === 'with_reviewer';
+    $article->can_review        = $hasReview;
+    $article->can_review_decide = !$isPostApproval && $isAssignedReviewer && $stage === 'with_reviewer';
 
-        $canFinalDecide = !$isPostApproval && $hasForwardToAuthor
-            && in_array('editor_final_decide', $allowedActions, true);
+    $canFinalDecide = !$isPostApproval && $hasForwardToAuthor
+        && in_array('editor_final_decide', $allowedActions, true);
 
-        $article->can_approve_final = $canFinalDecide;
-        $article->can_reject_final  = $canFinalDecide;
+    $article->can_approve_final = $canFinalDecide;
+    $article->can_reject_final  = $canFinalDecide;
 
-        $article->can_editor_final_decide = $canFinalDecide;
+    $article->can_editor_final_decide = $canFinalDecide;
 
-        $article->can_forward_to_author_revision = !$isPostApproval && $hasForwardToAuthor
-            && in_array('forward_to_author_revision', $allowedActions, true);
+    $article->can_forward_to_author_revision = !$isPostApproval && $hasForwardToAuthor
+        && in_array('forward_to_author_revision', $allowedActions, true);
 
-        $article->can_resubmit = ($isOwner || $canViewAll) && in_array('resubmit', $allowedActions, true);
+    $article->can_resubmit = ($isOwner || $canViewAll) && in_array('resubmit', $allowedActions, true);
 
-        $article->can_publish = $hasPublish && in_array('publish', $allowedActions, true);
+    $article->can_publish = $hasPublish && in_array('publish', $allowedActions, true);
 
-        $article->can_pay = ($isOwner || $canViewAll) && $stage === 'with_author_payment';
+    $article->can_pay = ($isOwner || $canViewAll) && $stage === 'with_author_payment';
 
-        $article->can_edit_issue = $canViewAll;
+    $article->can_edit_issue = $canViewAll;
+    $article->can_delete = $canViewAll;
+    $article->can_hide   = $canViewAll;
+    $article->is_published = (bool) ($article->review->is_published ?? false);
 
-        // ─── Delete / Hide — editor / admin / superadmin only ───────
-        // Deliberately tied to the same "view all articles" gate as the
-        // rest of the editor-only surface (issue override, reviewer
-        // names, granular stage) rather than a separate permission, so
-        // it can never be granted to an author or a plain reviewer.
-        $article->can_delete = $canViewAll;
-        $article->can_hide   = $canViewAll;
+    $article->reviewer_name = $canViewAll
+        ? ($article->review?->reviewer?->name ?? null)
+        : null;
 
-        // Whether this article is actually live on the public site right
-        // now. Distinct from is_hidden: an article can be marked
-        // is_published on the review but still be pulled from public view
-        // via is_hidden — the public controller checks BOTH.
-        $article->is_published = (bool) ($article->review->is_published ?? false);
+    $editorPendingStages = [
+        'submitted',
+        'with_reviewer',
+        'reviewer_approved',
+        'reviewer_rejected',
+        'reviewer_correction',
+        'approved',
+    ];
 
-        $article->reviewer_name = $canViewAll
-            ? ($article->review?->reviewer?->name ?? null)
-            : null;
-
-        $editorPendingStages = [
-            'submitted',
-            'with_reviewer',
-            'reviewer_approved',
-            'reviewer_rejected',
-            'reviewer_correction',
-            'approved',
-        ];
-
-        if ($isOwner && !$canViewAll) {
-            $article->display_stage = in_array($stage, $editorPendingStages, true)
-                ? 'with_editor'
-                : $stage;
-        } else {
-            // Editor / reviewer / admin sees the real, granular stage.
-            $article->display_stage = $stage;
-        }
+    if ($isOwner && !$canViewAll) {
+        $article->display_stage = in_array($stage, $editorPendingStages, true)
+            ? 'with_editor'
+            : $stage;
+    } else {
+        $article->display_stage = $stage;
     }
+}
 
-    // ─── List Submissions (scoped purely by permission) ─────────────
+    // private function attachPermissionFlags(SubmitArticle $article, $user): void
+    // {
+    //     $canViewAll = $user && $user->can('view all articles');
+    //     $isOwner    = $user && $article->user_id === $user->id;
+
+    //     $allowedActions = $this->allowedActionsFor($article);
+    //     $stage = $article->review->current_stage ?? 'submitted';
+
+    //     $isOwnerEditable = in_array($stage, self::OWNER_EDITABLE_STAGES, true);
+
+    //     $hasApprove         = $canViewAll || ($user?->can('approve article') ?? false);
+    //     $hasReject          = $canViewAll || ($user?->can('reject article') ?? false);
+    //     $hasForward         = $canViewAll || ($user?->can('forward article') ?? false);
+    //     $hasForwardToAuthor = $canViewAll || ($user?->can('forward article to author') ?? false);
+    //     $hasPublish         = $canViewAll || ($user?->can('publish article') ?? false);
+    //     $hasReview          = $canViewAll || ($user?->can('review article') ?? false);
+
+    //     $isAssignedReviewer = $hasReview
+    //         && $article->review
+    //         && $article->review->reviewer_id === $user?->id;
+
+    //     $isPostApproval = in_array($stage, ['approved', 'with_author_payment', 'published', 'rejected', 'reviewer_rejected'], true);
+
+    //     $article->can_edit = !$isPostApproval && (($isOwner && $isOwnerEditable) || $canViewAll);
+
+    //     $article->can_approve = !$isPostApproval && $hasApprove && in_array('approve', $allowedActions, true);
+    //     $article->can_reject  = !$isPostApproval && $hasReject && in_array('reject', $allowedActions, true);
+    //     $article->can_forward = !$isPostApproval && $hasForward && in_array('forward', $allowedActions, true);
+
+    //     $article->can_review        = $hasReview;
+    //     $article->can_review_decide = !$isPostApproval && $isAssignedReviewer && $stage === 'with_reviewer';
+
+    //     $canFinalDecide = !$isPostApproval && $hasForwardToAuthor
+    //         && in_array('editor_final_decide', $allowedActions, true);
+
+    //     $article->can_approve_final = $canFinalDecide;
+    //     $article->can_reject_final  = $canFinalDecide;
+
+    //     $article->can_editor_final_decide = $canFinalDecide;
+
+    //     $article->can_forward_to_author_revision = !$isPostApproval && $hasForwardToAuthor
+    //         && in_array('forward_to_author_revision', $allowedActions, true);
+
+    //     $article->can_resubmit = ($isOwner || $canViewAll) && in_array('resubmit', $allowedActions, true);
+
+    //     $article->can_publish = $hasPublish && in_array('publish', $allowedActions, true);
+
+    //     $article->can_pay = ($isOwner || $canViewAll) && $stage === 'with_author_payment';
+
+    //     $article->can_edit_issue = $canViewAll;
+    //     $article->can_delete = $canViewAll;
+    //     $article->can_hide   = $canViewAll;
+    //     $article->is_published = (bool) ($article->review->is_published ?? false);
+
+    //     $article->reviewer_name = $canViewAll
+    //         ? ($article->review?->reviewer?->name ?? null)
+    //         : null;
+
+    //     $editorPendingStages = [
+    //         'submitted',
+    //         'with_reviewer',
+    //         'reviewer_approved',
+    //         'reviewer_rejected',
+    //         'reviewer_correction',
+    //         'approved',
+    //     ];
+
+    //     if ($isOwner && !$canViewAll) {
+    //         $article->display_stage = in_array($stage, $editorPendingStages, true)
+    //             ? 'with_editor'
+    //             : $stage;
+    //     } else {
+    //         $article->display_stage = $stage;
+    //     }
+    // }
+
     public function adminIndex(Request $request)
     {
         try {
@@ -274,8 +340,6 @@ class SubmitArticleController extends Controller
                     $query->where('user_id', $user->id);
                 }
 
-                // Hidden submissions are an editor/admin-only concern —
-                // authors and reviewers never see a hidden row at all.
                 $query->where('is_hidden', false);
             }
 
@@ -316,7 +380,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── View Single Submission (scoped by permission) ──────────────
     public function show(Request $request, $id)
     {
         try {
@@ -390,7 +453,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── Update Submission (owner while editable, or "view all") ────
     public function update(Request $request, $id)
     {
         try {
@@ -440,12 +502,10 @@ class SubmitArticleController extends Controller
                 'declarations.*'                => 'required|string|in:original,not_under_review,all_approved,ethical_approval,data_accurate',
                 'author_signature'              => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[a-zA-Z\s\.\-]+$/'],
 
-                // Optional file replacements — same rules as store()
                 'signed_manuscript_pdf'         => ['nullable', 'file', 'mimes:pdf', 'max:51200', 'min:1'],
                 'abstract_file'                 => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:51200', 'min:1'],
                 'signature_file'                => ['nullable', 'file', 'mimes:jpeg,jpg,png', 'max:2048'],
 
-                // Co-authors and reviewers — fully replaceable arrays
                 'co_authors'                    => 'nullable|array|max:10',
                 'co_authors.*.name'             => ['required_with:co_authors', 'string', 'max:255', 'regex:/^[a-zA-Z\s\.\-]+$/'],
                 'co_authors.*.email'            => 'required_with:co_authors|email:rfc|max:255',
@@ -503,10 +563,6 @@ class SubmitArticleController extends Controller
                 'reviewers.*.area_of_expertise.required_with' => 'Reviewer area of expertise is required.',
             ]);
 
-            // ── Manual Volume/Issue override — editors ("view all articles")
-            // only. Non-editors can never set issue_id, even if they somehow
-            // send it in the request. If an editor does send one, make sure
-            // it actually belongs to the (possibly newly-selected) journal.
             if (!$canViewAll) {
                 unset($validated['issue_id']);
             } elseif (array_key_exists('issue_id', $validated) && !empty($validated['issue_id'])) {
@@ -532,7 +588,6 @@ class SubmitArticleController extends Controller
             DB::beginTransaction();
 
             try {
-                // ── Handle file replacements (only if a new file was sent) ──
                 if ($request->hasFile('signed_manuscript_pdf')) {
                     $newManuscriptPath = $request->file('signed_manuscript_pdf')
                         ->store('articles/manuscripts', 'public');
@@ -551,9 +606,6 @@ class SubmitArticleController extends Controller
                     $article->signature_img = $newSignaturePath;
                 }
 
-                // ── Fill the rest of the plain fields ──
-                // issue_id (when present and permitted) rides along here like
-                // any other plain column since it's already been vetted above.
                 $article->fill(collect($validated)->except([
                     'co_authors',
                     'reviewers',
@@ -564,7 +616,6 @@ class SubmitArticleController extends Controller
 
                 $article->save();
 
-                // ── Sync co-authors: wipe and recreate (simplest, matches store()) ──
                 if ($request->has('co_authors')) {
                     $article->coAuthors()->delete();
 
@@ -608,7 +659,6 @@ class SubmitArticleController extends Controller
 
                 DB::commit();
 
-                // Delete old files ONLY after successful commit, and only the ones actually replaced
                 if ($newManuscriptPath && $oldManuscriptPath) {
                     Storage::disk('public')->delete($oldManuscriptPath);
                 }
@@ -620,7 +670,6 @@ class SubmitArticleController extends Controller
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
-                // Clean up any newly-uploaded files since the transaction failed
                 if ($newManuscriptPath) Storage::disk('public')->delete($newManuscriptPath);
                 if ($newAbstractPath)   Storage::disk('public')->delete($newAbstractPath);
                 if ($newSignaturePath)  Storage::disk('public')->delete($newSignaturePath);
@@ -673,7 +722,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── STEP 1: Editor's initial decision on a fresh submission ───
     public function approve(Request $request, $id)
     {
         try {
@@ -698,15 +746,9 @@ class SubmitArticleController extends Controller
                     'message' => 'This submission is not in a stage that can be approved.',
                 ], 409);
             }
-
-            // If the editor already manually set an issue_id (via the edit
-            // form override), respect it and skip auto-assignment. Otherwise
-            // fall back to the current issue for this journal, same as before.
             if ($article->issue_id) {
                 $currentIssue = Issue::find($article->issue_id);
             } else {
-                // The "current" issue for this journal as of today — the most
-                // recent issue whose published_date has already arrived.
                 $currentIssue = Issue::where('journal_id', $article->journal_id)
                     ->whereDate('published_date', '<=', now())
                     ->orderByDesc('published_date')
@@ -749,7 +791,7 @@ class SubmitArticleController extends Controller
                             'editor_id'     => $user->id,
                             'editor_status' => 'approved',
                             'current_stage' => 'approved',
-                            'approval_date' => now(), // NEW: editor's approval timestamp
+                            'approval_date' => now(), 
                         ]
                     );
                 });
@@ -862,7 +904,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── STEP 2: Editor forwards to a specific reviewer ─────────────
     public function forwardToReviewer(Request $request, $id)
     {
         try {
@@ -913,7 +954,7 @@ class SubmitArticleController extends Controller
                     'reviewer_status'            => 'pending',
                     'reviewer_remarks'           => $validated['remarks'] ?? null,
                     'current_stage'              => 'with_reviewer',
-                    'forwarded_to_reviewer_date' => now(), // NEW: date sent to reviewer
+                    'forwarded_to_reviewer_date' => now(), 
                 ]
             );
 
@@ -952,7 +993,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── STEP 3: Reviewer's own 3-way decision ──────────────────────
     public function reviewerDecision(Request $request, $id)
     {
         try {
@@ -1091,7 +1131,7 @@ class SubmitArticleController extends Controller
                     'editor_status'  => 'approved_pending_payment',
                     'editor_remarks' => $validated['remarks'],
                     'current_stage'  => 'with_author_payment',
-                    'approval_date'  => now(), // NEW: editor's approval timestamp
+                    'approval_date'  => now(), 
                 ];
                 $message = 'Author notified to complete payment.';
             } else {
@@ -1220,7 +1260,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── STEP 5: Author resubmits after revision — goes back to SAME reviewer ──
     public function resubmit(Request $request, $id)
     {
         try {
@@ -1286,7 +1325,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── Publish (after author has been notified for payment) ──────
     public function publish(Request $request, $id)
     {
         try {
@@ -1312,8 +1350,6 @@ class SubmitArticleController extends Controller
                 ], 409);
             }
 
-            // If the editor already manually set/overrode an issue_id (via
-            // the edit form), respect it and skip auto-assignment.
             if ($article->issue_id) {
                 $latestIssue = Issue::find($article->issue_id);
             } else {
@@ -1375,12 +1411,6 @@ class SubmitArticleController extends Controller
             ], 500);
         }
     }
-
-    // ─── Delete Submission — editor / admin / superadmin only ───────
-    // Soft-deletes the submission (relies on SoftDeletes on the model /
-    // deleted_at column via migration). Regular Eloquent queries used
-    // everywhere else in this controller automatically exclude it once
-    // deleted, so no further "trashed" scoping is required elsewhere.
     public function destroy(Request $request, $id)
     {
         try {
@@ -1433,11 +1463,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── Hide / Unhide Submission — editor / admin / superadmin only ─
-    // Toggles visibility without deleting anything. Hidden submissions
-    // are excluded from the author's / reviewer's own list view (see
-    // adminIndex / show) but remain fully visible to anyone with
-    // "view all articles".
     public function toggleHide(Request $request, $id)
     {
         try {
@@ -1497,7 +1522,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── Reviewers Dropdown (for Forward modal) — permission-based ──
     public function reviewers(Request $request)
     {
         try {
@@ -1520,7 +1544,6 @@ class SubmitArticleController extends Controller
         }
     }
 
-    // ─── Create Submission (Frontend) — no login required ──────────
     public function store(Request $request)
     {
         if ($request->server('CONTENT_LENGTH') > 0 && empty($_FILES) && empty($_POST)) {
@@ -1670,9 +1693,6 @@ class SubmitArticleController extends Controller
                 'terms_accepted'                => true,
             ]);
 
-            // Every article is born with an explicit review row in the
-            // "submitted" stage — this is what makes it show up for the
-            // editor and keeps the reviewer/author scoping queries correct.
             $article->review()->create([
                 'current_stage' => 'submitted',
             ]);
