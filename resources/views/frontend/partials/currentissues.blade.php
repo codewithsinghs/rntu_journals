@@ -2,10 +2,11 @@
 
 @section('content')
 
-    <div id="currentIssuesApp"
-         data-issue-uuid="{{ $issueUuid }}"
-         data-api-base="{{ url('/api/public/issues') }}"
-         data-articles-route-base="{{ url('/article') }}">
+   <div id="currentIssuesApp"
+     data-journal-slug="{{ $journal }}"
+     data-issue-uuid="{{ $issueUuid }}"
+     data-api-base="{{ url('/' . $journal . '/issues') }}"
+     data-articles-route-base="{{ url('/' . $journal . '/articles') }}">
 
         <div class="current-banner">
 

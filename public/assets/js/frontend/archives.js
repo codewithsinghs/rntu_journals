@@ -4,9 +4,11 @@
     'use strict';
 
     const app = document.getElementById('archivesApp');
+
     if (!app) return;
 
     const journalId = app.dataset.journalId;
+    const journal = app.dataset.journal; 
     const apiBase = app.dataset.apiBase; 
     const els = {
         loading: document.getElementById('archivesLoading'),
@@ -22,9 +24,10 @@
         return div.innerHTML;
     }
 
-    function issueRoute(uuid) {
+    function issueRoute(uuid,journal) {
         // Mirrors: route('current-issues', $issue->uuid)
-        return `/current-issues/${encodeURIComponent(uuid)}`;
+        // return `/current-issues/${encodeURIComponent(uuid)}`;
+        return `/${encodeURIComponent(journal)}/current-issues/${encodeURIComponent(uuid)}`;
     }
 
     function renderYearBlocks(issuesByYear) {
@@ -52,7 +55,7 @@
                             : '-';
 
                         return `
-                        <a href="${issueRoute(issue.uuid)}" class="arc-card"
+                        <a href="${issueRoute(issue.uuid, journal)}" class="arc-card"
                             data-title="${escapeHtml(title)}"
                             data-date="${escapeHtml(issue.created_at)}">
 

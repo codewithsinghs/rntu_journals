@@ -67,5 +67,10 @@ class Issue extends Model
     {
         return $this->belongsTo(Volume::class, 'volume_id');
     }
+
+    public function getRouteKeyName()
+{
+    return 'uuid';
+}
     
 }

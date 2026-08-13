@@ -13,12 +13,12 @@
         <div id="header-menu" class="nav-links">
         </div>
 
-        <div class="search-box">
+        <!-- <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search.....">
             <button class="search-btn" id="searchBtn">
                 <img src="{{ asset('/storage/home_page/search_icon.png') }}" alt="Search">
             </button>
-        </div>
+        </div> -->
 
         <a href="#" class="login-btn" id="btn-login" data-has-login-errors="{{ $errors->any() ? '1' : '0' }}">
             <img src="{{ asset('/storage/home_page/login_icon.png') }}" alt="Login">

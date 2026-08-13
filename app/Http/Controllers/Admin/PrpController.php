@@ -12,36 +12,8 @@ class PrpController extends Controller
     private function rules(bool $isUpdate = false): array
     {
         return [
-            // ── PRPs Author ──────────────────────────────
-            'author_badge'               => 'nullable|string|max:255',
             'author_heading'             => 'required|string|max:255',
             'author_description'         => 'required|string',
-
-            // ── Process Submission ──────────────────────────────
-            'process_badge'              => 'nullable|string|max:255',
-            'process_heading'            => 'required|string|max:255',
-            'process_description'        => 'required|string',
-
-            // ── Manuscript ──────────────────────────────────────
-            'manuscript_badge'           => 'nullable|string|max:255',
-            'manuscript_heading'         => 'required|string|max:255',
-            'manuscript_description'     => 'required|string',
-
-            // ── Document Formatting ──────────────────────────────
-            'formatting_badge1'          => 'nullable|string|max:255',
-            'formatting_badge2'          => 'nullable|string|max:255',
-            'formatting_heading'         => 'required|string|max:255',
-            'formatting_description'     => 'required|string',
-
-            // ── Page Layout ──────────────────────────────────────
-            'layout_badge1'              => 'nullable|string|max:255',
-            'layout_heading'             => 'required|string|max:255',
-            'layout_description'         => 'required|string',
-
-            // ── Acknowledgement ───────────────────────────────────
-            'acknowlegdement_badge1'     => 'nullable|string|max:255',
-            'acknowlegdement_heading'    => 'required|string|max:255',
-            'acknowlegdement_description'=> 'required|string',
         ];
     }
 

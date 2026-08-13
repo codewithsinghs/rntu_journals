@@ -111,3 +111,23 @@ function renderBottomLinks(links) {
         .map(link => `<li><a href="${link.url}" target="${link.target}" style="color:inherit;text-decoration:none;">${link.label}</a></li>`)
         .join("");
 }
+
+document.addEventListener('DOMContentLoaded', async function () {
+    const visitorCountEl = document.getElementById('visitor-count');
+
+    if (!visitorCountEl) return;
+
+    try {
+        const res = await fetch('/api/public/visitor-count');
+        const json = await res.json();
+
+        if (!json.status) {
+            console.error('Visitor count fetch failed:', json.message);
+            return;
+        }
+
+        visitorCountEl.textContent = json.data.count.toLocaleString();
+    } catch (err) {
+        console.error('Visitor count load failed:', err);
+    }
+});

@@ -23,9 +23,7 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contacts');
 Route::get('/submit-article', [SubmitArticleController::class, 'index'])->name('submitarticles');
 Route::get('/menus/{location}', [FrontendMenuController::class, 'byLocation'])->name('menus.byLocation');
 Route::get('/peer-review-process', [PrpController::class, 'index'])->name('prp');
-Route::get('/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
-Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles');
-Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
+// Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
 
 Route::post('/password/send-otp', [ForgotPasswordOtpController::class, 'sendOtp'])->name('password.send-otp');
 Route::post('/password/reset-otp', [ForgotPasswordOtpController::class, 'resetWithOtp'])->name('password.reset-otp');
@@ -48,7 +46,12 @@ Route::get('/{journal}/archives', [ArchiveController::class, 'show'])->name('arc
 Route::get('/{journal}/editorialboard', [EditorialBoardController::class, 'index'])->name('editorial_board');
 Route::get('/{journal}/guideline', [GuidelinesController::class, 'index'])->name('guidelines');
 Route::get('/{journal}', [JournalDetailController::class, 'show'])->name('journal-details');
-
+Route::get('/{journal}/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
+Route::get('/{journal}/issues/{uuid?}/articles', [CurrentIssuesController::class, 'articlesData'])->name('current-issues.articles');
+Route::get('/{journal}/articles/{uuid}', [ArticleController::class, 'show'])->name('article.show');
+Route::get('/api/public/{journal}/articles/{uuid}', [ArticleController::class, 'data'])->name('article.data');
+Route::get('/articles/{uuid}/download', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
+ 
 // ── Protected Admin Routes ────────────────────────────────────────
 Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function () {
 

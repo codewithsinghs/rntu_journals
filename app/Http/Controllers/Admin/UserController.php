@@ -19,6 +19,32 @@ class UserController extends Controller
         return JWTAuth::setToken(request()->cookie('jwt_token'))->authenticate();
     }
 
+    // ─── Helper: role names a given set of role-names is NOT allowed to assign ──
+private function restrictedRoleNamesFor(array $userRoleNames): array
+{
+    $restrictions = [
+        'super-admin' => [],                        
+        'admin'       => ['super-admin'],             
+        'editor'      => ['admin', 'super-admin'],
+        'reviewer'    => ['admin', 'super-admin'],
+        'author'      => ['admin', 'super-admin'],
+    ];
+
+    if (empty($userRoleNames)) {
+        return [];
+    }
+
+    $forbiddenSets = array_map(function ($roleName) use ($restrictions) {
+        $roleName = strtolower($roleName);
+        return $restrictions[$roleName] ?? [];
+    }, $userRoleNames);
+
+    $intersection = array_reduce($forbiddenSets, function ($carry, $set) {
+        return $carry === null ? $set : array_intersect($carry, $set);
+    }, null);
+
+    return array_values($intersection ?? []);
+}
     // ─── Web view only ─────────────────────────────────────────────
     public function index()
     {
@@ -27,6 +53,25 @@ class UserController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to load users view', ['error' => $e->getMessage()]);
             return back()->with('error', 'Failed to load users page.');
+        }
+    }
+
+    // ─── API: current logged-in user's roles ───────────────────────
+    public function me()
+    {
+        try {
+            $user = $this->jwtUser();
+
+            return response()->json([
+                'status' => true,
+                'roles'  => $user->getRoleNames(), // Collection of role name strings
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch current user', ['error' => $e->getMessage()]);
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to fetch current user.',
+            ], 500);
         }
     }
 
@@ -121,6 +166,27 @@ class UserController extends Controller
                 'roles.*'               => 'integer|exists:roles,id',
             ]);
 
+            // ─── Enforce role-assignment restrictions ───────────────
+            if (!empty($validated['roles'])) {
+                $currentUser      = $this->jwtUser();
+                $currentRoleNames = $currentUser->getRoleNames()->toArray();
+                $forbiddenNames   = $this->restrictedRoleNamesFor($currentRoleNames);
+
+                $requestedRoleNames = Role::whereIn('id', $validated['roles'])
+                    ->pluck('name')
+                    ->map(fn($n) => strtolower($n))
+                    ->toArray();
+
+                $violations = array_intersect($requestedRoleNames, $forbiddenNames);
+
+                if (!empty($violations)) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'You are not allowed to assign one or more of the selected roles.',
+                    ], 403);
+                }
+            }
+
             $user = User::create([
                 'name'     => $validated['name'],
                 'email'    => $validated['email'],
@@ -186,6 +252,26 @@ class UserController extends Controller
                 'roles'   => 'nullable|array',
                 'roles.*' => 'integer|exists:roles,id',
             ]);
+
+            // ─── Enforce role-assignment restrictions ───────────────
+            if (!empty($validated['roles'])) {
+                $currentRoleNames = $currentUser->getRoleNames()->toArray();
+                $forbiddenNames   = $this->restrictedRoleNamesFor($currentRoleNames);
+
+                $requestedRoleNames = Role::whereIn('id', $validated['roles'])
+                    ->pluck('name')
+                    ->map(fn($n) => strtolower($n))
+                    ->toArray();
+
+                $violations = array_intersect($requestedRoleNames, $forbiddenNames);
+
+                if (!empty($violations)) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'You are not allowed to assign one or more of the selected roles.',
+                    ], 403);
+                }
+            }
 
             $roleNames = Role::whereIn('id', $validated['roles'] ?? [])
                              ->pluck('name')

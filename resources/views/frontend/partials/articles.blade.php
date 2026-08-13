@@ -3,8 +3,9 @@
 @section('content')
 
 <div class="jrn-page" id="articleApp"
+     data-journal-slug="{{ $journal }}"
      data-article-uuid="{{ $articleUuid }}"
-     data-api-base="{{ url('/api/public/articles') }}">
+     data-api-base="{{ url('/api/public/' . $journal . '/articles') }}">
 
     <!-- Loading state -->
     <div id="articleLoading" class="text-center py-5">Loading article...</div>

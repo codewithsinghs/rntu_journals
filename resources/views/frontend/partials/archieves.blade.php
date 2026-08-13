@@ -1,6 +1,7 @@
 {{-- resources/views/frontend/archives.blade.php --}}
 
 <div class="s__container_custom" id="archivesApp"
+ data-journal="{{ $journal->slug }}"
      data-journal-id="{{ $journal->id }}"
      data-api-base="{{ url('/api/public/journals') }}">
 
