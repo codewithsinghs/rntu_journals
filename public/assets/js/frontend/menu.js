@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
         console.error("Menu load failed:", err);
     }
-}); 
+});
 
 document.addEventListener("DOMContentLoaded", () => {
     const hamburger = document.getElementById("hamburger");

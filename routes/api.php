@@ -110,7 +110,7 @@
             Route::delete('/prp/{id}',   [PrpController::class, 'destroy'])->name('prp.destroy');
 
 
-            //contacts    
+            //contacts
             Route::get('/contacts',               [ContactController::class, 'adminIndex']);
             Route::post('/contacts',              [ContactController::class, 'store']);
             Route::get('/contacts/{id}',          [ContactController::class, 'show']);

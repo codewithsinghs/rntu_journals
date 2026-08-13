@@ -2,46 +2,49 @@
 .env
 .env.*
 
-/node_modules
-/public/build
-/public/hot
-/public/storage
+# Dependencies
+/vendor/
+/node_modules/
 
+# Laravel runtime & cache
+/bootstrap/cache/
+
+# Keep runtime stuff ignored
 /storage/*.key
 /storage/logs/*
 /storage/framework/*
 /storage/app/private/*
+/storage/app/uploads/*
 
-# Laravel runtime
-/storage/framework/
-/storage/logs/
-/bootstrap/cache/
+# Allow public assets to be tracked
+!/storage/app/public/
 
-# Local uploaded files
-/storage/app/private/
-/storage/app/uploads/
 
-# IDE
-.vscode/
-.idea/
+# Public build artifacts
+/public/build
+/public/hot
+/public/storage
 
-/vendor
+# IDE & editor settings
+/.idea/
+/.vscode/
 
-# Windows files
+# OS-specific files
+.DS_Store
 Thumbs.db
 Desktop.ini
 
-# Temporary
+# Temporary & logs
 *.log
 *.tmp
+*.bak
+*.swp
+*.swo
 
-# Node
-
-
+# Testing
 .phpunit.result.cache
 
-.idea
-.vscode
-
-.DS_Store
-Thumbs.db
+# Coverage & reports
+/coverage/
+/npm-debug.log*
+/yarn-error.log*
