@@ -48,8 +48,12 @@ a {
     text-decoration: none !important;
 }
 
-a:hover {
+/* a:hover {
     color: inherit;
+} */
+
+.primary-btn:hover {
+    color: #ffb347;
 }
 
 /* Custom Container */
