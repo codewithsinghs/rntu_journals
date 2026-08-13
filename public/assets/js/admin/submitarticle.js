@@ -6,6 +6,13 @@ document.addEventListener("DOMContentLoaded", function () {
         Authorization: `Bearer ${TOKEN}`,
     });
 
+
+    const truncate = (s, len = 15) => {
+    if (!s) return "—";
+    const str = s.toString();
+    return str.length > len ? str.slice(0, len) + "…" : str;
+};
+
     let currentPage = 1;
     let currentForwardId = null;
     let currentReviewDecisionId = null;
@@ -299,8 +306,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                         <tr data-id="${r.uuid}" class="${r.is_hidden ? "sa-row-hidden" : ""}">
                                             <td>${esc(r.full_name)}</td>
                                             <td>${esc(r.email)}</td>
-                                            <td>${r.journal ? `<span class="edit-btn">${esc(r.journal.title)}</span>` : "—"}</td>
-                                            <td>${esc(r.manuscript_title)}</td>
+                                            <td>${r.journal ? `<span class="edit-btn">${esc(truncate(r.journal.title, 15))}</span>` : "—"}</td>
+                                            
                                             <td>${stageChip(r)}</td>
                                             <td>${fmtDate(r.submission_date)}</td>
                                             <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
@@ -312,7 +319,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     `;
                 })
                 .join("");
-
+{/* <td title="${esc(r.manuscript_title)}">${esc(truncate(r.manuscript_title, 15))}</td> this should hidden for temporary it will come on line no 310 just same copy paste will do */}
 
             document.querySelectorAll("#saTableBody tr").forEach((tr) => {
                 tr.addEventListener("click", (e) => {

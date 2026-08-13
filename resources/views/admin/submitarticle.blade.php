@@ -35,7 +35,7 @@
                                     <th>Author</th>
                                     <th>Email</th>
                                     <th>Journal</th>
-                                    <th>Manuscript Title</th>
+                                    <!-- <th>Manuscript Title</th> -->
                                     <th>Stage</th>
                                     <th>Submitted</th>
                                     <th id="saReviewerNameTh" class="d-none">Reviewer</th>
