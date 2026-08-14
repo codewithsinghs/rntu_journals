@@ -57,7 +57,7 @@ class HomeBasicContent extends Model
     public function getAimSectionImageUrlAttribute(): ?string
     {
         return $this->aim_section_image
-            ? asset('storage/' . $this->aim_section_image)
+            ? asset('images/' . $this->aim_section_image)
             : null;
     }
 }

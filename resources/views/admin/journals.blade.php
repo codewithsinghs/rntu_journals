@@ -16,7 +16,7 @@
                             <h3 id="statTotal">0 Journals</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_1.png">
+                            <img src="/images/dashboard/d_1.png">
                         </div>
                     </div>
 
@@ -26,7 +26,7 @@
                             <h3 id="statActive">0 Journals</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_2.png">
+                            <img src="/images/dashboard/d_2.png">
                         </div>
                     </div>
 
@@ -36,7 +36,7 @@
                             <h3 id="statInactive">0 Journals</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_2.png">
+                            <img src="/images/dashboard/d_2.png">
                         </div>
                     </div>
 

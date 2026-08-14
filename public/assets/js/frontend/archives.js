@@ -59,7 +59,7 @@
                             data-title="${escapeHtml(title)}"
                             data-date="${escapeHtml(issue.created_at)}">
 
-                            <div class="arc-card-icon"><img src="${escapeHtml('/storage/book_icon.png')}"></div>
+                            <div class="arc-card-icon"><img src="${escapeHtml('/images/book_icon.png')}"></div>
 
                             <div class="arc-card-info">
                                 <h4>Volume ${escapeHtml(issue.volume)}, Issue ${escapeHtml(issue.issue)}, Year ${escapeHtml(issue.year)}</h4>

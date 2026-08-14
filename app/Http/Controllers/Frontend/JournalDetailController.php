@@ -11,10 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class JournalDetailController extends Controller
 {
-    /**
-     * List all active journals (JSON).
-     * Route: GET /api/public/journals  (or wherever this is mounted)
-     */
+
     public function index()
     {
         try {
@@ -29,9 +26,7 @@ class JournalDetailController extends Controller
         }
     }
 
-    /**
-     * Return a single journal's raw data (JSON, no articles).
-     */
+
     public function showData($id)
     {
         try {
@@ -45,11 +40,7 @@ class JournalDetailController extends Controller
         }
     }
 
-    /**
-     * Web route: renders the Blade shell page.
-     * Route: GET /{journal}  (name: journal-details)
-     * Laravel resolves {journal} via implicit route-model binding.
-     */
+
     public function show(Journal $journal)
     {
         return view('frontend.journal-detail', [
@@ -57,11 +48,7 @@ class JournalDetailController extends Controller
         ]);
     }
 
-    /**
-     * API route: returns journal + paginated approved articles as JSON.
-     * Route: GET /api/public/journals/{id}/detail
-     * This is what journal-detail.js fetches.
-     */
+
     public function detail($id)
     {
         try {
@@ -89,8 +76,11 @@ class JournalDetailController extends Controller
                 )
                 ->paginate(9);
 
+            // $journal->cover_image_url = $journal->cover_image
+            //     ? Storage::url($journal->cover_image)
+            //     : asset('assets/home_page/hero_1.jpg');
             $journal->cover_image_url = $journal->cover_image
-                ? Storage::url($journal->cover_image)
+                ? asset('images/' . $journal->cover_image)
                 : asset('assets/home_page/hero_1.jpg');
 
             $articlesData = collect($articles->items())->map(function ($article) {

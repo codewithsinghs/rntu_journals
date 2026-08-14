@@ -25,13 +25,13 @@
     margin: auto;
     padding: 0;
     opacity: 1;
-    background-image: url(/storage/min.png);
+    background-image: url(/images/dashboard/min.png);
 }
 
 .modal-content .modal-body {
     padding: 20px;
     position: relative;
-    min-height: 200px;
+    min-height: 100px;
 }
 
 

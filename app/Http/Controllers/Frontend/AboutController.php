@@ -8,19 +8,11 @@ use Illuminate\Support\Facades\Log;
 
 class AboutController extends Controller
 {
-    /**
-     * Render the About page shell.
-     * Content is loaded client-side from the API.
-     */
     public function index()
     {
         return view('frontend.about');
     }
 
-    /**
-     * Public JSON API — About page content.
-     * GET /api/public/about-content
-     */
     public function content()
     {
         try {
@@ -34,7 +26,7 @@ class AboutController extends Controller
 
             foreach (['about_section_img1', 'about_section_img2', 'why_section_image'] as $field) {
                 $data[$field . '_url'] = $content->$field
-                    ? asset('storage/' . $content->$field)
+                    ? asset('images/' . $content->$field)
                     : null;
             }
 

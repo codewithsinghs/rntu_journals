@@ -21,12 +21,12 @@
                         <!-- <div class="search-box">
                             <input type="text" id="searchInput" placeholder="Search.....">
                             <button class="search-btn" id="searchBtn">
-                                <img src="{{ asset('/storage/home_page/search_icon.png') }}" alt="Search">
+                                <img src="{{ asset('/images/home_page/search_icon.png') }}" alt="Search">
                             </button>
                         </div> -->
 
                         <a href="#" class="login-btn" id="btn-login" data-has-login-errors="{{ $errors->any() ? '1' : '0' }}">
-                            <img src="{{ asset('/storage/home_page/login_icon.png') }}" alt="Login">
+                            <img src="{{ asset('/images/home_page/login_icon.png') }}" alt="Login">
                             Login / Register
                         </a>
 
@@ -43,7 +43,7 @@
         <div class="login-popup">
 
             <div class="popup-left">
-                <img src="{{ asset('storage/popup_img.png') }}" alt="Login" />
+                <img src="{{ asset('images/popup_img.png') }}" alt="Login" />
             </div>
 
             <div class="popup-right">
@@ -110,7 +110,7 @@
         <div class="login-popup">
 
             <div class="popup-left">
-                <img src="{{ asset('/storage/popup_img.png') }}" alt="Register" />
+                <img src="{{ asset('/images/popup_img.png') }}" alt="Register" />
             </div>
 
             <div class="popup-right">

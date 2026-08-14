@@ -31,21 +31,21 @@ class AboutBasicContent extends Model
     public function getWhySectionImageUrlAttribute(): ?string
     {
         return $this->why_section_image
-            ? asset('storage/' . $this->why_section_image)
+            ? asset('images/' . $this->why_section_image)
             : null;
     }
 
     public function getAboutSectionImg1UrlAttribute(): ?string
     {
         return $this->about_section_img1
-            ? asset('storage/' . $this->about_section_img1)
+            ? asset('images/' . $this->about_section_img1)
             : null;
     }
 
     public function getAboutSectionImg2UrlAttribute(): ?string
     {
         return $this->about_section_img2
-            ? asset('storage/' . $this->about_section_img2)
+            ? asset('images/' . $this->about_section_img2)
             : null;
     }
 }

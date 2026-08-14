@@ -16,12 +16,12 @@
         <!-- <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search.....">
             <button class="search-btn" id="searchBtn">
-                <img src="{{ asset('/storage/home_page/search_icon.png') }}" alt="Search">
+                <img src="{{ asset('images/search_icon.png') }}" alt="Search">
             </button>
         </div> -->
 
         <a href="#" class="login-btn" id="btn-login" data-has-login-errors="{{ $errors->any() ? '1' : '0' }}">
-            <img src="{{ asset('/storage/home_page/login_icon.png') }}" alt="Login">
+            <img src="{{ asset('images/login_icon.png') }}" alt="Login">
             Login / Register
         </a>
 
@@ -33,7 +33,7 @@
     <div class="login-popup">
 
         <div class="popup-left">
-            <img src="{{ asset('storage/popup_img.png') }}" alt="Login" />
+            <img src="{{ asset('images/popup_img.png') }}" alt="Login" />
         </div>
 
         <div class="popup-right">
@@ -129,7 +129,7 @@
     <div class="login-popup">
 
         <div class="popup-left">
-            <img src="{{ asset('/storage/popup_img.png') }}" alt="Register" />
+            <img src="{{ asset('images/popup_img.png') }}" alt="Register" />
         </div>
 
         <div class="popup-right">
@@ -271,10 +271,6 @@
             }
         });
 
-        // ── Forgot Password via OTP (3-step) ────────────────────────────
-        // NOTE: requires <meta name="csrf-token" content="{{ csrf_token() }}">
-        // in the page <head> (main layout), since this form uses fetch()
-        // instead of a normal POST form submission.
         const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
         const otpEmailInput = document.getElementById("otpEmail");

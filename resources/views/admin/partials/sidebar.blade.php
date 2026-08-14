@@ -4,7 +4,7 @@
     <div class="sidebar-header">
         <button id="toggle-btn-small-screen">&#9776;</button>
         <a href="{{ route('admin.dashboard') }}">
-            <img src="{{ asset('storage/dashboard/logo.png') }}" alt="Logo">
+            <img src="{{ asset('images/dashboard/logo.png') }}" alt="Logo">
         </a>
         @php
             $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
