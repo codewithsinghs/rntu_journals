@@ -95,7 +95,7 @@ class EditorialBoardController extends Controller
         try {
             $validated = $request->validate([
                 'journal_id'          => 'nullable|integer|exists:journal,id',
-                'role'                => 'required|string|max:100|in:Editor-in-Chief,Managing Editor,Executive Editor,Advisory Board,Editors,Associate Editors,Members',
+                'role'                => 'required|string|max:100',
                 'name'                => 'required|string|max:255',
                 'designation'         => 'nullable|string|max:255',
                 'department'          => 'nullable|string|max:255',
@@ -189,7 +189,7 @@ class EditorialBoardController extends Controller
         try {
             $validated = $request->validate([
                 'journal_id'         => 'nullable|integer|exists:journal,id',
-                'role'               => 'sometimes|required|string|max:100|in:Editor-in-Chief,Managing Editor,Executive Editor,Editors,Associate Editors,Members',
+                'role'               => 'sometimes|required|string|max:100',
                 'name'               => 'sometimes|required|string|max:255',
                 'designation'        => 'nullable|string|max:255',
                 'department'         => 'nullable|string|max:255',

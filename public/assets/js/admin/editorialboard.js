@@ -132,6 +132,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // filled in separately once its options exist. See fillForm() / __ebEdit().
     const TEXT_FIELDS = [
         "journal_id",
+        "name",
         "designation",
         "department",
         "institute",
@@ -454,34 +455,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return `<span class="eb-muted-cell">Site-wide</span>`;
     }
-
-    function renderRows(members) {
-        return members
-            .map(
-                (m) => `
-                <tr>
-                    <td></td>
-                    <td>${journalCell(m)}</td>
-                    <td><span class="green-btn" title="${esc(m.role)}">${esc(m.role)}</span></td>
-                    <td class="eb-name-cell" title="${esc(m.name)}">${esc(m.name)}</td>
-                    <td class="eb-text-cell" title="${esc(m.designation || "")}">${m.designation ? esc(m.designation) : '<span class="eb-muted-cell">—</span>'}</td>
-                    <td class="eb-text-cell" title="${esc(m.department || "")}">${m.department ? esc(m.department) : '<span class="eb-muted-cell">—</span>'}</td>
-                    <td>${m.sequence ?? 0}</td>
-                    <td>
-                        <span class="${Number(m.is_active) ? "green-btn" : "delete-btn"}" style="cursor:pointer" onclick="window.__ebToggle(${m.id})">
-                            ${Number(m.is_active) ? "Active" : "Inactive"}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="d-flex">
-                            <button class="edit-btn" onclick="window.__ebEdit(${m.id})">Edit</button>
-                            <button class="delete-btn" onclick="window.__ebDelete(${m.id})">Delete</button>
-                        </div>
-                    </td>
-                </tr>`,
-            )
-            .join("");
-    }
+function renderRows(members) {
+    return members
+        .map(
+            (m) => `
+            <tr>
+                <td></td>
+                <td>${journalCell(m)}</td>
+                <td><span class="green-btn" title="${esc(m.role)}">${esc(m.role)}</span></td>
+                <td class="eb-name-cell" title="${esc(m.name)}">${esc(m.name)}</td>
+                <td>${m.sequence ?? 0}</td>
+                <td>
+                    <span class="${Number(m.is_active) ? "green-btn" : "delete-btn"}" style="cursor:pointer" onclick="window.__ebToggle(${m.id})">
+                        ${Number(m.is_active) ? "Active" : "Inactive"}
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex">
+                        <button class="edit-btn" onclick="window.__ebEdit(${m.id})">Edit</button>
+                        <button class="delete-btn" onclick="window.__ebDelete(${m.id})">Delete</button>
+                    </div>
+                </td>
+            </tr>`,
+        )
+        .join("");
+}
 
     function renderPage(members) {
         document.getElementById("ebLoading").classList.add("d-none");

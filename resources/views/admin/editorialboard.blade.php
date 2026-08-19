@@ -29,8 +29,6 @@
                                 <th>Journal</th>
                                 <th>Role</th>
                                 <th>Name</th>
-                                <th>Designation</th>
-                                <th>Department</th>
                                 <th>Seq</th>
                                 <th>Status</th>
                                 <th>Actions</th>

@@ -13,6 +13,7 @@
         loading: document.getElementById('journalLoading'),
         error: document.getElementById('journalError'),
         card: document.getElementById('journalCard'),
+        titleHeading: document.getElementById('journalTitleHeading'),
         coverImage: document.getElementById('journalCoverImage'),
         description: document.getElementById('journalDescription'),
         fieldsGrid: document.getElementById('journalFieldsGrid'),
@@ -49,46 +50,49 @@
         return div.innerHTML;
     }
 
-    function renderJournal(journal) {
-        els.coverImage.src = journal.cover_image_url;
-        els.coverImage.alt = journal.title ?? '';
-
-        if (journal.description) {
-            els.description.innerHTML = journal.description;
-            els.description.classList.remove('d-none');
-        } else {
-            els.description.classList.add('d-none');
-        }
-
-        // Article template link (special case: has an <a> tag)
-        const fieldsHtml = FIELD_DEFS
-            .filter(([key]) => journal[key])
-            .map(([key, label, formatter]) => {
-                const value = formatter ? formatter(journal[key]) : journal[key];
-                const text = label ? `${label} : ${value}` : value;
-                return `<div class="field-item field-item-2">${escapeHtml(text)}</div>`;
-            })
-            .join('');
-
-        let templateHtml = '';
-        if (journal.article_template_url) {
-            templateHtml = `<div class="field-item field-item-2">
-                Download Article Template <a href="${escapeHtml(journal.article_template_url)}" target="_blank">click here</a>
-            </div>`;
-        }
-
-        els.fieldsGrid.innerHTML = fieldsHtml + templateHtml;
-
-        if (journal.aim_and_scope) {
-            els.aimScopeTitle.textContent = journal.aim_and_scope_title || 'Aim and Scope';
-            els.aimScopeContent.innerHTML = journal.aim_and_scope;
-            els.aimScopeSection.classList.remove('d-none');
-        }
-
-        els.loading.classList.add('d-none');
-        els.card.classList.remove('d-none');
+function renderJournal(journal) {
+    if (els.titleHeading) {
+        els.titleHeading.textContent = journal.slug ?? journal.title ?? '';
     }
 
+    els.coverImage.src = journal.cover_image_url;
+    els.coverImage.alt = journal.title ?? '';
+
+    if (journal.description) {
+        els.description.innerHTML = journal.description;
+        els.description.classList.remove('d-none');
+    } else {
+        els.description.classList.add('d-none');
+    }
+
+    // Article template link (special case: has an <a> tag)
+    const fieldsHtml = FIELD_DEFS
+        .filter(([key]) => journal[key])
+        .map(([key, label, formatter]) => {
+            const value = formatter ? formatter(journal[key]) : journal[key];
+            const text = label ? `${label} : ${value}` : value;
+            return `<div class="field-item field-item-2">${escapeHtml(text)}</div>`;
+        })
+        .join('');
+
+    let templateHtml = '';
+    if (journal.article_template_url) {
+        templateHtml = `<div class="field-item field-item-2">
+            Download Article Template <a href="${escapeHtml(journal.article_template_url)}" target="_blank">click here</a>
+        </div>`;
+    }
+
+    els.fieldsGrid.innerHTML = fieldsHtml + templateHtml;
+
+    if (journal.aim_and_scope) {
+        els.aimScopeTitle.textContent = journal.aim_and_scope_title || 'Aim and Scope';
+        els.aimScopeContent.innerHTML = journal.aim_and_scope;
+        els.aimScopeSection.classList.remove('d-none');
+    }
+
+    els.loading.classList.add('d-none');
+    els.card.classList.remove('d-none');
+}
     function renderArticles(articles) {
         els.articlesLoading.classList.add('d-none');
 

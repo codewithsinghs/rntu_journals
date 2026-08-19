@@ -3922,4 +3922,7 @@ select {
         display: block;
     }
 
-
+/*Journal Description heading is changed*/
+#journalTitleHeading {
+    text-transform: capitalize;
+}

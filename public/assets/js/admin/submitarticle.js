@@ -96,8 +96,6 @@ document.addEventListener("DOMContentLoaded", function () {
             ? ` <span class="sa-stage-chip is_hidden" title="Hidden from the author's own list">Hidden</span>`
             : "";
 
-        // "Live" reflects exactly what the public ArticleController checks:
-        // review.is_published === true AND is_hidden === false.
         const liveBadge =
             article.is_published && !article.is_hidden
                 ? ` <span class="sa-stage-chip is_live" title="Visible on the public site">Live</span>`
@@ -448,32 +446,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
     /* ── Forward to Reviewer ────────────────────────────────────── */
-    async function openForward(id) {
-        currentForwardId = id;
-        document.getElementById("saForwardRemarks").value = "";
-        const select = document.getElementById("saForwardReviewer");
-        select.innerHTML = '<option value="">Loading…</option>';
-        saForwardModal.show();
+async function openForward(id) {
+    currentForwardId = id;
+    document.getElementById("saForwardRemarks").value = "";
+    const select = document.getElementById("saForwardReviewer");
+    select.innerHTML = '<option value="">Loading…</option>';
+    saForwardModal.show();
 
-        try {
-            const res = await fetch("/api/admin/reviewers", {
-                headers: authHeaders(),
-            });
-            const json = await res.json();
-            const list = json.data || [];
-            select.innerHTML = list.length
-                ? list
-                      .map(
-                          (u) =>
-                              `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`,
-                      )
-                      .join("")
-                : '<option value="">No reviewers found</option>';
-        } catch (e) {
-            select.innerHTML =
-                '<option value="">Failed to load reviewers</option>';
-        }
+    try {
+        const res = await fetch("/api/admin/reviewers", {
+            headers: authHeaders(),
+        });
+        const json = await res.json();
+        const currentUserId = window.APP_CONFIG?.CURRENT_USER_ID;
+        const list = (json.data || []).filter(
+            (u) => String(u.id) !== String(currentUserId),
+        );
+
+        select.innerHTML = list.length
+            ? list
+                  .map(
+                      (u) =>
+                          `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`,
+                  )
+                  .join("")
+            : '<option value="">No reviewers found</option>';
+    } catch (e) {
+        select.innerHTML =
+            '<option value="">Failed to load reviewers</option>';
     }
+}
 
     document
         .getElementById("saForwardConfirmBtn")
