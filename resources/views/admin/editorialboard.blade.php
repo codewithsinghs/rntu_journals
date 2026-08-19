@@ -86,18 +86,12 @@
                                 <div class="invalid-feedback" id="err_journal_id"></div>
                             </span>
 
-                            <!-- Role -->
+                            <!-- Role: options are loaded dynamically from editorial_board_roles,
+                                 scoped to whichever Journal is selected above. -->
                             <span class="input-set">
                                 <label>Role <span class="text-danger">*</span></label>
                                 <select class="form-select" id="role" name="role" required>
-                                    <option value="">Select role</option>
-                                    <option value="Editor-in-Chief">Editor-in-Chief</option>
-                                    <option value="Managing Editor">Managing Editor</option>
-                                    <option value="Executive Editor">Executive Editor</option>
-                                    <option value="Advisory Board">Advisory Board</option>
-                                    <option value="Editors">Editors</option>
-                                    <option value="Associate Editors">Associate Editors</option>
-                                    <option value="Members">Members</option>
+                                    <option value="">Select a journal first</option>
                                 </select>
                                 <div class="invalid-feedback" id="err_role"></div>
                             </span>
@@ -282,7 +276,8 @@
     <script>
         window.APP_CONFIG = {
             API_BASE: "{{ url('/api/admin/editorial-board') }}",
-            JOURNALS_API: "{{ url('/api/admin/journals') }}?page=1&per_page=100"
+            JOURNALS_API: "{{ url('/api/admin/journals') }}?page=1&per_page=100",
+            ROLES_API: "{{ url('/api/admin/editorial-board-roles') }}"
         };
     </script>
 

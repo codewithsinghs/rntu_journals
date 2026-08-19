@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const API_BASE = window.APP_CONFIG.API_BASE;
     const JOURNALS_API = window.APP_CONFIG.JOURNALS_API;
+    const ROLES_API = window.APP_CONFIG.ROLES_API;
 
     const authHeaders = () => ({
         Accept: "application/json",
@@ -22,6 +23,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let deleteTargetId = null;
     let cachedMembers = [];
     let cachedJournals = [];
+    let cachedRoles = []; // roles currently loaded for the selected journal
+    let rolesRequestToken = 0; // guards against out-of-order responses
 
     const ROLE_ORDER = [
         "Editor-in-Chief",
@@ -124,10 +127,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Form helpers ───────────────────────────────────────────── */
+    // NOTE: "role" is intentionally excluded from this list — its <select>
+    // is populated asynchronously (scoped to the chosen journal), so it is
+    // filled in separately once its options exist. See fillForm() / __ebEdit().
     const TEXT_FIELDS = [
         "journal_id",
-        "role",
-        "name",
         "designation",
         "department",
         "institute",
@@ -140,6 +144,88 @@ document.addEventListener("DOMContentLoaded", function () {
         "sequence",
     ];
 
+    /* ── Roles: journal-scoped, loaded from editorial_board_roles ─── */
+    function setRoleSelectState(state, options) {
+        const select = document.getElementById("role");
+        if (state === "loading") {
+            select.disabled = true;
+            select.innerHTML = `<option value="">Loading roles…</option>`;
+        } else if (state === "empty") {
+            select.disabled = true;
+            select.innerHTML = `<option value="">No roles configured for this journal</option>`;
+        } else if (state === "prompt") {
+            select.disabled = true;
+            select.innerHTML = `<option value="">Select a journal first</option>`;
+        } else if (state === "error") {
+            select.disabled = false;
+            select.innerHTML = `<option value="">Failed to load roles</option>`;
+        } else if (state === "ready") {
+            select.disabled = false;
+            select.innerHTML =
+                `<option value="">Select role</option>` +
+                (options || [])
+                    .map(
+                        (r) =>
+                            `<option value="${r.role}">${r.role}</option>`,
+                    )
+                    .join("");
+        }
+    }
+
+    /**
+     * Loads the roles configured for a given journal (or site-wide roles
+     * when journalId is empty/null) from the editorial_board_roles table
+     * and repopulates the #role select.
+     *
+     * Returns the loaded roles array. If a newer call is made before this
+     * one resolves, its result is discarded (rolesRequestToken guard) so
+     * fast journal switching can't leave a stale role list behind.
+     */
+    async function loadRolesForJournal(journalId) {
+        const myToken = ++rolesRequestToken;
+        cachedRoles = [];
+        setRoleSelectState("loading");
+
+        try {
+            const url = journalId
+                ? `${ROLES_API}?journal_id=${journalId}`
+                : `${ROLES_API}?journal_id=`;
+            const res = await apiFetch(url);
+            const json = await res.json();
+
+            if (myToken !== rolesRequestToken) return cachedRoles; // stale
+
+            if (!res.ok) {
+                setRoleSelectState("error");
+                return [];
+            }
+
+            // Support either a flat array (json.data) or a paginated
+            // shape (json.data.data), same pattern as loadJournals().
+            const roles = json.data?.data ?? json.data ?? [];
+            cachedRoles = roles;
+
+            if (!roles.length) {
+                setRoleSelectState("empty");
+            } else {
+                setRoleSelectState("ready", roles);
+            }
+
+            return roles;
+        } catch (e) {
+            if (myToken !== rolesRequestToken) return cachedRoles; // stale
+            console.error("Failed to load roles list:", e.message);
+            setRoleSelectState("error");
+            return [];
+        }
+    }
+
+    document
+        .getElementById("journal_id")
+        .addEventListener("change", (e) => {
+            loadRolesForJournal(e.target.value);
+        });
+
     function resetForm() {
         document.getElementById("ebForm").reset();
         document.getElementById("ebId").value = "";
@@ -149,6 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("journal_id").value = "";
         document.getElementById("ebImagePreview").classList.add("d-none");
         document.getElementById("ebImagePreview").src = "";
+        setRoleSelectState("prompt");
         clearErrors();
     }
 
@@ -173,8 +260,6 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const res = await apiFetch(JOURNALS_API);
             const json = await res.json();
-            // JournalsController::adminIndex() paginates, so the array
-            // is nested at json.data.data (Laravel paginate() shape).
             cachedJournals = json.data?.data ?? [];
 
             const formSelect = document.getElementById("journal_id");
@@ -460,14 +545,29 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Global handlers (used by inline onclick) ─────────────────── */
-    window.__ebEdit = (id) => {
+    window.__ebEdit = async (id) => {
         const member = cachedMembers.find((m) => m.id === id);
         if (!member) return;
+
         resetForm();
         fillForm(member);
         document.getElementById("ebModalTitle").textContent = "Edit Member";
         document.getElementById("ebSaveBtnText").textContent = "Update";
         bootstrap.Modal.getOrCreateInstance(ebModalEl).show();
+
+        const roles = await loadRolesForJournal(member.journal_id || "");
+        const roleSelect = document.getElementById("role");
+        const hasRole = roles.some((r) => r.role === member.role);
+
+        if (!hasRole && member.role) {
+            const opt = document.createElement("option");
+            opt.value = member.role;
+            opt.textContent = `${member.role} (not in current list)`;
+            roleSelect.appendChild(opt);
+            roleSelect.disabled = false;
+        }
+
+        roleSelect.value = member.role ?? "";
     };
 
     window.__ebDelete = (id) => askDelete(id);

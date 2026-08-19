@@ -4,6 +4,7 @@
         use App\Http\Controllers\Admin\AnnouncementController;
         use App\Http\Controllers\Admin\ContactController;
         use App\Http\Controllers\Admin\DashboardController;
+        use App\Http\Controllers\Admin\EditorialBoardRoleController;
         use App\Http\Controllers\Frontend\EditorialBoardController as FrontendEditorialBoardController;
         use App\Http\Controllers\Admin\EditorialBoardController as AdminEditorialBoardController;
         use App\Http\Controllers\Admin\GuidelinesController;
@@ -147,6 +148,13 @@
             Route::patch('/editorial-board/{id}/toggle',     [AdminEditorialBoardController::class, 'toggleStatus']);
             Route::post('/editorial-board/update-sequence',  [AdminEditorialBoardController::class, 'updateSequence']);
 
+            //Editorial Board Role
+            Route::get('/editorial-board-roles',                   [EditorialBoardRoleController::class, 'adminIndex'])->name('editorial-board-roles.data');
+            Route::post('/editorial-board-roles',                  [EditorialBoardRoleController::class, 'store'])->name('editorial-board-roles.store');
+            Route::get('/editorial-board-roles/{id}',               [EditorialBoardRoleController::class, 'show'])->name('editorial-board-roles.show');
+            Route::put('/editorial-board-roles/{id}',              [EditorialBoardRoleController::class, 'update'])->name('editorial-board-roles.update');
+            Route::delete('/editorial-board-roles/{id}',           [EditorialBoardRoleController::class, 'destroy'])->name('editorial-board-roles.destroy');
+            Route::patch('/editorial-board-roles/{id}/toggle',     [EditorialBoardRoleController::class, 'toggleStatus'])->name('editorial-board-roles.toggle');
 
             // Submit Articles
             Route::get('submit-articles', [SubmitArticleController::class, 'adminIndex']);

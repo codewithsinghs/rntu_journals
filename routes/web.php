@@ -73,6 +73,7 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/prp', fn() => view('admin.prp'))->middleware('permission:view prp')->name('prp');
     Route::get('/homebasiccontent', fn() => view('admin.homebasiccontent'))->middleware('permission:view home content')->name('homebasiccontent');
     Route::get('/editorial-board', fn() => view('admin.editorialboard'))->middleware('permission:view editorial board')->name('editorial-board');
+    Route::get('/editorial-board-roles', fn() => view('admin.editorialboardroles'))->middleware('permission:view editorial board roles')->name('editorial-board-roles');
     Route::get('/all-article-lists', fn() => view('admin.submitarticle'))->middleware('permission:view submit article')->name('submit-article');
 
 

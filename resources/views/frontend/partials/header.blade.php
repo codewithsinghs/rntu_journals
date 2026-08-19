@@ -21,7 +21,7 @@
         </div> -->
 
         <a href="#" class="login-btn" id="btn-login" data-has-login-errors="{{ $errors->any() ? '1' : '0' }}">
-            <img src="{{ asset('images/login_icon.png') }}" alt="Login">
+            <img src="{{ asset('/images/home_page/login_icon.png') }}" alt="Login">
             Login / Register
         </a>
 

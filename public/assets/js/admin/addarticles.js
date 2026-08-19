@@ -45,6 +45,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // ── Date restriction: only present or past dates allowed ───────
+    // NOTE: assumes the date field has id="submission_date". If your
+    // blade template uses a different id, update the selector below.
+    const dateInput = document.getElementById("submission_date");
+    if (dateInput) {
+        const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        dateInput.max = todayStr; // blocks future dates in the native picker
+    }
+
     // ── Load journals ─────────────────────────────────────────────
     fetch("/api/submit-article/journals")
         .then((res) => res.json())
@@ -198,6 +207,17 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("aaForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         clearErrors();
+
+        // Backstop check in case the native max is bypassed (DOM tampering,
+        // browsers with weak date-input support, etc.)
+        if (dateInput && dateInput.value) {
+            const todayStr = new Date().toISOString().split("T")[0];
+            if (dateInput.value > todayStr) {
+                showToast("Date cannot be in the future.");
+                dateInput.focus();
+                return;
+            }
+        }
 
         const submitBtn = document.getElementById("aaSubmitBtn");
         submitBtn.disabled = true;
