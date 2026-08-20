@@ -21,11 +21,11 @@
     <div class="d-lg-flex half">
 
         <a href="{{ url('/') }}">
-            <img src="{{ asset('storage/dashboard/logo.png') }}">
+            <img src="{{ asset('images/dashboard/logo.png') }}">
         </a>
 
         @php
-            $loginBg = asset('storage/dashboard/login.jpeg');
+            $loginBg = asset('images/dashboard/login.jpeg');
         @endphp
         <div class="bg order-1 order-md-2" style="background-image: url('{{ $loginBg }}');"></div>
 

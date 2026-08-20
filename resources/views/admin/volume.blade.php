@@ -93,20 +93,12 @@
                             </span>
 
                             <!-- Year -->
-                            <span class="input-set">
-                                <label>Year <span class="text-danger">*</span></label>
-                                <input
-                                    type="text"
-                                    class="content_show"
-                                    name="year"
-                                    id="year"
-                                    placeholder="e.g. 2025"
-                                    inputmode="numeric"
-                                    pattern="\d{4}"
-                                    maxlength="4"
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)"
-                                    required>
-                            </span>
+<span class="input-set">
+    <label>Year <span class="text-danger">*</span></label>
+    <select class="form-select" name="year" id="year" required>
+        <option value="">Select year...</option>
+    </select>
+</span>
 
                             <!-- Status -->
                             <span class="input-set">

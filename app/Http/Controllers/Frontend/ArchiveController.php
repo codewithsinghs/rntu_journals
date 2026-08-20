@@ -23,6 +23,10 @@ class ArchiveController extends Controller
 
             $issues = $journal->issues()
                 ->with('volume')
+                ->where('issues.status', 'published')
+                ->whereHas('volume', function ($query) {
+                    $query->where('status', 'published');
+                })
                 ->orderByDesc('year')
                 ->orderByDesc('created_at')
                 ->get()

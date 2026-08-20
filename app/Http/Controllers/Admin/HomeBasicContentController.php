@@ -6,12 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\HomeBasicContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class HomeBasicContentController extends Controller
 {
+    private const IMAGE_DIR = 'images/home-content';
 
-    // ── Validation rules ──────────────────────────────────────────────────────────
     private function rules(bool $isUpdate = false): array
     {
         $imageRule = $isUpdate
@@ -58,7 +57,40 @@ class HomeBasicContentController extends Controller
         ];
     }
 
-    // ── GET /api/admin/home-content ───────────────────────────────────────────────
+
+    private function storeImage($file): string
+    {
+        $filename    = uniqid('home_') . '.' . $file->getClientOriginalExtension();
+        $destination = public_path(self::IMAGE_DIR);
+
+        if (!file_exists($destination)) {
+            mkdir($destination, 0775, true);
+        }
+
+        $file->move($destination, $filename);
+
+        return 'home-content/' . $filename;
+    }
+
+    private function deleteImage(?string $relativePath): void
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $fullPath = public_path('images/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+    }
+
+
+    private function imageUrl(?string $relativePath): ?string
+    {
+        return $relativePath ? asset('images/' . $relativePath) : null;
+    }
+
     public function adminIndex()
     {
         try {
@@ -72,9 +104,7 @@ class HomeBasicContentController extends Controller
                 ]);
             }
 
-            $record->aim_section_image_url = $record->aim_section_image
-                ? asset('storage/' . $record->aim_section_image)
-                : null;
+            $record->aim_section_image_url = $this->imageUrl($record->aim_section_image);
 
             return response()->json([
                 'status'  => true,
@@ -93,7 +123,6 @@ class HomeBasicContentController extends Controller
         }
     }
 
-    // ── POST /api/admin/home-content ─────────────────────────────────────────────
     public function store(Request $request)
     {
         // Enforce single-record constraint
@@ -110,8 +139,7 @@ class HomeBasicContentController extends Controller
             $validated = $request->validate($this->rules(false));
 
             if ($request->hasFile('aim_section_image')) {
-                $imagePath = $request->file('aim_section_image')
-                    ->store('home-content', 'public');
+                $imagePath = $this->storeImage($request->file('aim_section_image'));
 
                 Log::info('Home content image uploaded', ['path' => $imagePath]);
             }
@@ -121,9 +149,7 @@ class HomeBasicContentController extends Controller
                 ['aim_section_image' => $imagePath]
             ));
 
-            $record->aim_section_image_url = $imagePath
-                ? asset('storage/' . $imagePath)
-                : null;
+            $record->aim_section_image_url = $this->imageUrl($imagePath);
 
             Log::info('Home content created', ['id' => $record->id]);
 
@@ -143,7 +169,7 @@ class HomeBasicContentController extends Controller
         } catch (\Exception $e) {
             // Rollback uploaded file if DB insert failed
             if ($imagePath) {
-                Storage::disk('public')->delete($imagePath);
+                $this->deleteImage($imagePath);
                 Log::warning('Rolled back image after failed insert', ['path' => $imagePath]);
             }
 
@@ -157,15 +183,12 @@ class HomeBasicContentController extends Controller
         }
     }
 
-    // ── GET /api/admin/home-content/{id} ─────────────────────────────────────────
     public function show($id)
     {
         try {
             $record = HomeBasicContent::findOrFail($id);
 
-            $record->aim_section_image_url = $record->aim_section_image
-                ? asset('storage/' . $record->aim_section_image)
-                : null;
+            $record->aim_section_image_url = $this->imageUrl($record->aim_section_image);
 
             return response()->json([
                 'status' => true,
@@ -191,17 +214,14 @@ class HomeBasicContentController extends Controller
         }
     }
 
-    // ── POST /api/admin/home-content/{id}  (_method=PUT) ─────────────────────────
     public function update(Request $request, $id)
     {
         try {
             $record = HomeBasicContent::findOrFail($id);
 
-            // Support both full update (PUT) and single-field patch (PATCH)
             $isPatch = strtoupper($request->input('_method', $request->method())) === 'PATCH';
 
             if ($isPatch) {
-                // Inline single-field edit — only validate the one field sent
                 $field = array_key_first($request->except('_method'));
                 $allRules = $this->rules(true);
                 $rules = isset($allRules[$field]) ? [$field => $allRules[$field]] : [];
@@ -218,19 +238,16 @@ class HomeBasicContentController extends Controller
                     'data'    => $record->toArray(),
                 ]);
             }
-
-            // Full PUT update
+            
             $validated = $request->validate($this->rules(true));
 
             if ($request->hasFile('aim_section_image')) {
-                // Delete old image
                 if ($record->aim_section_image) {
-                    Storage::disk('public')->delete($record->aim_section_image);
+                    $this->deleteImage($record->aim_section_image);
                     Log::info('Old home content image deleted', ['path' => $record->aim_section_image]);
                 }
 
-                $record->aim_section_image = $request->file('aim_section_image')
-                    ->store('home-content', 'public');
+                $record->aim_section_image = $this->storeImage($request->file('aim_section_image'));
 
                 Log::info('New home content image uploaded', ['path' => $record->aim_section_image]);
             }
@@ -238,9 +255,7 @@ class HomeBasicContentController extends Controller
             $record->fill(collect($validated)->except('aim_section_image')->toArray());
             $record->save();
 
-            $record->aim_section_image_url = $record->aim_section_image
-                ? asset('storage/' . $record->aim_section_image)
-                : null;
+            $record->aim_section_image_url = $this->imageUrl($record->aim_section_image);
 
             Log::info('Home content updated', ['id' => $id]);
 
@@ -277,14 +292,13 @@ class HomeBasicContentController extends Controller
         }
     }
 
-    // ── DELETE /api/admin/home-content/{id} ──────────────────────────────────────
     public function destroy($id)
     {
         try {
             $record = HomeBasicContent::findOrFail($id);
 
             if ($record->aim_section_image) {
-                Storage::disk('public')->delete($record->aim_section_image);
+                $this->deleteImage($record->aim_section_image);
                 Log::info('Home content image deleted', ['path' => $record->aim_section_image]);
             }
 
@@ -316,6 +330,4 @@ class HomeBasicContentController extends Controller
             ], 500);
         }
     }
-
-  
 }

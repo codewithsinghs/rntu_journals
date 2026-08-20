@@ -27,7 +27,7 @@
                             <h3 id="stat_total_journals">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_1.png">
+                            <img src="/images/dashboard/d_1.png">
                         </div>
                     </div>
 
@@ -38,7 +38,7 @@
                             <h3 id="stat_total_articles">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_2.png">
+                            <img src="/images/dashboard/d_2.png">
                         </div>
                     </div>
 
@@ -49,7 +49,7 @@
                             <h3 id="stat_submitted_articles">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_3.png">
+                            <img src="/images/dashboard/d_3.png">
                         </div>
                     </div>
 
@@ -60,7 +60,7 @@
                             <h3 id="stat_under_review">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_4.png">
+                            <img src="/images/dashboard/d_4.png">
                         </div>
                     </div>
 
@@ -71,7 +71,7 @@
                             <h3 id="stat_pending_submission">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_4.png">
+                            <img src="/images/dashboard/d_4.png">
                         </div>
                     </div>
 
@@ -82,7 +82,7 @@
                             <h3 id="stat_revision_requested">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/d_4.png">
+                            <img src="/images/dashboard/d_4.png">
                         </div>
                     </div>
 
@@ -93,7 +93,7 @@
                             <h3 id="stat_accepted_articles">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/accept.png">
+                            <img src="/images/dashboard/accept.png">
                         </div>
                     </div>
 
@@ -104,7 +104,7 @@
                             <h3 id="stat_rejected_articles">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/min.png">
+                            <img src="/images/dashboard/min.png">
                         </div>
                     </div>
 
@@ -115,7 +115,7 @@
                             <h3 id="stat_published_articles">0</h3>
                         </div>
                         <div class="card-image">
-                            <img src="/storage/dashboard/upload.png">
+                            <img src="/images/dashboard/upload.png">
                         </div>
                     </div>
 

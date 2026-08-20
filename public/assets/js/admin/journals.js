@@ -329,7 +329,7 @@ function renderTable() {
     let rows = "";
     pageItems.forEach((j) => {
         const cover = j.cover_image
-            ? `<img src="/storage/${j.cover_image}" class="table-cover-journal-image" alt="">`
+            ? `<img src="/images/${j.cover_image}" class="table-cover-journal-image" alt="">`
             : `<div class="table-cover-journal-image--empty">N/A</div>`;
 
         const issn = j.e_issn || j.p_issn || j.issn_online || "-";
@@ -494,7 +494,7 @@ function openEditModal(id) {
     document.getElementById("coverPreviewCurrent").style.display = "none";
     if (journal.cover_image) {
         document.getElementById("coverPreviewCurrent").src =
-            `/storage/${journal.cover_image}`;
+            `/images/${journal.cover_image}`;
         document.getElementById("coverPreviewCurrent").style.display = "block";
     }
 

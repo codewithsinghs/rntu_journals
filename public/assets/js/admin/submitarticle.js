@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let currentPage = 1;
     let currentForwardId = null;
-    let currentReviewDecisionId = null;
     let currentFinalDecisionId = null;
     let currentRevisionId = null;
     let currentRejectId = null;
@@ -25,9 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const saForwardModal = bootstrap.Modal.getOrCreateInstance(
         document.getElementById("saForwardModal"),
-    );
-    const saReviewDecisionModal = bootstrap.Modal.getOrCreateInstance(
-        document.getElementById("saReviewDecisionModal"),
     );
     const saFinalDecisionModal = bootstrap.Modal.getOrCreateInstance(
         document.getElementById("saFinalDecisionModal"),
@@ -100,8 +96,6 @@ document.addEventListener("DOMContentLoaded", function () {
             ? ` <span class="sa-stage-chip is_hidden" title="Hidden from the author's own list">Hidden</span>`
             : "";
 
-        // "Live" reflects exactly what the public ArticleController checks:
-        // review.is_published === true AND is_hidden === false.
         const liveBadge =
             article.is_published && !article.is_hidden
                 ? ` <span class="sa-stage-chip is_live" title="Visible on the public site">Live</span>`
@@ -194,16 +188,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 label: "Forward to Reviewer",
                 show: r.can_forward,
             },
-            {
-                action: "review-decide",
-                label: "Submit Review",
-                show: r.can_review_decide,
-            },
-            {
-                action: "final-decide",
-                label: "Final Decision",
-                show: r.can_editor_final_decide,
-            },
+            // "Submit Review" removed from the list dropdown.
+            // Reviewers now submit their Approved / Correction Needed / Reject
+            // decision from the article's own View page instead.
+            // {
+            //     action: "final-decide",
+            //     label: "Final Decision",
+            //     show: r.can_editor_final_decide,
+            // },
             {
                 action: "forward-revision",
                 label: "Send Back to Author",
@@ -307,7 +299,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                             <td>${esc(r.full_name)}</td>
                                             <td>${esc(r.email)}</td>
                                             <td>${r.journal ? `<span class="edit-btn">${esc(truncate(r.journal.title, 15))}</span>` : "—"}</td>
-                                            
+
                                             <td>${stageChip(r)}</td>
                                             <td>${fmtDate(r.submission_date)}</td>
                                             <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
@@ -319,7 +311,6 @@ document.addEventListener("DOMContentLoaded", function () {
                                     `;
                 })
                 .join("");
-{/* <td title="${esc(r.manuscript_title)}">${esc(truncate(r.manuscript_title, 15))}</td> this should hidden for temporary it will come on line no 310 just same copy paste will do */}
 
             document.querySelectorAll("#saTableBody tr").forEach((tr) => {
                 tr.addEventListener("click", (e) => {
@@ -342,7 +333,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (action === "approve") doApprove(id);
                         if (action === "reject") openReject(id);
                         if (action === "forward") openForward(id);
-                        if (action === "review-decide") openReviewDecision(id);
                         if (action === "final-decide") openFinalDecision(id);
                         if (action === "forward-revision")
                             openForwardRevision(id);
@@ -455,32 +445,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
     /* ── Forward to Reviewer ────────────────────────────────────── */
-    async function openForward(id) {
-        currentForwardId = id;
-        document.getElementById("saForwardRemarks").value = "";
-        const select = document.getElementById("saForwardReviewer");
-        select.innerHTML = '<option value="">Loading…</option>';
-        saForwardModal.show();
+async function openForward(id) {
+    currentForwardId = id;
+    document.getElementById("saForwardRemarks").value = "";
+    const select = document.getElementById("saForwardReviewer");
+    select.innerHTML = '<option value="">Loading…</option>';
+    saForwardModal.show();
 
-        try {
-            const res = await fetch("/api/admin/reviewers", {
-                headers: authHeaders(),
-            });
-            const json = await res.json();
-            const list = json.data || [];
-            select.innerHTML = list.length
-                ? list
-                      .map(
-                          (u) =>
-                              `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`,
-                      )
-                      .join("")
-                : '<option value="">No reviewers found</option>';
-        } catch (e) {
-            select.innerHTML =
-                '<option value="">Failed to load reviewers</option>';
-        }
+    try {
+        const res = await fetch("/api/admin/reviewers", {
+            headers: authHeaders(),
+        });
+        const json = await res.json();
+        const currentUserId = window.APP_CONFIG?.CURRENT_USER_ID;
+        const list = (json.data || []).filter(
+            (u) => String(u.id) !== String(currentUserId),
+        );
+
+        select.innerHTML = list.length
+            ? list
+                  .map(
+                      (u) =>
+                          `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`,
+                  )
+                  .join("")
+            : '<option value="">No reviewers found</option>';
+    } catch (e) {
+        select.innerHTML =
+            '<option value="">Failed to load reviewers</option>';
     }
+}
 
     document
         .getElementById("saForwardConfirmBtn")
@@ -522,85 +516,30 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-    /* ── Reviewer's own 3-way decision ─────────────────────────── */
-    function openReviewDecision(id) {
-        currentReviewDecisionId = id;
-        document.getElementById("saReviewDecisionRemarks").value = "";
-        document.getElementById("saReviewDecisionApproved").checked = true;
-        saReviewDecisionModal.show();
-    }
+    // /* ── Editor's Final Decision (after reviewer approved/rejected) ── */
+    // async function openFinalDecision(id) {
+    //     currentFinalDecisionId = id;
+    //     document.getElementById("saFinalDecisionRemarks").value = "";
+    //     document.getElementById("saFinalDecisionApprove").checked = true;
+    //     document.getElementById("saFinalReviewerRemarks").textContent =
+    //         "Loading…";
+    //     saFinalDecisionModal.show();
 
-    document
-        .getElementById("saReviewDecisionConfirmBtn")
-        .addEventListener("click", async () => {
-            const decision = document.querySelector(
-                'input[name="saReviewDecision"]:checked',
-            )?.value;
-            const remarks = document.getElementById(
-                "saReviewDecisionRemarks",
-            ).value;
-
-            if (!remarks.trim()) {
-                showToast(
-                    "error",
-                    "Submit failed",
-                    "Please add remarks for your decision.",
-                );
-                return;
-            }
-
-            try {
-                const res = await fetch(
-                    `${API_BASE}/${currentReviewDecisionId}/review-decision`,
-                    {
-                        method: "POST",
-                        headers: {
-                            ...authHeaders(),
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            decision,
-                            remarks,
-                        }),
-                    },
-                );
-                const json = await res.json();
-                if (!res.ok || !json.status)
-                    throw new Error(
-                        json.message || "Submitting review failed.",
-                    );
-                showToast("success", "Review submitted", json.message);
-                saReviewDecisionModal.hide();
-                loadList(currentPage);
-            } catch (e) {
-                showToast("error", "Submit failed", e.message);
-            }
-        });
-
-    /* ── Editor's Final Decision (after reviewer approved/rejected) ── */
-    async function openFinalDecision(id) {
-        currentFinalDecisionId = id;
-        document.getElementById("saFinalDecisionRemarks").value = "";
-        document.getElementById("saFinalDecisionApprove").checked = true;
-        document.getElementById("saFinalReviewerRemarks").textContent =
-            "Loading…";
-        saFinalDecisionModal.show();
-
-        try {
-            const res = await fetch(`${API_BASE}/${id}`, {
-                headers: authHeaders(),
-            });
-            const json = await res.json();
-            if (!res.ok || !json.status)
-                throw new Error(json.message || "Failed to load submission.");
-            document.getElementById("saFinalReviewerRemarks").textContent =
-                json.data.review?.reviewer_remarks ||
-                "No remarks provided by reviewer.";
-        } catch (e) {
-            document.getElementById("saFinalReviewerRemarks").textContent =
-                "Failed to load reviewer remarks.";
-        }
-    }
+    //     try {
+    //         const res = await fetch(`${API_BASE}/${id}`, {
+    //             headers: authHeaders(),
+    //         });
+    //         const json = await res.json();
+    //         if (!res.ok || !json.status)
+    //             throw new Error(json.message || "Failed to load submission.");
+    //         document.getElementById("saFinalReviewerRemarks").textContent =
+    //             json.data.review?.reviewer_remarks ||
+    //             "No remarks provided by reviewer.";
+    //     } catch (e) {
+    //         document.getElementById("saFinalReviewerRemarks").textContent =
+    //             "Failed to load reviewer remarks.";
+    //     }
+    // }
 
     document
         .getElementById("saFinalDecisionConfirmBtn")

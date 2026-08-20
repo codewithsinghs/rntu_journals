@@ -42,9 +42,12 @@ class HomeController extends Controller
                 ->get()
                 ->map(function ($journal) {
                     $data = $journal->toArray();
+                    // $data['cover_image_url'] = $journal->cover_image
+                    //     ? Storage::url($journal->cover_image)
+                    //     : null;
                     $data['cover_image_url'] = $journal->cover_image
-                        ? Storage::url($journal->cover_image)
-                        : null;
+                        ? asset('images/' . $journal->cover_image)
+                        : asset('assets/home_page/hero_1.jpg');
                     return $data;
                 });
 
@@ -108,35 +111,35 @@ class HomeController extends Controller
         }
     }
 
-public function visitorCount(): JsonResponse
-{
-    try {
-        $ip = request()->ip();
+    public function visitorCount(): JsonResponse
+    {
+        try {
+            $ip = request()->ip();
 
-        // Scope to TODAY only — otherwise once an IP is logged once,
-        // it's never counted again on any future day.
-        $alreadyVisitedToday = WebsiteVisitor::where('ip_address', $ip)
-            ->whereDate('created_at', now()->toDateString())
-            ->exists();
+            // Scope to TODAY only — otherwise once an IP is logged once,
+            // it's never counted again on any future day.
+            $alreadyVisitedToday = WebsiteVisitor::where('ip_address', $ip)
+                ->whereDate('created_at', now()->toDateString())
+                ->exists();
 
-        if (!$alreadyVisitedToday) {
-            WebsiteVisitor::create([
-                'ip_address' => $ip,
-                'user_agent' => request()->userAgent(),
-                'url'        => request()->fullUrl(),
-                'referrer'   => request()->headers->get('referer'),
+            if (!$alreadyVisitedToday) {
+                WebsiteVisitor::create([
+                    'ip_address' => $ip,
+                    'user_agent' => request()->userAgent(),
+                    'url'        => request()->fullUrl(),
+                    'referrer'   => request()->headers->get('referer'),
+                ]);
+            }
+
+            return response()->json([
+                'status' => true,
+                'data'   => [
+                    'count' => WebsiteVisitor::count(),
+                ],
             ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to log visitor / fetch count', ['error' => $e->getMessage()]);
+            return response()->json(['status' => false, 'message' => 'Failed to fetch visitor count.'], 500);
         }
-
-        return response()->json([
-            'status' => true,
-            'data'   => [
-                'count' => WebsiteVisitor::count(),
-            ],
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Failed to log visitor / fetch count', ['error' => $e->getMessage()]);
-        return response()->json(['status' => false, 'message' => 'Failed to fetch visitor count.'], 500);
     }
-}
 }

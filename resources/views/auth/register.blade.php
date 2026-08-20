@@ -24,7 +24,7 @@
 
             <!-- Image -->
             <div class="popup-left">
-                <img src="{{ asset('storage/popup_img.png') }}" alt="Register" />
+                <img src="{{ asset('images/popup_img.png') }}" alt="Register" />
             </div>
 
             <!-- Form -->

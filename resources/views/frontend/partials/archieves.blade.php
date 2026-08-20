@@ -23,7 +23,7 @@
         </div>
 
         <div class="arc-illustration">
-            <img src="{{ asset('storage/archives_icom.png') }}">
+            <img src="{{ asset('images/archives_icom.png') }}">
         </div>
 
     </div>
@@ -52,7 +52,7 @@
         <div class="arc-search-box">
             <input type="text" id="searchInput" placeholder="Search Volumes">
             <button>
-                <img src="{{ asset('storage/search_icon.png') }}" alt="">
+                <img src="{{ asset('images/search_icon.png') }}" alt="">
             </button>
         </div>
 

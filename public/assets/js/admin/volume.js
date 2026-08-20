@@ -6,12 +6,48 @@ let deleteVolumeModal;
 let pendingDeleteId = null;
 let pendingDeleteName = null;
 
+const CURRENT_YEAR = new Date().getFullYear();
+
+// How many years back the Year dropdown should offer (inclusive of the
+// current year). Adjust this if your journal archive goes back further.
+const YEAR_RANGE_BACK = 50;
+
 function authHeaders() {
     return {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
         "Content-Type": "application/json",
     };
+}
+
+// Populates the Year <select> with the current year down to
+// (CURRENT_YEAR - YEAR_RANGE_BACK), so only the current year or a past
+// year can ever be chosen — future years are never rendered as options.
+// Called whenever the modal is opened (create/edit).
+function populateYearOptions(selectedYear = null) {
+    const yearSelect = document.getElementById("year");
+    if (!yearSelect) return;
+
+    const minYear = CURRENT_YEAR - YEAR_RANGE_BACK;
+    let options = '<option value="">Select year...</option>';
+    for (let y = CURRENT_YEAR; y >= minYear; y--) {
+        const selected = selectedYear != null && String(selectedYear) === String(y)
+            ? "selected"
+            : "";
+        options += `<option value="${y}" ${selected}>${y}</option>`;
+    }
+
+    // If we're editing a volume whose year predates the configured range,
+    // add it as a fallback option so its value isn't silently dropped.
+    if (
+        selectedYear != null &&
+        selectedYear !== "" &&
+        (Number(selectedYear) < minYear || Number(selectedYear) > CURRENT_YEAR)
+    ) {
+        options += `<option value="${selectedYear}" selected>${selectedYear} (outside range)</option>`;
+    }
+
+    yearSelect.innerHTML = options;
 }
 
 // ─── Toast Helper ───────────────────────────────────────────────
@@ -133,6 +169,7 @@ async function openCreateModal() {
     document.getElementById("volumeForm").reset();
     document.getElementById("volume_id").value = "";
     document.getElementById("volumeModalTitle").innerText = "Add Volume";
+    populateYearOptions();
     await loadJournalOptions();
     new bootstrap.Modal(document.getElementById("volumeModal")).show();
 }
@@ -150,7 +187,7 @@ async function editVolume(id) {
 
     document.getElementById("volume_id").value = v.id;
     document.getElementById("volume").value = v.volume;
-    document.getElementById("year").value = v.year ?? "";
+    populateYearOptions(v.year);
     document.getElementById("status").value = v.status;
     document.getElementById("is_current").checked = !!v.is_current;
     document.getElementById("volumeModalTitle").innerText = "Edit Volume";
@@ -220,11 +257,24 @@ document
         e.preventDefault();
 
         const id = document.getElementById("volume_id").value;
+        const yearValue = document.getElementById("year").value;
+
+        // Year is now a dropdown that only ever renders current-year-or-past
+        // options, so this is just a defense-in-depth check against DOM
+        // tampering / a stray value, not the primary safeguard anymore.
+        if (yearValue !== "" && Number(yearValue) > CURRENT_YEAR) {
+            showToast(
+                `Year cannot be a future year. Please choose ${CURRENT_YEAR} or earlier.`,
+                "error",
+            );
+            document.getElementById("year").focus();
+            return;
+        }
 
         const payload = {
             journal_id: document.getElementById("journal_id").value,
             volume: document.getElementById("volume").value,
-            year: document.getElementById("year").value,
+            year: yearValue,
             status: document.getElementById("status").value,
             is_current: document.getElementById("is_current").checked,
         };
@@ -254,6 +304,8 @@ document
 
 document.addEventListener("DOMContentLoaded", function () {
     deleteVolumeModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+
+    populateYearOptions();
 
     document
         .getElementById("confirmDeleteVolumeBtn")

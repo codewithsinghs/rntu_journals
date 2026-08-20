@@ -68,7 +68,7 @@ function contactBlock(icon, label, contentHtml) {
         <ol style="padding:0;">
             <div class="contact_item">
                 <div class="contact_icon">
-                    <img src="/storage/home_page/${icon}" alt="${label}">
+                    <img src="/images/home_page/${icon}" alt="${label}">
                 </div>
                 <div class="contact_text">
                     <h4>${label}</h4>

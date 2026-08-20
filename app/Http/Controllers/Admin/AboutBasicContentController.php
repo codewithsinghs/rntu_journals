@@ -7,10 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Models\AboutBasicContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class AboutBasicContentController extends Controller
 {
+       private const IMAGE_DIR = 'images/about';
+
     private function rules(bool $isUpdate = false): array
     {
         $imgRule = $isUpdate ? 'nullable' : 'nullable';
@@ -30,6 +31,34 @@ class AboutBasicContentController extends Controller
         ];
     }
 
+    private function storeImage($file, string $field): string
+    {
+        $filename    = uniqid("{$field}_") . '.' . $file->getClientOriginalExtension();
+        $destination = public_path(self::IMAGE_DIR . "/{$field}");
+
+        if (!file_exists($destination)) {
+            mkdir($destination, 0775, true);
+        }
+
+        $file->move($destination, $filename);
+
+        return "about/{$field}/{$filename}";
+    }
+
+
+    private function deleteImage(?string $relativePath): void
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $fullPath = public_path('images/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+    }
+
     public function adminIndex()
     {
         try {
@@ -42,19 +71,19 @@ class AboutBasicContentController extends Controller
     }
 
 
-// ─── Show single record ────────────────────────────────────────────
-public function show($id)
-{
-    try {
-        $record = AboutBasicContent::findOrFail($id);
-        return response()->json(['status' => true, 'data' => $record]);
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        return response()->json(['status' => false, 'message' => 'Record not found.'], 404);
-    } catch (\Exception $e) {
-        return response()->json(['status' => false, 'message' => 'Failed to fetch content.'], 500);
+    // ─── Show single record ────────────────────────────────────────────
+    public function show($id)
+    {
+        try {
+            $record = AboutBasicContent::findOrFail($id);
+            return response()->json(['status' => true, 'data' => $record]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['status' => false, 'message' => 'Record not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Failed to fetch content.'], 500);
+        }
     }
-}
-    
+
 
     public function store(Request $request)
     {
@@ -65,7 +94,7 @@ public function show($id)
 
             foreach (['about_section_img1', 'about_section_img2', 'why_section_image'] as $field) {
                 if ($request->hasFile($field)) {
-                    $uploaded[$field] = $request->file($field)->store("about/{$field}", 'public');
+                    $uploaded[$field] = $this->storeImage($request->file($field), $field);
                 }
             }
 
@@ -83,13 +112,13 @@ public function show($id)
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Rollback any uploads already stored
             foreach ($uploaded as $path) {
-                Storage::disk('public')->delete($path);
+                $this->deleteImage($path);
             }
             return response()->json(['status' => false, 'message' => 'Validation failed.', 'errors' => $e->errors()], 422);
 
         } catch (\Exception $e) {
             foreach ($uploaded as $path) {
-                Storage::disk('public')->delete($path);
+                $this->deleteImage($path);
             }
             Log::error('Failed to create about content', ['error' => $e->getMessage()]);
             return response()->json(['status' => false, 'message' => 'Failed to create content.'], 500);
@@ -105,9 +134,9 @@ public function show($id)
             foreach (['about_section_img1', 'about_section_img2', 'why_section_image'] as $field) {
                 if ($request->hasFile($field)) {
                     if ($record->$field) {
-                        Storage::disk('public')->delete($record->$field);
+                        $this->deleteImage($record->$field);
                     }
-                    $record->$field = $request->file($field)->store("about/{$field}", 'public');
+                    $record->$field = $this->storeImage($request->file($field), $field);
                 }
             }
 

@@ -6,14 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class JournalsController extends Controller
 {
-    /**
-     * Validation rules shared by store() and update().
-     */
+    private const IMAGE_DIR = 'images/journals/covers';
+
+   
     private function rules(): array
     {
         return [
@@ -55,10 +54,34 @@ class JournalsController extends Controller
         ];
     }
 
-    /**
-     * Generate a unique slug from the explore_journals_link URL.
-     * Falls back to the title if the link is empty or has no usable segment.
-     */
+    
+    private function storeCoverImage($file): string
+    {
+        $filename    = uniqid('journal_') . '.' . $file->getClientOriginalExtension();
+        $destination = public_path(self::IMAGE_DIR);
+
+        if (!file_exists($destination)) {
+            mkdir($destination, 0775, true);
+        }
+
+        $file->move($destination, $filename);
+
+        return 'journals/covers/' . $filename;
+    }
+
+    private function deleteCoverImage(?string $relativePath): void
+    {
+        if (!$relativePath) {
+            return;
+        }
+
+        $fullPath = public_path('images/' . $relativePath);
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+    }
+
     private function generateUniqueSlug(?string $exploreLink, string $title, ?int $ignoreId = null): string
     {
         $baseSlug = $this->extractSlugSource($exploreLink, $title);
@@ -77,10 +100,6 @@ class JournalsController extends Controller
         return $slug;
     }
 
-    /**
-     * Pulls a usable slug string out of the explore_journals_link URL.
-     * Falls back to the title if the link is missing or has no meaningful path.
-     */
     private function extractSlugSource(?string $exploreLink, string $title): string
     {
         if ($exploreLink) {
@@ -138,8 +157,7 @@ class JournalsController extends Controller
             $validated = $request->validate($this->rules());
 
             if ($request->hasFile('cover_image')) {
-                $coverImagePath = $request->file('cover_image')
-                    ->store('journals/covers', 'public');
+                $coverImagePath = $this->storeCoverImage($request->file('cover_image'));
 
                 Log::info('Journal cover image uploaded', [
                     'path'          => $coverImagePath,
@@ -219,7 +237,7 @@ class JournalsController extends Controller
             ]);
 
             if (!empty($coverImagePath)) {
-                Storage::disk('public')->delete($coverImagePath);
+                $this->deleteCoverImage($coverImagePath);
                 Log::warning('Rolled back cover image upload after failed insert', [
                     'path' => $coverImagePath,
                 ]);
@@ -238,8 +256,6 @@ class JournalsController extends Controller
     {
         try {
             $journal = Journal::with('volumes', 'issues')->findOrFail($id);
-
-            // Map title_2 → heading_1 for frontend
             $journal->heading_1 = $journal->title_2;
 
             Log::info('Journal fetched', ['journal_id' => $id]);
@@ -270,7 +286,6 @@ class JournalsController extends Controller
         }
     }
 
-    // ─── Update Journal ───────────────────────────────────────────
     public function update(Request $request, $id)
     {
         try {
@@ -282,7 +297,7 @@ class JournalsController extends Controller
 
             if ($request->hasFile('cover_image')) {
                 if ($journal->cover_image) {
-                    Storage::disk('public')->delete($journal->cover_image);
+                    $this->deleteCoverImage($journal->cover_image);
 
                     Log::info('Old journal cover image deleted', [
                         'journal_id' => $id,
@@ -290,8 +305,7 @@ class JournalsController extends Controller
                     ]);
                 }
 
-                $journal->cover_image = $request->file('cover_image')
-                    ->store('journals/covers', 'public');
+                $journal->cover_image = $this->storeCoverImage($request->file('cover_image'));
 
                 Log::info('New journal cover image uploaded', [
                     'journal_id'    => $id,
@@ -389,7 +403,6 @@ class JournalsController extends Controller
         }
     }
 
-    // ─── Delete Journal ───────────────────────────────────────────
     public function destroy($id)
     {
         try {
@@ -397,7 +410,7 @@ class JournalsController extends Controller
             $title   = $journal->title;
 
             if ($journal->cover_image) {
-                Storage::disk('public')->delete($journal->cover_image);
+                $this->deleteCoverImage($journal->cover_image);
 
                 Log::info('Journal cover image deleted with record', [
                     'journal_id' => $id,
@@ -439,7 +452,6 @@ class JournalsController extends Controller
         }
     }
 
-    // ─── Toggle Active Status ─────────────────────────────────────
     public function toggleStatus($id)
     {
         try {

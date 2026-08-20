@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (c.aim_section_image) {
                 document.getElementById('aimSectionImageWrap').innerHTML =
-                    `<img src="/storage/${c.aim_section_image}" alt="Aim and Scope">`;
+                    `<img src="/images/${c.aim_section_image}" alt="Aim and Scope">`;
             }
             if (c.aim_and_scope_title_1) {
                 document.getElementById('aimTitle1').textContent = c.aim_and_scope_title_1;
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const box = document.createElement('div');
                 box.className = 'feature_box';
                 box.innerHTML = `
-                    <div class="feature_icon"><img src="/storage/home_page/${f.icon}" alt=""></div>
+                    <div class="feature_icon"><img src="/images/home_page/${f.icon}" alt=""></div>
                     <h4>${f.value}</h4>
                     <p>${f.label ?? ''}</p>
                 `;
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const exploreHtml = journal.explore_journals_link ? `
             <a href="${journal.explore_journals_link}" class="secondary-link">
                 <div class="icon-circle">
-                    <img src="/storage/home_page/explore_icon.png" alt="Explore"
+                    <img src="/images/home_page/explore_icon.png" alt="Explore"
                          onerror="this.style.display='none';">
                 </div>
                 ${journal.explore_journals_label || 'Explore Journals'}

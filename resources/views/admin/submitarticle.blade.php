@@ -311,5 +311,9 @@
 @endsection
 
 @section('scripts')
+ <script>
+        window.APP_CONFIG = window.APP_CONFIG || {};
+        window.APP_CONFIG.CURRENT_USER_ID = "{{ auth()->id() }}";
+    </script>
     <script src="{{ asset('assets/js/admin/submitarticle.js') }}"></script>
 @endsection

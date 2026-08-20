@@ -457,6 +457,17 @@
                 if (el && !el.value.trim()) fail(el, f.label);
             });
 
+            // Defense-in-depth: the date input already has max="today" set
+            // server-side via Blade, but guard here too in case that gets
+            // bypassed (manual typing, DOM tampering, older browsers, etc.)
+            const submissionDateEl = document.getElementById('submission_date');
+            if (submissionDateEl && submissionDateEl.value) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (submissionDateEl.value > todayStr) {
+                    fail(submissionDateEl, 'Date cannot be in the future.');
+                }
+            }
+
             const titleEl = document.getElementById('manuscript_title');
             const title = titleEl.value.trim();
             if (title && title.length < 10) fail(titleEl, 'Must be at least 10 characters.');

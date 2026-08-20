@@ -36,12 +36,12 @@
     <div class="out_footer">
 
         <!-- <div class="visitors">
-            <img src="{{ asset('/storage/home_page/visitor.png') }}" alt="Visitors">
+            <img src="{{ asset('/images/home_page/visitor.png') }}" alt="Visitors">
             <p>Website Visitor : <span id="visitor-count">12563</span></p>
         </div> -->
 
         <div class="visitors">
-            <img src="{{ asset('/storage/home_page/visitor.png') }}" alt="Visitors">
+            <img src="{{ asset('/images/home_page/visitor.png') }}" alt="Visitors">
             <p>Website Visitor : <span id="visitor-count">0</span></p>
         </div>
 

@@ -171,9 +171,152 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+    /* ── Reviewer decision modal (Approved / Correction Needed / Reject) ──
+       Built dynamically so no blade changes are required. Remarks are
+       mandatory for "Correction Needed" and "Reject", optional for
+       "Approved". ─────────────────────────────────────────────────── */
+
+    const REVIEW_DECISIONS = {
+        approved: {
+            label: "Approved",
+            remarksRequired: false,
+            okLabel: "Submit Approval",
+            variant: "approve",
+        },
+        correction_needed: {
+            label: "Correction Needed",
+            remarksRequired: true,
+            okLabel: "Send Correction Request",
+            variant: "warn",
+        },
+        rejected: {
+            label: "Reject",
+            remarksRequired: true,
+            okLabel: "Submit Rejection",
+            variant: "warn",
+        },
+    };
+
+    let currentReviewDecision = null;
+    let saReviewDecisionModal = null;
+
+    function ensureReviewDecisionModal() {
+        if (document.getElementById("saReviewDecisionModal")) {
+            saReviewDecisionModal = bootstrap.Modal.getOrCreateInstance(
+                document.getElementById("saReviewDecisionModal"),
+            );
+            return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = `
+            <div class="modal fade" id="saReviewDecisionModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header border-bottom py-3">
+                            <h5 class="modal-title fw-semibold mb-0" id="saReviewDecisionTitle"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label" style="font-size:13px;font-weight:600;" id="saReviewDecisionRemarksLabel">
+                                    Remarks
+                                </label>
+                                <textarea class="form-control form-control-sm" id="saReviewDecisionRemarks" rows="4"
+                                    placeholder="Notes on your review…"></textarea>
+                                <div id="saReviewDecisionRemarksHint" class="text-danger" style="font-size:12px;margin-top:4px;display:none;">
+                                    Remarks are required for this decision.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top py-3">
+                            <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary btn-sm px-4" id="saReviewDecisionConfirmBtn">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+
+        saReviewDecisionModal = bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("saReviewDecisionModal"),
+        );
+
+        document
+            .getElementById("saReviewDecisionConfirmBtn")
+            .addEventListener("click", submitReviewDecision);
+    }
+
+    function openReviewDecision(decisionKey) {
+        ensureReviewDecisionModal();
+
+        const cfg = REVIEW_DECISIONS[decisionKey];
+        if (!cfg) return;
+
+        currentReviewDecision = decisionKey;
+
+        // document.getElementById("saReviewDecisionTitle").textContent =
+        //     `Submit Review — ${cfg.label}`;
+        document.getElementById("saReviewDecisionRemarksLabel").textContent =
+            cfg.remarksRequired ? "Remarks (required)" : "Remarks (optional)";
+        document.getElementById("saReviewDecisionRemarks").value = "";
+        document.getElementById("saReviewDecisionRemarksHint").style.display =
+            "none";
+
+        const okBtn = document.getElementById("saReviewDecisionConfirmBtn");
+        okBtn.textContent = cfg.okLabel;
+        okBtn.className =
+            "btn btn-sm px-4 text-white " +
+            (cfg.variant === "approve" ? "btn-success" : "btn-danger");
+
+        saReviewDecisionModal.show();
+    }
+
+    async function submitReviewDecision() {
+        const cfg = REVIEW_DECISIONS[currentReviewDecision];
+        if (!cfg) return;
+
+        const remarks = document
+            .getElementById("saReviewDecisionRemarks")
+            .value.trim();
+
+        if (cfg.remarksRequired && !remarks) {
+            document.getElementById(
+                "saReviewDecisionRemarksHint",
+            ).style.display = "block";
+            showToast(
+                "error",
+                "Submit failed",
+                "Please add remarks for this decision.",
+            );
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/${id}/review-decision`, {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    decision: currentReviewDecision,
+                    remarks,
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.status)
+                throw new Error(json.message || "Submitting review failed.");
+            showToast("success", "Review submitted", json.message);
+            saReviewDecisionModal.hide();
+            load();
+        } catch (e) {
+            showToast("error", "Submit failed", e.message);
+        }
+    }
 
     function renderActions(r) {
-        const buttons = [
+        const editorButtons = [
             r.can_approve
                 ? `<div class="button_d"> <button type="button" class="green_d" id="saApproveBtn"> Approve </button> </div>`
                 : "",
@@ -187,9 +330,19 @@ document.addEventListener("DOMContentLoaded", function () {
             .filter(Boolean)
             .join("");
 
+        // Reviewer's own 3-way decision — shown only to the assigned
+        // reviewer while the submission is with_reviewer.
+        const reviewerButtons = r.can_review_decide
+            ? `
+                <div class="button_d"> <button type="button" class="green_d" id="saReviewApprovedBtn"> Approved </button> </div>
+                <div class="button_d"> <button type="button" class="orange_d" id="saReviewCorrectionBtn"> Correction Needed </button> </div>
+                <div class="button_d"> <button type="button" class="red_d" id="saReviewRejectBtn"> Reject </button> </div>
+            `
+            : "";
+
         const bar = document.getElementById("saActionsBar");
         if (!bar) return;
-        bar.innerHTML = buttons;
+        bar.innerHTML = editorButtons + reviewerButtons;
 
         if (r.can_approve) {
             document
@@ -205,6 +358,19 @@ document.addEventListener("DOMContentLoaded", function () {
             document
                 .getElementById("saForwardBtn")
                 .addEventListener("click", openForward);
+        }
+        if (r.can_review_decide) {
+            document
+                .getElementById("saReviewApprovedBtn")
+                .addEventListener("click", () => openReviewDecision("approved"));
+            document
+                .getElementById("saReviewCorrectionBtn")
+                .addEventListener("click", () =>
+                    openReviewDecision("correction_needed"),
+                );
+            document
+                .getElementById("saReviewRejectBtn")
+                .addEventListener("click", () => openReviewDecision("rejected"));
         }
     }
 
