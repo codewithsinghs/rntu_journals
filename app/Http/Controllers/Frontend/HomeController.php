@@ -71,46 +71,47 @@ class HomeController extends Controller
     }
 
 
-    public function latestArticles()
-    {
-        try {
-            $approvedArticles = DB::table('submit_articles as sa')
-                ->join('article_reviews as ar', 'ar.submit_article_id', '=', 'sa.id')
-                ->where('ar.editor_status', 'approved')
-                ->where('sa.deleted_at', null)
-                ->where('sa.is_hidden', false)
-                ->orderByDesc('ar.updated_at')
-                ->select(
-                    'sa.id',
-                    'sa.uuid',
-                    'sa.manuscript_title',
-                    'sa.full_name',
-                    'sa.journal_id',
-                    'ar.updated_at as created_at'
-                )
-                ->limit(30)
-                ->get();
+public function latestArticles()
+{
+    try {
+        $approvedArticles = DB::table('submit_articles as sa')
+            ->join('article_reviews as ar', 'ar.submit_article_id', '=', 'sa.id')
+            ->leftJoin('journal as j', 'j.id', '=', 'sa.journal_id')
+            ->where('ar.editor_status', 'approved')
+            ->where('sa.deleted_at', null)
+            ->where('sa.is_hidden', false)
+            ->orderByDesc('ar.updated_at')
+            ->select(
+                'sa.id',
+                'sa.uuid',
+                'sa.manuscript_title',
+                'sa.full_name',
+                'sa.journal_id',
+                'j.slug as journal_slug',
+                'ar.updated_at as created_at'
+            )
+            ->limit(30)
+            ->get();
 
-            $latest = $approvedArticles->take(3)->values();
+        $latest = $approvedArticles->take(3)->values();
 
-            $byYear = $approvedArticles
-                ->groupBy(fn($a) => \Carbon\Carbon::parse($a->created_at)->year)
-                ->map(fn($group) => $group->take(3)->values())
-                ->sortKeysDesc();
+        $byYear = $approvedArticles
+            ->groupBy(fn($a) => \Carbon\Carbon::parse($a->created_at)->year)
+            ->map(fn($group) => $group->take(3)->values())
+            ->sortKeysDesc();
 
-            return response()->json([
-                'status' => true,
-                'data'   => [
-                    'latest'  => $latest,
-                    'by_year' => $byYear,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch latest articles', ['error' => $e->getMessage()]);
-            return response()->json(['status' => false, 'message' => 'Failed to fetch articles.'], 500);
-        }
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'latest'  => $latest,
+                'by_year' => $byYear,
+            ],
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Failed to fetch latest articles', ['error' => $e->getMessage()]);
+        return response()->json(['status' => false, 'message' => 'Failed to fetch articles.'], 500);
     }
-
+}
     public function visitorCount(): JsonResponse
     {
         try {

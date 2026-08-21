@@ -1,6 +1,12 @@
 // assets/frontend/home.js
 document.addEventListener('DOMContentLoaded', function () {
 
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str ?? '';
+        return div.innerHTML;
+    }
+
     //Aim & Scope + Why RNTU ─────────────────────────────────────────────────────────────
 
     async function loadAimScopeWhy() {
@@ -205,7 +211,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
             const json = await res.json();
             const announcements = json.data ?? [];
-            console.log(announcements);
             if (!announcements.length) {
                 wrapEl.innerHTML = `<div class="announcement-item">No announcements available.</div>`;
                 return;
@@ -216,10 +221,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 return href
                     ? `<div class="announcement-item">
-                <a href="${href}" target="_blank">📢 ${a.name}</a>
+                <a href="${href}" target="_blank">📢 ${escapeHtml(a.name)}</a>
            </div>`
                     : `<div class="announcement-item">
-                <span>📢 ${a.name}</span>
+                <span>📢 ${escapeHtml(a.name)}</span>
            </div>`;
             };
 
@@ -255,18 +260,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const { latest = [], by_year = {} } = articlesJson.data ?? {};
 
-            const renderArticle = a => `
-                <div class="issue_item">
-                    <div class="issue_date">
-                        <h4>${new Date(a.created_at).getDate().toString().padStart(2, '0')}</h4>
-                        <span>${new Date(a.created_at).toLocaleString('en-US', { month: 'short' })}</span>
+            const renderArticle = a => {
+                const slug = a.journal_slug || '';
+                const href = slug
+                    ? `/${escapeHtml(slug)}/articles/${escapeHtml(a.uuid)}`
+                    : '#'; // no valid journal slug, avoid broken //articles/ URL
+
+                return `
+                    <div class="issue_item">
+                        <div class="issue_date">
+                            <h4>${new Date(a.created_at).getDate().toString().padStart(2, '0')}</h4>
+                            <span>${new Date(a.created_at).toLocaleString('en-US', { month: 'short' })}</span>
+                        </div>
+                        <div class="issue_content">
+                            <h5><a href="${href}" class="link_connect">${escapeHtml(a.manuscript_title)}</a></h5>
+                            <p>${escapeHtml(a.full_name)}</p>
+                        </div>
                     </div>
-                    <div class="issue_content">
-                        <h5><a href="/article/${a.uuid}" class="link_connect">${a.manuscript_title}</a></h5>
-                        <p>${a.full_name}</p>
-                    </div>
-                </div>
-            `;
+                `;
+            };
 
             const latestTab = document.getElementById('tab-latest');
             if (latestTab) {

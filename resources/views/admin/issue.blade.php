@@ -93,8 +93,7 @@
                                 <input type="text"
                                     class="content_show" name="issue" id="issue"
                                     placeholder="e.g. 3" inputmode="numeric"
-                                    pattern="\d{1}"
-                                    maxlength="1"
+                                    maxlength="2"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                     required>
                             </span>

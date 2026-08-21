@@ -380,12 +380,16 @@ document.addEventListener("DOMContentLoaded", function () {
         .addEventListener("click", async () => {
             if (!deleteTargetId) return;
             const spinner = document.getElementById("ebDeleteSpinner");
+            const label = document.getElementById("ebDeleteLabel");
+
             spinner.classList.remove("d-none");
+            label.classList.add("d-none");
 
             try {
                 const res = await apiFetch(`${API_BASE}/${deleteTargetId}`, {
                     method: "DELETE",
                 });
+
                 const json = await res.json();
 
                 if (!res.ok) {
@@ -400,12 +404,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 bootstrap.Modal.getOrCreateInstance(ebDeleteModalEl).hide();
                 showToast("success", "Deleted!", json.message ?? "");
                 loadMembers();
+
             } catch (err) {
                 showToast("error", "Request failed", err.message);
+
             } finally {
                 spinner.classList.add("d-none");
+                label.classList.remove("d-none");
                 deleteTargetId = null;
             }
+
         });
 
     /* ── Toggle status ──────────────────────────────────────────── */
@@ -436,9 +444,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const esc = (s) =>
         s
             ? String(s)
-                  .replace(/&/g, "&amp;")
-                  .replace(/</g, "&lt;")
-                  .replace(/>/g, "&gt;")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
             : "";
     const initials = (name) =>
         (name || "?")
@@ -455,10 +463,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return `<span class="eb-muted-cell">Site-wide</span>`;
     }
-function renderRows(members) {
-    return members
-        .map(
-            (m) => `
+    function renderRows(members) {
+        return members
+            .map(
+                (m) => `
             <tr>
                 <td></td>
                 <td>${journalCell(m)}</td>
@@ -474,12 +482,12 @@ function renderRows(members) {
                     <div class="d-flex">
                         <button class="edit-btn" onclick="window.__ebEdit(${m.id})">Edit</button>
                         <button class="delete-btn" onclick="window.__ebDelete(${m.id})">Delete</button>
-                    </div>
+                    </div>  
                 </td>
             </tr>`,
-        )
-        .join("");
-}
+            )
+            .join("");
+    }
 
     function renderPage(members) {
         document.getElementById("ebLoading").classList.add("d-none");
