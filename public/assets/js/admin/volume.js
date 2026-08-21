@@ -8,8 +8,6 @@ let pendingDeleteName = null;
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-// How many years back the Year dropdown should offer (inclusive of the
-// current year). Adjust this if your journal archive goes back further.
 const YEAR_RANGE_BACK = 50;
 
 function authHeaders() {
@@ -20,10 +18,7 @@ function authHeaders() {
     };
 }
 
-// Populates the Year <select> with the current year down to
-// (CURRENT_YEAR - YEAR_RANGE_BACK), so only the current year or a past
-// year can ever be chosen — future years are never rendered as options.
-// Called whenever the modal is opened (create/edit).
+
 function populateYearOptions(selectedYear = null) {
     const yearSelect = document.getElementById("year");
     if (!yearSelect) return;
@@ -37,8 +32,6 @@ function populateYearOptions(selectedYear = null) {
         options += `<option value="${y}" ${selected}>${y}</option>`;
     }
 
-    // If we're editing a volume whose year predates the configured range,
-    // add it as a fallback option so its value isn't silently dropped.
     if (
         selectedYear != null &&
         selectedYear !== "" &&
@@ -50,7 +43,6 @@ function populateYearOptions(selectedYear = null) {
     yearSelect.innerHTML = options;
 }
 
-// ─── Toast Helper ───────────────────────────────────────────────
 function showToast(message, type = "success", title = null) {
     const el = document.getElementById("ecToast");
     if (!el) {

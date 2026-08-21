@@ -86,8 +86,6 @@
                                     id="volume"
                                     placeholder="e.g. 6"
                                     inputmode="numeric"
-                                    pattern="\d{1}"
-                                    maxlength="1"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                     required>
                             </span>

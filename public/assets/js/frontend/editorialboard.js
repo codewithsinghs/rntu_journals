@@ -7,13 +7,19 @@
     if (!app) return;
 
     const journalParam = app.dataset.journalParam || '';
-    const apiBase = app.dataset.apiBase; 
+    const apiBase = app.dataset.apiBase;
 
     const els = {
         loading: document.getElementById('boardLoading'),
         empty: document.getElementById('boardEmpty'),
         content: document.getElementById('boardContent'),
     };
+    
+    const SPECIAL_LAYOUT_ROLES = new Set([
+        'Editor-in-Chief',
+        'Managing Editor',
+        'Executive Editor',
+    ]);
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -105,7 +111,7 @@
         </section>`;
     }
 
-    function renderThreeUpSection(role, members) {
+    function renderGenericSection(role, members) {
         if (!members || members.length === 0) return '';
 
         const cards = members.map((member) => `
@@ -113,6 +119,7 @@
                 ${photoHtml(member)}
                 <h3>${escapeHtml(member.name)}</h3>
                 ${memberFields(member)}
+                ${member.email ? `<p>Email: ${escapeHtml(member.email)}</p>` : ''}
                 ${linksHtml(member)}
             </div>
         `).join('');
@@ -128,9 +135,13 @@
 
     function renderBoard(data) {
         const roles = data.roles || {};
+        const roleOrder = Array.isArray(data.role_order) ? data.role_order : Object.keys(roles);
 
-        const allEmpty = Object.values(roles).every((list) => !list || list.length === 0);
-        if (allEmpty) {
+        const hasMembers = typeof data.has_members === 'boolean'
+            ? data.has_members
+            : Object.values(roles).some((list) => list && list.length > 0);
+
+        if (!hasMembers) {
             els.empty.classList.remove('d-none');
             els.content.innerHTML = '';
             els.loading.classList.add('d-none');
@@ -138,15 +149,18 @@
         }
 
         let html = '';
+
         html += renderEditorInChief(roles['Editor-in-Chief']);
         html += renderManagingExecutive(roles);
-        html += renderThreeUpSection('Editors', roles['Editors']);
-        html += renderThreeUpSection('Associate Editors', roles['Associate Editors']);
-        html += renderThreeUpSection('Members', roles['Members']);
-        html += renderThreeUpSection('Advisory Board', roles['Advisory Board']);
+
+        roleOrder.forEach((role) => {
+            if (SPECIAL_LAYOUT_ROLES.has(role)) return; 
+            html += renderGenericSection(role, roles[role]);
+        });
 
         els.content.innerHTML = html;
         els.loading.classList.add('d-none');
+        els.empty.classList.add('d-none');
     }
 
     async function init() {
