@@ -41,7 +41,8 @@
         ['time_to_first_decision', 'Time to First Decision'],
         ['time_to_review', 'Time to Review'],
         ['acceptance_to_publication', 'Acceptance to Publication'],
-        ['latest_volume', 'Latest Volume'],
+        // ['latest_volume', 'Latest Volume'],
+        ['published_date', 'Published On'],
     ];
 
     function escapeHtml(str) {

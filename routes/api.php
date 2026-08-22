@@ -216,7 +216,7 @@
             Route::get('/guidelines/{journalParam}', [FrontendGuidelinesController::class, 'content']);
             Route::get('/prp', [FrontendPrpController::class, 'content']);
             Route::get('/contact', [FrontendContactController::class, 'content']);
-            Route::get('/journals/{id}/detail', [JournalDetailController::class, 'detail']);
+            Route::get('/journals/{identifier}/detail', [JournalDetailController::class, 'detail']);
             Route::get('/journals/{id}/archives', [ArchiveController::class, 'archivesData']);
             Route::get('/issues/{uuid}/articles', [CurrentIssuesController::class, 'articlesData']);
             Route::get('/articles/{uuid}', [ArticleController::class, 'data']);

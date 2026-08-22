@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Journal extends Model
@@ -15,6 +16,7 @@ class Journal extends Model
 
     protected $fillable = [
         // ===== Common fields =====
+        'uuid',
         'title',
         'slug',
         'description',
@@ -62,6 +64,18 @@ class Journal extends Model
         parent::boot();
 
         static::creating(function ($journal) {
+            // Auto-generate UUID if missing
+            if (empty($journal->uuid)) {
+                $journal->uuid = Str::uuid()->toString();
+            }
+
+            // Auto-generate slug if missing
+            if (empty($journal->slug)) {
+                $journal->slug = static::generateUniqueSlug($journal->title);
+            }
+        });
+
+        static::creating(function ($journal) {
             if (empty($journal->slug)) {
                 $journal->slug = static::generateUniqueSlug($journal->title);
             }
@@ -88,6 +102,26 @@ class Journal extends Model
         return $slug;
     }
 
+     public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        // Try slug first
+        $journal = $this->where('slug', $value)->first();
+
+        // If not found, try uuid
+        if (! $journal) {
+            $journal = $this->where('uuid', $value)->first();
+        }
+
+        return $journal;
+    }
+
+
+    // model realtions
     public function submitArticles(): HasMany
     {
         return $this->hasMany(SubmitArticle::class, 'journal_id');
@@ -102,6 +136,22 @@ class Journal extends Model
     {
         return $this->hasMany(Issue::class, 'journal_id');
     }
+
+    // 22/08/2026
+    // Get the latest volume
+    // Latest volume by published_date or created_at
+    public function latestVolume(): HasOne
+    {
+        return $this->hasOne(Volume::class, 'journal_id')->latestOfMany('published_date');
+    }
+
+    // Latest issue by published_date or created_at
+    public function latestIssue(): HasOne
+    {
+        return $this->hasOne(Issue::class, 'journal_id')->latestOfMany('published_date');
+    }
+
+    //
 
     public function editorial_board(): HasMany
     {
@@ -118,8 +168,5 @@ class Journal extends Model
         return $this->hasMany(EditorialBoardRole::class, 'journal_id');
     }
 
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
+
 }

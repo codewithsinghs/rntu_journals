@@ -43,22 +43,53 @@ class JournalDetailController extends Controller
 
     public function show(Journal $journal)
     {
+        // dd($journal->latestVolume);
+
+        // dd($journal);
+        // dd($journal->latestVolume);
+        // dd($journal->latestIssue);
+
         return view('frontend.journal-detail', [
-            'journalId' => $journal->id,
+            'journalId' => $journal->uuid,
         ]);
     }
 
 
-    public function detail($id)
+    public function detail($identifier)
     {
         try {
-            $journal = Journal::findOrFail($id);
+            // Try to find by UUID first, fallback to ID
+            $journal = Journal::where('uuid', $identifier)
+                ->orWhere('id', $identifier)
+                ->firstOrFail();
+
+            // Overwrite with latest volume & issue
+            $latestVolume = $journal->latestVolume()->first();
+            $latestIssue  = $journal->latestIssue()->first();
+
+            if ($latestVolume) {
+                $journal->volume         = $latestVolume->volume;
+                $journal->year           = $latestVolume->year;
+                $journal->latest_volume  = $latestVolume->volume;
+                $journal->published_date = $latestVolume->published_date
+                    ? \Carbon\Carbon::parse($latestVolume->published_date)->format('M Y')
+                    : null;
+            }
+
+            if ($latestIssue) {
+                $journal->issue          = $latestIssue->issue;
+                $journal->year           = $latestIssue->year;
+                $journal->issue_date     = $latestIssue->published_date
+                    ? \Carbon\Carbon::parse($latestIssue->published_date)->format('d M Y')
+                    : null;
+            }
+
 
             $articles = DB::table('submit_articles as sa')
                 ->join('article_reviews as ar', 'ar.submit_article_id', '=', 'sa.id')
                 ->where('sa.journal_id', $journal->id)
                 ->where('sa.is_hidden', false)
-                ->where('sa.deleted_at', null)
+                ->whereNull('sa.deleted_at')
                 ->where('ar.editor_status', 'approved')
                 ->whereYear('ar.created_at', now()->year)
                 ->orderByDesc('ar.created_at')
@@ -76,12 +107,9 @@ class JournalDetailController extends Controller
                 )
                 ->paginate(9);
 
-            // $journal->cover_image_url = $journal->cover_image
-            //     ? Storage::url($journal->cover_image)
-            //     : asset('assets/home_page/hero_1.jpg');
             $journal->cover_image_url = $journal->cover_image
-                ? asset('images/' . $journal->cover_image)
-                : asset('assets/home_page/hero_1.jpg');
+                    ? asset('images/' . $journal->cover_image)
+                    : asset('assets/home_page/hero_1.jpg');
 
             $articlesData = collect($articles->items())->map(function ($article) {
                 $article->pdf_url = $article->signed_manuscript_pdf
@@ -112,4 +140,5 @@ class JournalDetailController extends Controller
             return response()->json(['status' => false, 'message' => 'Failed to fetch journal detail.'], 500);
         }
     }
+
 }

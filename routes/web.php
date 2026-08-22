@@ -51,7 +51,7 @@ Route::get('/{journal}/issues/{uuid?}/articles', [CurrentIssuesController::class
 Route::get('/{journal}/articles/{uuid}', [ArticleController::class, 'show'])->name('article.show');
 Route::get('/api/public/{journal}/articles/{uuid}', [ArticleController::class, 'data'])->name('article.data');
 Route::get('/articles/{uuid}/download', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
- 
+
 // ── Protected Admin Routes ────────────────────────────────────────
 Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function () {
 
