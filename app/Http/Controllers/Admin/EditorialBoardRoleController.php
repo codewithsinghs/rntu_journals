@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EditorialBoard;
 use App\Models\EditorialBoardRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -99,9 +100,10 @@ class EditorialBoardRoleController extends Controller
                     'string',
                     'max:100',
                     Rule::unique('editorial_board_roles', 'role')
-                        ->where(fn ($q) => $q->where('journal_id', $request->input('journal_id'))),
+                        ->where(fn($q) => $q->where('journal_id', $request->input('journal_id'))),
                 ],
-                'status' => 'boolean',
+                'sequence' => 'nullable|integer|min:0',
+                'status'   => 'boolean',
             ], [
                 'journal_id.exists' => 'Selected journal does not exist.',
                 'role.required'     => 'Role name is required.',
@@ -119,6 +121,7 @@ class EditorialBoardRoleController extends Controller
             $role = EditorialBoardRole::create([
                 'journal_id' => $validated['journal_id'] ?? null,
                 'role'       => $validated['role'],
+                'sequence'   => $validated['sequence'] ?? 0,
                 'status'     => $validated['status'] ?? true,
             ]);
 
@@ -129,7 +132,6 @@ class EditorialBoardRoleController extends Controller
                 'message' => 'Role added successfully.',
                 'data'    => $role->load('journal'),
             ], 201);
-
         } catch (\Exception $e) {
             Log::error('EditorialBoardRole store error', ['error' => $e->getMessage()]);
 
@@ -163,10 +165,11 @@ class EditorialBoardRoleController extends Controller
                     'string',
                     'max:100',
                     Rule::unique('editorial_board_roles', 'role')
-                        ->where(fn ($q) => $q->where('journal_id', $journalId))
+                        ->where(fn($q) => $q->where('journal_id', $journalId))
                         ->ignore($role->id),
                 ],
-                'status' => 'boolean',
+                'sequence' => 'nullable|integer|min:0',
+                'status'   => 'boolean',
             ], [
                 'journal_id.exists' => 'Selected journal does not exist.',
                 'role.unique'       => 'This role already exists for the selected journal.',
@@ -179,8 +182,35 @@ class EditorialBoardRoleController extends Controller
             ], 422);
         }
 
+        $oldRoleName = $role->role;
+        $newRoleName = $validated['role'] ?? $oldRoleName;
+        $isRenaming  = $newRoleName !== $oldRoleName;
+
         try {
+            if ($isRenaming) {
+                $inUseCount = EditorialBoard::where('role', $oldRoleName)
+                    ->where('journal_id', $role->journal_id)
+                    ->count();
+
+                $confirmed = $request->boolean('confirm_update_members');
+
+                if ($inUseCount > 0 && !$confirmed) {
+                    return response()->json([
+                        'status'               => false,
+                        'needs_confirmation'   => true,
+                        'members_count'        => $inUseCount,
+                        'message'              => "This role is currently used by {$inUseCount} member(s). Do you want to update it? All members with this role will also be updated to \"{$newRoleName}\".",
+                    ], 409);
+                }
+            }
+
             $role->update($validated);
+
+            if ($isRenaming) {
+                EditorialBoard::where('role', $oldRoleName)
+                    ->where('journal_id', $role->journal_id)
+                    ->update(['role' => $newRoleName]);
+            }
 
             Log::info('Editorial board role updated', ['id' => $role->id]);
 
@@ -189,7 +219,6 @@ class EditorialBoardRoleController extends Controller
                 'message' => 'Role updated successfully.',
                 'data'    => $role->fresh()->load('journal'),
             ]);
-
         } catch (\Exception $e) {
             Log::error('EditorialBoardRole update error', ['error' => $e->getMessage()]);
 
@@ -199,12 +228,30 @@ class EditorialBoardRoleController extends Controller
             ], 500);
         }
     }
-
     // ── Delete role ───────────────────────────────────────────────────────
     public function destroy($id)
     {
         try {
             $role = EditorialBoardRole::findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Role not found.',
+            ], 404);
+        }
+
+        try {
+            $inUseCount = EditorialBoard::where('role', $role->role)
+                ->where('journal_id', $role->journal_id)
+                ->count();
+
+            if ($inUseCount > 0) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => "This role is currently assigned to {$inUseCount} member(s) and cannot be deleted. Please reassign or remove those members first.",
+                ], 409);
+            }
+
             $role->delete();
 
             Log::info('Editorial board role deleted', ['id' => $id]);
@@ -213,12 +260,6 @@ class EditorialBoardRoleController extends Controller
                 'status'  => true,
                 'message' => 'Role deleted successfully.',
             ]);
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Role not found.',
-            ], 404);
         } catch (\Exception $e) {
             Log::error('EditorialBoardRole destroy error', ['error' => $e->getMessage()]);
 
@@ -241,7 +282,6 @@ class EditorialBoardRoleController extends Controller
                 'message' => 'Status updated successfully.',
                 'data'    => ['status' => $role->status],
             ]);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'status'  => false,
