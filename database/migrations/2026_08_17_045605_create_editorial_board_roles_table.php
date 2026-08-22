@@ -19,9 +19,10 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('role');
+            $table->unsignedInteger('sequence')->default(0);
 
             $table->boolean('status')->default(true);
-
+            
             $table->timestamps();
         });
     }

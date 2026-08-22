@@ -117,7 +117,7 @@ class EditorialBoardController extends Controller
                 'email.email'           => 'Please enter a valid email address.',
                 'orcid_url.url'         => 'ORCID must be a valid URL.',
                 'scopus_url.url'        => 'Scopus must be a valid URL.',
-                'web_of_science_url.url'=> 'Web of Science must be a valid URL.',
+                'web_of_science_url.url' => 'Web of Science must be a valid URL.',
                 'profile_image.mimes'   => 'Profile image must be JPEG, JPG, PNG, or WEBP.',
                 'profile_image.max'     => 'Profile image must not exceed 2MB.',
             ]);
@@ -162,7 +162,6 @@ class EditorialBoardController extends Controller
                 'message' => 'Member added successfully.',
                 'data'    => $member->load('journal'),
             ], 201);
-
         } catch (\Exception $e) {
             if ($imagePath) Storage::disk('public')->delete($imagePath);
             Log::error('EditorialBoard store error', ['error' => $e->getMessage()]);
@@ -209,7 +208,7 @@ class EditorialBoardController extends Controller
                 'email.email'           => 'Please enter a valid email address.',
                 'orcid_url.url'         => 'ORCID must be a valid URL.',
                 'scopus_url.url'        => 'Scopus must be a valid URL.',
-                'web_of_science_url.url'=> 'Web of Science must be a valid URL.',
+                'web_of_science_url.url' => 'Web of Science must be a valid URL.',
                 'profile_image.mimes'   => 'Profile image must be JPEG, JPG, PNG, or WEBP.',
                 'profile_image.max'     => 'Profile image must not exceed 2MB.',
             ]);
@@ -242,7 +241,6 @@ class EditorialBoardController extends Controller
                 'message' => 'Member updated successfully.',
                 'data'    => $member->fresh()->load('journal'),
             ]);
-
         } catch (\Exception $e) {
             if ($newImagePath) Storage::disk('public')->delete($newImagePath);
             Log::error('EditorialBoard update error', ['error' => $e->getMessage()]);
@@ -272,7 +270,6 @@ class EditorialBoardController extends Controller
                 'status'  => true,
                 'message' => 'Member deleted successfully.',
             ]);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'status'  => false,
@@ -300,7 +297,6 @@ class EditorialBoardController extends Controller
                 'message' => 'Status updated successfully.',
                 'data'    => ['is_active' => $member->is_active],
             ]);
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'status'  => false,
@@ -344,7 +340,6 @@ class EditorialBoardController extends Controller
                 'status'  => true,
                 'message' => 'Sequence updated successfully.',
             ]);
-
         } catch (\Exception $e) {
             Log::error('EditorialBoard updateSequence error', ['error' => $e->getMessage()]);
 
