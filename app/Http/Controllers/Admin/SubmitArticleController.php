@@ -491,7 +491,7 @@ class SubmitArticleController extends Controller
                 'department'                    => 'sometimes|required|string|max:255',
                 'orcid_id'                      => ['nullable', 'string', 'regex:/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/'],
                 'affiliating_institute_address' => 'sometimes|required|string|max:1000',
-                'journal_id'                    => 'sometimes|required|integer|exists:journal,id',
+                'journal_id'                    => 'sometimes|required|integer|exists:journals,id',
                 'issue_id'                      => 'sometimes|nullable|integer|exists:issues,id',
                 'manuscript_title'              => 'sometimes|required|string|min:10|max:500',
                 'abstract_summary'              => 'sometimes|required|string|min:100|max:5000',
@@ -791,7 +791,7 @@ class SubmitArticleController extends Controller
                             'editor_id'     => $user->id,
                             'editor_status' => 'approved',
                             'current_stage' => 'approved',
-                            'approval_date' => now(), 
+                            'approval_date' => now(),
                         ]
                     );
                 });
@@ -954,7 +954,7 @@ class SubmitArticleController extends Controller
                     'reviewer_status'            => 'pending',
                     'reviewer_remarks'           => $validated['remarks'] ?? null,
                     'current_stage'              => 'with_reviewer',
-                    'forwarded_to_reviewer_date' => now(), 
+                    'forwarded_to_reviewer_date' => now(),
                 ]
             );
 
@@ -1131,7 +1131,7 @@ class SubmitArticleController extends Controller
                     'editor_status'  => 'approved_pending_payment',
                     'editor_remarks' => $validated['remarks'],
                     'current_stage'  => 'with_author_payment',
-                    'approval_date'  => now(), 
+                    'approval_date'  => now(),
                 ];
                 $message = 'Author notified to complete payment.';
             } else {
@@ -1565,7 +1565,7 @@ class SubmitArticleController extends Controller
                 'department'                    => 'required|string|max:255',
                 'orcid_id'                      => ['nullable', 'string', 'regex:/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/'],
                 'affiliating_institute_address' => 'required|string|max:1000',
-                'journal_id'                    => 'required|integer|exists:journal,id',
+                'journal_id'                    => 'required|integer|exists:journals,id',
                 'manuscript_title'              => 'required|string|min:10|max:500',
                 'abstract_summary'              => 'required|string|min:100|max:5000',
                 'keywords'                      => 'required|array|min:1|max:8',

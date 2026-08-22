@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->foreignId('journal_id')
-                ->constrained('journal')
+                ->constrained('journals')
                 ->cascadeOnDelete();
 
             $table->foreignId('volume_id')

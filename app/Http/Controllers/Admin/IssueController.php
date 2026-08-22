@@ -17,7 +17,7 @@ class IssueController extends Controller
     private function rules(): array
     {
         return [
-            'journal_id'     => 'required|exists:journal,id',
+            'journal_id'     => 'required|exists:journals,id',
             'volume_id'      => 'required|exists:volumes,id',
             'issue'          => 'required|string|max:100',
             'year'           => 'nullable|string|max:10',

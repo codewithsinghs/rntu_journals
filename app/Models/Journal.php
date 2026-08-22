@@ -12,7 +12,7 @@ class Journal extends Model
 {
     use HasFactory;
 
-    protected $table = 'journal';
+    protected $table = 'journals';
 
     protected $fillable = [
         // ===== Common fields =====

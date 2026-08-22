@@ -94,7 +94,7 @@ class EditorialBoardRoleController extends Controller
     {
         try {
             $validated = $request->validate([
-                'journal_id' => 'nullable|integer|exists:journal,id',
+                'journal_id' => 'nullable|integer|exists:journals,id',
                 'role'       => [
                     'required',
                     'string',
@@ -158,7 +158,7 @@ class EditorialBoardRoleController extends Controller
             $journalId = $request->input('journal_id', $role->journal_id);
 
             $validated = $request->validate([
-                'journal_id' => 'nullable|integer|exists:journal,id',
+                'journal_id' => 'nullable|integer|exists:journals,id',
                 'role'       => [
                     'sometimes',
                     'required',

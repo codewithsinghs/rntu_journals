@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('journal_id')
-                ->constrained('journal')
+                ->constrained('journals')
                 ->cascadeOnDelete();
 
             $table->string('volume');           // e.g. Volume 12
@@ -27,6 +27,7 @@ return new class extends Migration
             // Status
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->boolean('is_current')->default(false);
+            $table->date('published_date')->nullable();
 
             $table->timestamps();
         });

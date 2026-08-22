@@ -16,7 +16,7 @@ class VolumeController extends Controller
     private function rules(): array
     {
         return [
-            'journal_id'      => 'required|exists:journal,id',
+            'journal_id'      => 'required|exists:journals,id',
             'volume'          => 'required|string|max:100',
             'year'            => 'nullable|string|max:10',
             'issues_count'    => 'nullable|integer|min:0',

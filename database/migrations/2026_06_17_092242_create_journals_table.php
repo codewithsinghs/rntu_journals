@@ -8,9 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('journal', function (Blueprint $table) {
+        Schema::create('journals', function (Blueprint $table) {
             $table->id();
 
+            $table->uuid('uuid')->unique()->index();
             // ===== Common / Merged Fields =====
             $table->string('title');                         // journals.title + journal.name
             $table->text('description')->nullable();         // common in both
@@ -66,6 +67,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('journal');
+        Schema::dropIfExists('journals');
     }
 };

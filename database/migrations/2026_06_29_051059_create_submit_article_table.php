@@ -27,7 +27,7 @@ return new class extends Migration
             $table->text('affiliating_institute_address');
 
             // Abstract / manuscript details
-            $table->foreignId('journal_id')->nullable()->constrained('journal')->nullOnDelete();
+            $table->foreignId('journal_id')->nullable()->constrained('journals')->nullOnDelete();
             $table->string('manuscript_title');
             $table->text('abstract_summary');
             $table->json('keywords');

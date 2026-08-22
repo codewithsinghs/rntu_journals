@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('journal_id')
                 ->nullable()
                 ->after('id')
-                ->constrained('journal') // references id on the `journal` table
+                ->constrained('journals') // references id on the `journal` table
                 ->nullOnDelete();        // set to null if the journal is deleted
         });
     }
