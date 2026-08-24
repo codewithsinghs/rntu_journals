@@ -333,10 +333,6 @@ function renderTable() {
             : `<div class="table-cover-journal-image--empty">N/A</div>`;
 
         const issn = j.e_issn || j.p_issn || j.issn_online || "-";
-        const volIssue =
-            j.volume || j.issue
-                ? `Vol ${j.volume ?? "-"} / Issue ${j.issue ?? "-"}`
-                : "-";
 
         rows += `
                 <tr>
@@ -344,7 +340,6 @@ function renderTable() {
                     <td><strong>${escapeHtml(j.title || "")}</strong></td>
                     <td>${escapeHtml(j.abbreviation || "-")}</td>
                     <td>${escapeHtml(issn)}</td>
-                    <td>${escapeHtml(volIssue)}</td>
                     <td>${j.sequence ?? 0}</td>
                     <td>
                         <button class="green-btn" style="color:${j.is_active ? "white" : "White"};"
@@ -459,9 +454,6 @@ function openEditModal(id) {
         "e_issn",
         "p_issn",
         "issn_online",
-        "volume",
-        "issue",
-        "latest_volume",
         "publication_language",
         "publishing_frequency",
         "publishing_months",
@@ -531,12 +523,6 @@ function saveJournal() {
     formData.append(
         "issn_online",
         document.getElementById("issn_online").value.trim(),
-    );
-    formData.append("volume", document.getElementById("volume").value.trim());
-    formData.append("issue", document.getElementById("issue").value.trim());
-    formData.append(
-        "latest_volume",
-        document.getElementById("latest_volume").value.trim(),
     );
     formData.append(
         "publication_language",

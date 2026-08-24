@@ -65,8 +65,12 @@ class IssueController extends Controller
         try {
             $validated = $request->validate($this->rules());
 
+            // Scoped by journal_id (not volume_id) so that "current" means
+            // one current issue per journal overall — matching how
+            // Journal::latestIssue() is scoped by journal_id, and matching
+            // VolumeController's journal_id-scoped "current volume" behavior.
             if (!empty($validated['is_current'])) {
-                Issue::where('volume_id', $validated['volume_id'])
+                Issue::where('journal_id', $validated['journal_id'])
                     ->update(['is_current' => false]);
             }
 
@@ -159,8 +163,9 @@ class IssueController extends Controller
 
             $oldData = $issue->toArray();
 
+            // Scoped by journal_id — see note in store().
             if (!empty($validated['is_current'])) {
-                Issue::where('volume_id', $validated['volume_id'])
+                Issue::where('journal_id', $validated['journal_id'])
                     ->where('id', '!=', $issue->id)
                     ->update(['is_current' => false]);
             }
@@ -266,7 +271,8 @@ class IssueController extends Controller
         try {
             $issue = Issue::findOrFail($id);
 
-            Issue::where('volume_id', $issue->volume_id)
+            // Scoped by journal_id — see note in store().
+            Issue::where('journal_id', $issue->journal_id)
                 ->update(['is_current' => false]);
 
             $issue->is_current = true;

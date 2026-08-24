@@ -19,6 +19,7 @@ class VolumeController extends Controller
             'journal_id'      => 'required|exists:journals,id',
             'volume'          => 'required|string|max:100',
             'year'            => 'nullable|string|max:10',
+            'published_date'  => 'nullable|date',
             'issues_count'    => 'nullable|integer|min:0',
             'status'          => 'required|in:draft,published,archived',
             'is_current'      => 'nullable|boolean',
@@ -66,7 +67,7 @@ class VolumeController extends Controller
                 'journal_id'   => $validated['journal_id'],
                 'volume'       => $validated['volume'],
                 'year'         => $validated['year'] ?? null,
-                // 'issues_count' => $validated['issues_count'] ?? 0,
+                'published_date' => $validated['published_date'],
                 'status'       => $validated['status'],
                 'is_current'   => $request->boolean('is_current', false),
             ]);
@@ -159,7 +160,7 @@ class VolumeController extends Controller
             $volume->journal_id   = $validated['journal_id'];
             $volume->volume       = $validated['volume'];
             $volume->year         = $validated['year'] ?? null;
-            // $volume->issues_count = $validated['issues_count'] ?? 0;
+            $volume->published_date = $validated['published_date'];
             $volume->status       = $validated['status'];
             $volume->is_current   = $request->boolean('is_current', false);
             $volume->save();

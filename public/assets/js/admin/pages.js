@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const API_BASE = "/api/admin/guidelines";
-    const JOURNALS_API = "/api/admin/journals";
+    const API_BASE = "/api/admin/pages";
     const TOKEN = localStorage.getItem("jwt_token") || "";
     const authHeaders = () => ({
         Accept: "application/json",
@@ -11,21 +10,13 @@ document.addEventListener("DOMContentLoaded", function () {
     let perPage = 10;
     let searchTerm = "";
     let deleteTargetId = null;
-    let cachedJournals = [];
 
-    const guidelineModalEl = document.getElementById("GuidelineModal");
-    const deleteModalEl = document.getElementById("glDeleteModal");
+    const pageModalEl = document.getElementById("PageModal");
+    const deleteModalEl = document.getElementById("pgDeleteModal");
 
-    /* ── CKEditor fields ────────────────────────────────────────── */
-    const editors = {};
-    const CK_FIELDS = [
-        { id: "author_description", required: true },
-        { id: "process_description", required: true },
-        { id: "manuscript_description", required: true },
-        { id: "formatting_description", required: true },
-        { id: "layout_description", required: true },
-        { id: "acknowlegdement_description", required: true },
-    ];
+    /* ── CKEditor field ─────────────────────────────────────────── */
+    let editor = null;
+    let editorReady = false;
 
     const TOOLBAR = [
         "undo", "redo", "|", "heading", "|", "fontFamily", "fontSize", "fontColor",
@@ -35,64 +26,58 @@ document.addEventListener("DOMContentLoaded", function () {
         "code", "codeBlock", "horizontalLine",
     ];
 
-    // CKEditor cannot mount into a hidden (display:none) element — the
-
-    let editorsReady = false;
-
-    async function initEditors() {
-        for (const { id } of CK_FIELDS) {
-            if (editors[id]) {
-                await editors[id].destroy();
-                delete editors[id];
-            }
-
-            editors[id] = await CKEDITOR.ClassicEditor.create(
-                document.getElementById(`ck_${id}`),
-                {
-                    licenseKey: "GPL",
-                    removePlugins: [
-                        "CKBox", "CKFinder", "EasyImage",
-                        "RealTimeCollaborativeComments", "RealTimeCollaborativeTrackChanges",
-                        "RealTimeCollaborativeRevisionHistory", "PresenceList", "Comments",
-                        "TrackChanges", "TrackChangesData", "RevisionHistory", "Pagination",
-                        "WProofreader", "MathType", "SlashCommand", "Template",
-                        "DocumentOutline", "FormatPainter", "TableOfContents",
-                        "PasteFromOfficeEnhanced", "AIAssistant", "MultiLevelList", "CaseChange",
-                    ],
-                    toolbar: { items: TOOLBAR },
-                    alignment: { options: ["left", "center", "right", "justify"] },
-                    fontSize: { options: [8, 10, 12, 14, "default", 18, 24, 32, 48] },
-                    table: {
-                        contentToolbar: [
-                            "tableColumn", "tableRow", "mergeTableCells",
-                            "tableProperties", "tableCellProperties",
-                        ],
-                    },
-                    placeholder: "Enter content…",
-                },
-            );
-
-            editors[id].model.document.on("change:data", () => {
-                document.getElementById(id).value = editors[id].getData();
-            });
+    async function initEditor() {
+        if (editor) {
+            await editor.destroy();
+            editor = null;
         }
+
+        editor = await CKEDITOR.ClassicEditor.create(
+            document.getElementById("ck_content"),
+            {
+                licenseKey: "GPL",
+                removePlugins: [
+                    "CKBox", "CKFinder", "EasyImage",
+                    "RealTimeCollaborativeComments", "RealTimeCollaborativeTrackChanges",
+                    "RealTimeCollaborativeRevisionHistory", "PresenceList", "Comments",
+                    "TrackChanges", "TrackChangesData", "RevisionHistory", "Pagination",
+                    "WProofreader", "MathType", "SlashCommand", "Template",
+                    "DocumentOutline", "FormatPainter", "TableOfContents",
+                    "PasteFromOfficeEnhanced", "AIAssistant", "MultiLevelList", "CaseChange",
+                ],
+                toolbar: { items: TOOLBAR },
+                alignment: { options: ["left", "center", "right", "justify"] },
+                fontSize: { options: [8, 10, 12, 14, "default", 18, 24, 32, 48] },
+                table: {
+                    contentToolbar: [
+                        "tableColumn", "tableRow", "mergeTableCells",
+                        "tableProperties", "tableCellProperties",
+                    ],
+                },
+                placeholder: "Enter page content…",
+            },
+        );
+
+        editor.model.document.on("change:data", () => {
+            document.getElementById("content").value = editor.getData();
+        });
     }
 
     /* ── Toast ──────────────────────────────────────────────────── */
     function showToast(type, title, msg) {
-        const el = document.getElementById("glToast");
+        const el = document.getElementById("pgToast");
         if (!el) return;
-        document.getElementById("glToastTitle").textContent = title;
-        const msgEl = document.getElementById("glToastMsg");
+        document.getElementById("pgToastTitle").textContent = title;
+        const msgEl = document.getElementById("pgToastMsg");
         msgEl.textContent = msg || "";
         msgEl.style.display = msg ? "block" : "none";
-        document.getElementById("glToastIcon").innerHTML =
+        document.getElementById("pgToastIcon").innerHTML =
             type === "success"
                 ? `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
                 : `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>`;
         el.classList.remove("bg-success", "bg-danger");
         el.classList.add(type === "success" ? "bg-success" : "bg-danger");
-        const bar = document.getElementById("glToastBar");
+        const bar = document.getElementById("pgToastBar");
         bar.style.transition = "none";
         bar.style.width = "100%";
         requestAnimationFrame(() =>
@@ -115,8 +100,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const msg = Array.isArray(msgs) ? msgs[0] : msgs;
             const err = document.getElementById(`err_${field}`);
             if (err) err.textContent = msg;
-            if (CK_FIELDS.some((f) => f.id === field)) {
-                document.getElementById(`ck_${field}`)?.classList.add("is-invalid");
+            if (field === "content") {
+                document.getElementById("ck_content")?.classList.add("is-invalid");
             } else {
                 document.getElementById(field)?.classList.add("is-invalid");
             }
@@ -124,98 +109,54 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Form helpers ───────────────────────────────────────────── */
-    const PLAIN_FIELDS = [
-        "author_badge", "author_heading",
-        "process_badge", "process_heading",
-        "manuscript_badge", "manuscript_heading",
-        "formatting_badge1", "formatting_badge2", "formatting_heading",
-        "layout_badge1", "layout_heading",
-        "acknowlegdement_badge1", "acknowlegdement_heading",
-    ];
+    const PLAIN_FIELDS = ["title", "slug", "status", "meta_title", "meta_description"];
 
     function resetForm() {
-        document.getElementById("glForm").reset();
-        document.getElementById("glId").value = "";
-        document.getElementById("glMethod").value = "POST";
-        document.getElementById("journal_id").value = "";
-        CK_FIELDS.forEach(({ id }) => {
-            if (editors[id]) editors[id].setData("");
-            const ta = document.getElementById(id);
-            if (ta) ta.value = "";
-        });
+        document.getElementById("pgForm").reset();
+        document.getElementById("pgId").value = "";
+        document.getElementById("pgMethod").value = "POST";
+        document.getElementById("status").value = "draft";
+        document.getElementById("is_homepage").checked = false;
+        if (editor) editor.setData("");
+        document.getElementById("content").value = "";
         clearErrors();
     }
 
     function fillForm(r) {
-        document.getElementById("journal_id").value = r.journal_id ?? "";
         PLAIN_FIELDS.forEach((f) => {
             const el = document.getElementById(f);
             if (el) el.value = r[f] ?? "";
         });
-        CK_FIELDS.forEach(({ id }) => {
-            if (editors[id]) editors[id].setData(r[id] ?? "");
-            const ta = document.getElementById(id);
-            if (ta) ta.value = r[id] ?? "";
-        });
-        document.getElementById("glId").value = r.id;
-        document.getElementById("glMethod").value = "PUT";
+        document.getElementById("is_homepage").checked = !!r.is_homepage;
+        if (editor) editor.setData(r.content ?? "");
+        document.getElementById("content").value = r.content ?? "";
+        document.getElementById("pgId").value = r.id;
+        document.getElementById("pgMethod").value = "PUT";
     }
 
-    function syncEditors() {
-        CK_FIELDS.forEach(({ id }) => {
-            if (editors[id]) document.getElementById(id).value = editors[id].getData();
-        });
-    }
-
-    /* ── Load journals for the select dropdown ────────────────────── */
-    async function loadJournals() {
-        try {
-            const res = await fetch(JOURNALS_API, { headers: authHeaders() });
-            const json = await res.json();
-            // JournalsController::adminIndex() paginates → nested at json.data.data
-            cachedJournals = json.data?.data ?? [];
-
-            const select = document.getElementById("journal_id");
-            select.innerHTML = '<option value="">Select journal…</option>';
-            cachedJournals.forEach((j) => {
-                const opt = document.createElement("option");
-                opt.value = j.id;
-                opt.textContent = j.title;
-                select.appendChild(opt);
-            });
-        } catch (e) {
-            console.error("Failed to load journals:", e.message);
-        }
-    }
-
-    function journalTitle(id) {
-        const j = cachedJournals.find((j) => j.id == id);
-        return j ? j.title : "—";
+    function syncEditor() {
+        if (editor) document.getElementById("content").value = editor.getData();
     }
 
     /* ── Open Add modal ─────────────────────────────────────────── */
     document.getElementById("openAddBtn").addEventListener("click", () => {
         resetForm();
-        document.getElementById("glModalTitle").textContent = "Add Guideline";
-        document.getElementById("glSaveBtnText").textContent = "Save";
-        bootstrap.Modal.getOrCreateInstance(guidelineModalEl).show();
+        document.getElementById("pgModalTitle").textContent = "Add Page";
+        document.getElementById("pgSaveBtnText").textContent = "Save";
+        bootstrap.Modal.getOrCreateInstance(pageModalEl).show();
     });
 
-    guidelineModalEl.addEventListener("shown.bs.modal", async () => {
-        if (!editorsReady) {
-            await initEditors();
-            editorsReady = true;
+    pageModalEl.addEventListener("shown.bs.modal", async () => {
+        if (!editorReady) {
+            await initEditor();
+            editorReady = true;
         }
-        // Re-apply whatever the form currently holds (covers the edit
-        // case, where fillForm() may have run before editors existed).
-        CK_FIELDS.forEach(({ id }) => {
-            const ta = document.getElementById(id);
-            if (editors[id] && ta) editors[id].setData(ta.value || "");
-        });
+        const ta = document.getElementById("content");
+        if (editor && ta) editor.setData(ta.value || "");
     });
 
     /* ── Edit ───────────────────────────────────────────────────── */
-    async function editGuideline(id) {
+    async function editPage(id) {
         try {
             const res = await fetch(`${API_BASE}/${id}`, { headers: authHeaders() });
             const json = await res.json();
@@ -225,49 +166,46 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             resetForm();
             fillForm(json.data);
-            document.getElementById("glModalTitle").textContent = "Edit Guideline";
-            document.getElementById("glSaveBtnText").textContent = "Update";
-            bootstrap.Modal.getOrCreateInstance(guidelineModalEl).show();
+            document.getElementById("pgModalTitle").textContent = "Edit Page";
+            document.getElementById("pgSaveBtnText").textContent = "Update";
+            bootstrap.Modal.getOrCreateInstance(pageModalEl).show();
         } catch (e) {
             showToast("error", "Load failed", e.message);
         }
     }
 
     /* ── Save (create or update) ───────────────────────────────── */
-    document.getElementById("glSaveBtn").addEventListener("click", async () => {
+    document.getElementById("pgSaveBtn").addEventListener("click", async () => {
         clearErrors();
-        syncEditors();
+        syncEditor();
 
         let hasError = false;
 
-        if (!document.getElementById("journal_id").value) {
-            document.getElementById("journal_id").classList.add("is-invalid");
-            document.getElementById("err_journal_id").textContent = "Please select a journal.";
+        if (!document.getElementById("title").value.trim()) {
+            document.getElementById("title").classList.add("is-invalid");
+            document.getElementById("err_title").textContent = "Title is required.";
             hasError = true;
         }
 
-        CK_FIELDS.forEach((f) => {
-            if (f.required) {
-                const val = editors[f.id] ? editors[f.id].getData() : "";
-                if (!val.trim() || val === "<p>&nbsp;</p>") {
-                    document.getElementById(`ck_${f.id}`)?.classList.add("is-invalid");
-                    const errEl = document.getElementById(`err_${f.id}`);
-                    if (errEl) errEl.textContent = "This field is required.";
-                    hasError = true;
-                }
-            }
-        });
+        const contentVal = editor ? editor.getData() : "";
+        if (!contentVal.trim() || contentVal === "<p>&nbsp;</p>") {
+            document.getElementById("ck_content")?.classList.add("is-invalid");
+            document.getElementById("err_content").textContent = "Content is required.";
+            hasError = true;
+        }
+
         if (hasError) return;
 
-        const id = document.getElementById("glId").value;
-        const method = document.getElementById("glMethod").value;
-        const spinner = document.getElementById("glSaveSpinner");
-        const btnText = document.getElementById("glSaveBtnText");
+        const id = document.getElementById("pgId").value;
+        const method = document.getElementById("pgMethod").value;
+        const spinner = document.getElementById("pgSaveSpinner");
+        const btnText = document.getElementById("pgSaveBtnText");
 
         spinner.classList.remove("d-none");
         btnText.textContent = method === "PUT" ? "Updating…" : "Saving…";
 
-        const formData = new FormData(document.getElementById("glForm"));
+        const formData = new FormData(document.getElementById("pgForm"));
+        formData.set("is_homepage", document.getElementById("is_homepage").checked ? "1" : "0");
         if (method === "PUT") formData.append("_method", "PUT");
 
         const url = method === "PUT" ? `${API_BASE}/${id}` : API_BASE;
@@ -290,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            bootstrap.Modal.getOrCreateInstance(guidelineModalEl).hide();
+            bootstrap.Modal.getOrCreateInstance(pageModalEl).hide();
             showToast("success", method === "PUT" ? "Updated!" : "Created!", json.message ?? "");
             loadTable();
         } catch (err) {
@@ -302,15 +240,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     /* ── Delete flow ────────────────────────────────────────────── */
-    function askDelete(id, journalName) {
+    function askDelete(id, title) {
         deleteTargetId = id;
-        document.getElementById("deleteGuidelineJournal").textContent = journalName;
+        document.getElementById("deletePageTitle").textContent = title;
         bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
     }
 
-    document.getElementById("glConfirmDeleteBtn").addEventListener("click", async () => {
+    document.getElementById("pgConfirmDeleteBtn").addEventListener("click", async () => {
         if (!deleteTargetId) return;
-        const spinner = document.getElementById("glDeleteSpinner");
+        const spinner = document.getElementById("pgDeleteSpinner");
         spinner.classList.remove("d-none");
 
         try {
@@ -321,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const json = await res.json();
 
             if (!res.ok) {
-                showToast("error", "Error", json.message ?? "Failed to delete guideline.");
+                showToast("error", "Error", json.message ?? "Failed to delete page.");
                 return;
             }
 
@@ -336,23 +274,44 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    /* ── Toggle status ─────────────────────────────────────────── */
+    async function toggleStatus(id) {
+        try {
+            const res = await fetch(`${API_BASE}/${id}/toggle`, {
+                method: "PATCH",
+                headers: authHeaders(),
+            });
+            const json = await res.json();
+            if (!res.ok) {
+                showToast("error", "Error", json.message ?? "Failed to toggle status.");
+                return;
+            }
+            showToast("success", "Updated!", json.message ?? "");
+            loadTable();
+        } catch (e) {
+            showToast("error", "Request failed", e.message);
+        }
+    }
+
     /* ── Render table ───────────────────────────────────────────── */
     function renderRows(records) {
         return records
             .map((r) => {
-                const jTitle = r.journal?.title ?? journalTitle(r.journal_id);
                 const created = r.created_at ? new Date(r.created_at).toLocaleDateString() : "—";
+                const statusBadge = r.status === "published"
+                    ? `<span class="badge bg-success">Published</span>`
+                    : `<span class="badge bg-secondary">Draft</span>`;
                 return `
                 <tr>
-                    <td>${jTitle}</td>
-                    <td>${r.author_heading ?? "—"}</td>
-                    <td>${r.process_heading ?? "—"}</td>
-                    <td>${r.manuscript_heading ?? "—"}</td>
+                    <td>${r.title ?? "—"}</td>
+                    <td>${r.slug ?? "—"}</td>
+                    <td>${r.is_homepage ? "Yes" : "—"}</td>
+                    <td><a href="#" onclick="window.__pgToggle(${r.id}); return false;">${statusBadge}</a></td>
                     <td>${created}</td>
                     <td>
                         <div class="d-flex">
-                            <button class="edit-btn" onclick="window.__glEdit(${r.id})">Edit</button>
-                            <button class="delete-btn" onclick="window.__glDelete(${r.id}, '${jTitle.replace(/'/g, "\\'")}')">Delete</button>
+                            <button class="edit-btn" onclick="window.__pgEdit(${r.id})">Edit</button>
+                            <button class="delete-btn" onclick="window.__pgDelete(${r.id}, '${(r.title ?? "").replace(/'/g, "\\'")}')">Delete</button>
                         </div>
                     </td>
                 </tr>`;
@@ -404,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            document.getElementById("guidelinesTableBody").innerHTML = renderRows(records);
+            document.getElementById("pagesTableBody").innerHTML = renderRows(records);
             document.getElementById("tableWrap").style.display = "block";
 
             document.getElementById("entriesInfo").textContent =
@@ -435,8 +394,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     /* ── Global handlers (used by inline onclick) ─────────────────── */
-    window.__glEdit = (id) => editGuideline(id);
-    window.__glDelete = (id, journalName) => askDelete(id, journalName);
+    window.__pgEdit = (id) => editPage(id);
+    window.__pgDelete = (id, title) => askDelete(id, title);
+    window.__pgToggle = (id) => toggleStatus(id);
 
-    loadJournals().then(() => loadTable());
+    loadTable();
 });

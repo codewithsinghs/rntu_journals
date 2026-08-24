@@ -56,7 +56,7 @@
         </div>
     </section>
 
-    {{-- Add / Edit Guideline Modal --}}
+    {{-- Add / Edit Guideline Modal (matches Journal modal's input-set / reason / bottom-btn pattern) --}}
     <div class="modal fade" id="GuidelineModal" tabindex="-1" aria-labelledby="GuidelineModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
@@ -76,178 +76,168 @@
                         <input type="hidden" id="glMethod" value="POST">
 
                         {{-- Journal selector --}}
-                        <div class="reason">
-                            <label>Journal <span class="text-danger">*</span></label>
-                            <select class="form-select" id="journal_id" name="journal_id">
-                                <option value="">Select journal…</option>
-                            </select>
-                            <div class="invalid-feedback d-block" id="err_journal_id"></div>
+                        <div class="middle-3 middle">
+                            <span class="input-set">
+                                <label>Journal <span class="text-danger">*</span></label>
+                                <select class="form-select" id="journal_id" name="journal_id">
+                                    <option value="">Select journal…</option>
+                                </select>
+                                <div class="invalid-feedback d-block" id="err_journal_id"></div>
+                            </span>
                         </div>
 
                         {{-- Instructions for Authors --}}
                         <div class="inner_fp">
                             <div class="ssid">Instructions for Authors</div>
-                            <div class="content_container">
-                                <div class="content_inner">
-                                    <div class="content_partitions">
-                                        <div class="partitions_inner">
-                                            <label>Badge <span class="gl-hint">AUTHOR GUIDELINES</span></label>
-                                            <input type="text" class="content_show" id="author_badge" name="author_badge" placeholder="AUTHOR GUIDELINES">
-                                            <div class="invalid-feedback" id="err_author_badge"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Heading <span class="text-danger">*</span></label>
-                                            <input type="text" class="content_show" id="author_heading" name="author_heading" placeholder="Instructions for Authors" required>
-                                            <div class="invalid-feedback" id="err_author_heading"></div>
-                                        </div>
-                                    </div>
-                                    <div class="content_inner">
-                                        <div class="heading_p">Description <span class="text-danger">*</span></div>
-                                        <div id="ck_author_description" class="gl-ck-wrap"></div>
-                                        <textarea class="content_show d-none" id="author_description" name="author_description"></textarea>
-                                        <div class="gl-ck-error" id="err_author_description"></div>
-                                    </div>
-                                </div>
+
+                            <div class="middle-3 middle">
+                                <span class="input-set">
+                                    <label>Badge <span class="gl-hint">AUTHOR GUIDELINES</span></label>
+                                    <input type="text" class="content_show" id="author_badge" name="author_badge" placeholder="AUTHOR GUIDELINES">
+                                    <div class="invalid-feedback d-block" id="err_author_badge"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Heading <span class="text-danger">*</span></label>
+                                    <input type="text" class="content_show" id="author_heading" name="author_heading" placeholder="Instructions for Authors" required>
+                                    <div class="invalid-feedback d-block" id="err_author_heading"></div>
+                                </span>
+                            </div>
+
+                            <div class="reason">
+                                <label>Description <span class="text-danger">*</span></label>
+                                <div id="ck_author_description" class="gl-ck-wrap"></div>
+                                <textarea class="content_show d-none" id="author_description" name="author_description"></textarea>
+                                <div class="gl-ck-error" id="err_author_description"></div>
                             </div>
                         </div>
 
                         {{-- Submission Process --}}
                         <div class="inner_fp">
                             <div class="ssid">Submission Process</div>
-                            <div class="content_container">
-                                <div class="content_inner">
-                                    <div class="content_partitions">
-                                        <div class="partitions_inner">
-                                            <label>Badge <span class="gl-hint">PROCESS</span></label>
-                                            <input type="text" class="content_show" id="process_badge" name="process_badge" placeholder="PROCESS">
-                                            <div class="invalid-feedback" id="err_process_badge"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Heading <span class="text-danger">*</span></label>
-                                            <input type="text" class="content_show" id="process_heading" name="process_heading" placeholder="Submission Process" required>
-                                            <div class="invalid-feedback" id="err_process_heading"></div>
-                                        </div>
-                                    </div>
-                                    <div class="content_inner">
-                                        <div class="heading_p">Description <span class="text-danger">*</span></div>
-                                        <div id="ck_process_description" class="gl-ck-wrap"></div>
-                                        <textarea class="content_show d-none" id="process_description" name="process_description"></textarea>
-                                        <div class="gl-ck-error" id="err_process_description"></div>
-                                    </div>
-                                </div>
+
+                            <div class="middle-3 middle">
+                                <span class="input-set">
+                                    <label>Badge <span class="gl-hint">PROCESS</span></label>
+                                    <input type="text" class="content_show" id="process_badge" name="process_badge" placeholder="PROCESS">
+                                    <div class="invalid-feedback d-block" id="err_process_badge"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Heading <span class="text-danger">*</span></label>
+                                    <input type="text" class="content_show" id="process_heading" name="process_heading" placeholder="Submission Process" required>
+                                    <div class="invalid-feedback d-block" id="err_process_heading"></div>
+                                </span>
+                            </div>
+
+                            <div class="reason">
+                                <label>Description <span class="text-danger">*</span></label>
+                                <div id="ck_process_description" class="gl-ck-wrap"></div>
+                                <textarea class="content_show d-none" id="process_description" name="process_description"></textarea>
+                                <div class="gl-ck-error" id="err_process_description"></div>
                             </div>
                         </div>
 
                         {{-- New Manuscript --}}
                         <div class="inner_fp">
                             <div class="ssid">New Manuscript</div>
-                            <div class="content_container">
-                                <div class="content_inner">
-                                    <div class="content_partitions">
-                                        <div class="partitions_inner">
-                                            <label>Badge <span class="gl-hint">MANUSCRIPT PREPARATION</span></label>
-                                            <input type="text" class="content_show" id="manuscript_badge" name="manuscript_badge" placeholder="MANUSCRIPT PREPARATION">
-                                            <div class="invalid-feedback" id="err_manuscript_badge"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Heading <span class="text-danger">*</span></label>
-                                            <input type="text" class="content_show" id="manuscript_heading" name="manuscript_heading" placeholder="New Manuscripts" required>
-                                            <div class="invalid-feedback" id="err_manuscript_heading"></div>
-                                        </div>
-                                    </div>
-                                    <div class="content_inner">
-                                        <div class="heading_p">Description <span class="text-danger">*</span></div>
-                                        <div id="ck_manuscript_description" class="gl-ck-wrap"></div>
-                                        <textarea class="content_show d-none" id="manuscript_description" name="manuscript_description"></textarea>
-                                        <div class="gl-ck-error" id="err_manuscript_description"></div>
-                                    </div>
-                                </div>
+
+                            <div class="middle-3 middle">
+                                <span class="input-set">
+                                    <label>Badge <span class="gl-hint">MANUSCRIPT PREPARATION</span></label>
+                                    <input type="text" class="content_show" id="manuscript_badge" name="manuscript_badge" placeholder="MANUSCRIPT PREPARATION">
+                                    <div class="invalid-feedback d-block" id="err_manuscript_badge"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Heading <span class="text-danger">*</span></label>
+                                    <input type="text" class="content_show" id="manuscript_heading" name="manuscript_heading" placeholder="New Manuscripts" required>
+                                    <div class="invalid-feedback d-block" id="err_manuscript_heading"></div>
+                                </span>
+                            </div>
+
+                            <div class="reason">
+                                <label>Description <span class="text-danger">*</span></label>
+                                <div id="ck_manuscript_description" class="gl-ck-wrap"></div>
+                                <textarea class="content_show d-none" id="manuscript_description" name="manuscript_description"></textarea>
+                                <div class="gl-ck-error" id="err_manuscript_description"></div>
                             </div>
                         </div>
 
                         {{-- Formatting --}}
                         <div class="inner_fp">
                             <div class="ssid">Formatting</div>
-                            <div class="content_container">
-                                <div class="content_inner">
-                                    <div class="content_partitions">
-                                        <div class="partitions_inner">
-                                            <label>Badge <span class="gl-hint">DOCUMENT FORMAT REFERENCE</span></label>
-                                            <input type="text" class="content_show" id="formatting_badge1" name="formatting_badge1" placeholder="DOCUMENT FORMAT REFERENCE">
-                                            <div class="invalid-feedback" id="err_formatting_badge1"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Badge 2 <span class="gl-hint">e.g. IEEE STYLE</span></label>
-                                            <input type="text" class="content_show" id="formatting_badge2" name="formatting_badge2" placeholder="IEEE STYLE">
-                                            <div class="invalid-feedback" id="err_formatting_badge2"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Heading <span class="text-danger">*</span></label>
-                                            <input type="text" class="content_show" id="formatting_heading" name="formatting_heading" placeholder="Formatting" required>
-                                            <div class="invalid-feedback" id="err_formatting_heading"></div>
-                                        </div>
-                                    </div>
-                                    <div class="content_inner">
-                                        <div class="heading_p">Description <span class="text-danger">*</span></div>
-                                        <div id="ck_formatting_description" class="gl-ck-wrap"></div>
-                                        <textarea class="content_show d-none" id="formatting_description" name="formatting_description"></textarea>
-                                        <div class="gl-ck-error" id="err_formatting_description"></div>
-                                    </div>
-                                </div>
+
+                            <div class="middle-3 middle">
+                                <span class="input-set">
+                                    <label>Badge <span class="gl-hint">DOCUMENT FORMAT REFERENCE</span></label>
+                                    <input type="text" class="content_show" id="formatting_badge1" name="formatting_badge1" placeholder="DOCUMENT FORMAT REFERENCE">
+                                    <div class="invalid-feedback d-block" id="err_formatting_badge1"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Badge 2 <span class="gl-hint">e.g. IEEE STYLE</span></label>
+                                    <input type="text" class="content_show" id="formatting_badge2" name="formatting_badge2" placeholder="IEEE STYLE">
+                                    <div class="invalid-feedback d-block" id="err_formatting_badge2"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Heading <span class="text-danger">*</span></label>
+                                    <input type="text" class="content_show" id="formatting_heading" name="formatting_heading" placeholder="Formatting" required>
+                                    <div class="invalid-feedback d-block" id="err_formatting_heading"></div>
+                                </span>
+                            </div>
+
+                            <div class="reason">
+                                <label>Description <span class="text-danger">*</span></label>
+                                <div id="ck_formatting_description" class="gl-ck-wrap"></div>
+                                <textarea class="content_show d-none" id="formatting_description" name="formatting_description"></textarea>
+                                <div class="gl-ck-error" id="err_formatting_description"></div>
                             </div>
                         </div>
 
                         {{-- Page Layout --}}
                         <div class="inner_fp">
                             <div class="ssid">Page Layout</div>
-                            <div class="content_container">
-                                <div class="content_inner">
-                                    <div class="content_partitions">
-                                        <div class="partitions_inner">
-                                            <label>Badge <span class="gl-hint">PAGE LAYOUT</span></label>
-                                            <input type="text" class="content_show" id="layout_badge1" name="layout_badge1" placeholder="PAGE LAYOUT">
-                                            <div class="invalid-feedback" id="err_layout_badge1"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Heading <span class="text-danger">*</span></label>
-                                            <input type="text" class="content_show" id="layout_heading" name="layout_heading" placeholder="New Manuscripts" required>
-                                            <div class="invalid-feedback" id="err_layout_heading"></div>
-                                        </div>
-                                    </div>
-                                    <div class="content_inner">
-                                        <div class="heading_p">Description <span class="text-danger">*</span></div>
-                                        <div id="ck_layout_description" class="gl-ck-wrap"></div>
-                                        <textarea class="content_show d-none" id="layout_description" name="layout_description"></textarea>
-                                        <div class="gl-ck-error" id="err_layout_description"></div>
-                                    </div>
-                                </div>
+
+                            <div class="middle-3 middle">
+                                <span class="input-set">
+                                    <label>Badge <span class="gl-hint">PAGE LAYOUT</span></label>
+                                    <input type="text" class="content_show" id="layout_badge1" name="layout_badge1" placeholder="PAGE LAYOUT">
+                                    <div class="invalid-feedback d-block" id="err_layout_badge1"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Heading <span class="text-danger">*</span></label>
+                                    <input type="text" class="content_show" id="layout_heading" name="layout_heading" placeholder="New Manuscripts" required>
+                                    <div class="invalid-feedback d-block" id="err_layout_heading"></div>
+                                </span>
+                            </div>
+
+                            <div class="reason">
+                                <label>Description <span class="text-danger">*</span></label>
+                                <div id="ck_layout_description" class="gl-ck-wrap"></div>
+                                <textarea class="content_show d-none" id="layout_description" name="layout_description"></textarea>
+                                <div class="gl-ck-error" id="err_layout_description"></div>
                             </div>
                         </div>
 
                         {{-- Acknowledgement --}}
                         <div class="inner_fp">
                             <div class="ssid">Acknowledgement</div>
-                            <div class="content_container">
-                                <div class="content_inner">
-                                    <div class="content_partitions">
-                                        <div class="partitions_inner">
-                                            <label>Badge <span class="gl-hint">RNTU JOURNALS</span></label>
-                                            <input type="text" class="content_show" id="acknowlegdement_badge1" name="acknowlegdement_badge1" placeholder="RNTU JOURNALS">
-                                            <div class="invalid-feedback" id="err_acknowlegdement_badge1"></div>
-                                        </div>
-                                        <div class="partitions_inner">
-                                            <label>Heading <span class="text-danger">*</span></label>
-                                            <input type="text" class="content_show" id="acknowlegdement_heading" name="acknowlegdement_heading" placeholder="New Manuscripts" required>
-                                            <div class="invalid-feedback" id="err_acknowlegdement_heading"></div>
-                                        </div>
-                                    </div>
-                                    <div class="content_inner">
-                                        <div class="heading_p">Description <span class="text-danger">*</span></div>
-                                        <div id="ck_acknowlegdement_description" class="gl-ck-wrap"></div>
-                                        <textarea class="content_show d-none" id="acknowlegdement_description" name="acknowlegdement_description"></textarea>
-                                        <div class="gl-ck-error" id="err_acknowlegdement_description"></div>
-                                    </div>
-                                </div>
+
+                            <div class="middle-3 middle">
+                                <span class="input-set">
+                                    <label>Badge <span class="gl-hint">RNTU JOURNALS</span></label>
+                                    <input type="text" class="content_show" id="acknowlegdement_badge1" name="acknowlegdement_badge1" placeholder="RNTU JOURNALS">
+                                    <div class="invalid-feedback d-block" id="err_acknowlegdement_badge1"></div>
+                                </span>
+                                <span class="input-set">
+                                    <label>Heading <span class="text-danger">*</span></label>
+                                    <input type="text" class="content_show" id="acknowlegdement_heading" name="acknowlegdement_heading" placeholder="New Manuscripts" required>
+                                    <div class="invalid-feedback d-block" id="err_acknowlegdement_heading"></div>
+                                </span>
+                            </div>
+
+                            <div class="reason">
+                                <label>Description <span class="text-danger">*</span></label>
+                                <div id="ck_acknowlegdement_description" class="gl-ck-wrap"></div>
+                                <textarea class="content_show d-none" id="acknowlegdement_description" name="acknowlegdement_description"></textarea>
+                                <div class="gl-ck-error" id="err_acknowlegdement_description"></div>
                             </div>
                         </div>
 

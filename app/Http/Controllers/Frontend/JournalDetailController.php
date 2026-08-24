@@ -43,12 +43,6 @@ class JournalDetailController extends Controller
 
     public function show(Journal $journal)
     {
-        // dd($journal->latestVolume);
-
-        // dd($journal);
-        // dd($journal->latestVolume);
-        // dd($journal->latestIssue);
-
         return view('frontend.journal-detail', [
             'journalId' => $journal->uuid,
         ]);
@@ -111,10 +105,11 @@ class JournalDetailController extends Controller
                     ? asset('images/' . $journal->cover_image)
                     : asset('assets/home_page/hero_1.jpg');
 
-            $articlesData = collect($articles->items())->map(function ($article) {
+            $articlesData = collect($articles->items())->map(function ($article) use ($journal) {
                 $article->pdf_url = $article->signed_manuscript_pdf
                     ? Storage::url($article->signed_manuscript_pdf)
                     : null;
+                $article->journal_slug = $journal->slug;
                 return $article;
             });
 
@@ -122,7 +117,7 @@ class JournalDetailController extends Controller
                 'status' => true,
                 'data' => [
                     'journal' => $journal,
-                    'articles' => $articlesData,
+                    'articles' => $articlesData,    
                     'pagination' => [
                         'current_page' => $articles->currentPage(),
                         'last_page'    => $articles->lastPage(),

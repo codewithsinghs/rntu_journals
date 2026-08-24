@@ -13,6 +13,8 @@
         use App\Http\Controllers\Admin\JournalsController;
         use App\Http\Controllers\Admin\MediasController;
         use App\Http\Controllers\Admin\MenuController as AdminMenuController;
+        use App\Http\Controllers\Admin\PageController as AdminPageController;
+        use App\Http\Controllers\Frontend\PageController as FrontendPageController;
         use App\Http\Controllers\Admin\PermissionController;
         use App\Http\Controllers\Admin\PrpController;
         use App\Http\Controllers\Admin\RoleController;
@@ -22,7 +24,6 @@
         use App\Http\Controllers\Admin\UserController;
         use App\Http\Controllers\Admin\VolumeController;
         use App\Http\Controllers\Admin\WebsiteVisitorController;
-        use App\Http\Controllers\Frontend\PageResolverController;
         use App\Http\Controllers\Frontend\SettingController;
         use App\Http\Controllers\Frontend\AboutController;
         use App\Http\Controllers\Frontend\ArchiveController;
@@ -31,7 +32,6 @@
         use App\Http\Controllers\Frontend\CurrentIssuesController;
         use App\Http\Controllers\Frontend\FooterController;
         use App\Http\Controllers\Frontend\GuidelinesController as FrontendGuidelinesController;
-        use App\Http\Controllers\Frontend\HomeController;
         use App\Http\Controllers\Frontend\HomeController as FrontendHomeController;
         use App\Http\Controllers\Frontend\JournalDetailController;
         use App\Http\Controllers\Frontend\MenuController;
@@ -203,6 +203,15 @@
             Route::get('/website-visitors',      [WebsiteVisitorController::class, 'adminIndex'])->name('website-visitors.data');
             Route::get('/website-visitors/{id}', [WebsiteVisitorController::class, 'show'])->name('website-visitors.show');
             Route::delete('/website-visitors/{id}', [WebsiteVisitorController::class, 'destroy'])->name('website-visitors.destroy');
+
+            //Pages Module
+            Route::get('/pages',               [AdminPageController::class, 'adminIndex'])->name('pages.data');
+            Route::post('/pages',              [AdminPageController::class, 'store'])->name('pages.store');
+            Route::get('/pages/{id}',          [AdminPageController::class, 'show'])->name('pages.show');
+            Route::post('/pages/{id}',         [AdminPageController::class, 'update'])->name('pages.update.multipart');
+            Route::put('/pages/{id}',          [AdminPageController::class, 'update'])->name('pages.update');
+            Route::delete('/pages/{id}',       [AdminPageController::class, 'destroy'])->name('pages.destroy');
+            Route::patch('/pages/{id}/toggle', [AdminPageController::class, 'toggleStatus'])->name('pages.toggle');
         });
 
 
@@ -224,7 +233,10 @@
             Route::get('/menus', [MenuController::class, 'index']);
             Route::get('/menus/location/{location}', [MenuController::class, 'byLocation']);
             Route::get('/settings/logo', [SettingController::class, 'logo']);
-            Route::get('/current-page', [PageResolverController::class, 'resolve']);
             Route::get('/footer', [FooterController::class, 'index']);
             Route::get('/visitor-count', [FrontendHomeController::class, 'visitorCount']);
+
+            //page module
+            Route::get('/pages/{slug}', [FrontendPageController::class, 'content']);
+            Route::get('/pages/homepage/current', [FrontendPageController::class, 'homepage']);
         });

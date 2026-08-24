@@ -1,4 +1,4 @@
-<!-- @extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('content')
     {{-- Page Start --}}
@@ -167,4 +167,4 @@
 
 @section('scripts')
     <script src="{{ asset('assets/js/admin/contact.js') }}"></script>
-@endsection -->
+@endsection 

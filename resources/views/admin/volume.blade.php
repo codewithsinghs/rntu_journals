@@ -22,6 +22,7 @@
                                 <th>Journal</th>
                                 <th>Volume</th>
                                 <th>Year</th>
+                                <th>Published Date</th>
                                 <th>Status</th>
                                 <th>Current</th>
                                 <th>Action</th>
@@ -29,7 +30,7 @@
                         </thead>
                         <tbody id="volume-table-body">
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">Loading…</td>
+                                <td colspan="8" class="text-center text-muted py-4">Loading…</td>
                             </tr>
                         </tbody>
                     </table>
@@ -97,6 +98,16 @@
         <option value="">Select year...</option>
     </select>
 </span>
+
+                            <!-- Published Date -->
+                            <span class="input-set">
+                                <label>Published Date</label>
+                                <input
+                                    type="date"
+                                    class="content_show"
+                                    name="published_date"
+                                    id="published_date">
+                            </span>
 
                             <!-- Status -->
                             <span class="input-set">

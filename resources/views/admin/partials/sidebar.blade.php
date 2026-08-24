@@ -135,7 +135,7 @@
                 class="{{ request()->routeIs('admin.aboutcontent*') ? 'active' : '' }}">
                 <i class="fa-solid fa-info-circle"></i>
                 About Page
-            </a>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+            </a>
         </li>
         @endif
 
@@ -202,6 +202,16 @@
                 class="{{ request()->routeIs('admin.medias') ? 'active' : '' }}">
                 <i class="fa-solid fa-images"></i>
                 Media
+            </a>
+        </li>
+        @endif
+
+        @if ($can('view pages'))
+        <li>
+            <a href="{{ route('admin.pages') }}"
+                class="{{ request()->routeIs('admin.pages*') ? 'active' : '' }}">
+                <i class="fa-solid fa-file-lines"></i>
+                Pages
             </a>
         </li>
         @endif

@@ -14,6 +14,8 @@ use App\Http\Controllers\Frontend\ContactController;
 use App\Http\Controllers\Frontend\CurrentIssuesController;
 use App\Http\Controllers\Frontend\JournalDetailController;
 use App\Http\Controllers\Frontend\PrpController;
+use App\Http\Controllers\Frontend\PageController as FrontendPageController;
+use App\Http\Controllers\Frontend\RootResolverController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -45,12 +47,14 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::get('/{journal}/archives', [ArchiveController::class, 'show'])->name('archives');
 Route::get('/{journal}/editorialboard', [EditorialBoardController::class, 'index'])->name('editorial_board');
 Route::get('/{journal}/guideline', [GuidelinesController::class, 'index'])->name('guidelines');
-Route::get('/{journal}', [JournalDetailController::class, 'show'])->name('journal-details');
 Route::get('/{journal}/current-issues/{issue?}', [CurrentIssuesController::class, 'show'])->name('current-issues');
 Route::get('/{journal}/issues/{uuid?}/articles', [CurrentIssuesController::class, 'articlesData'])->name('current-issues.articles');
 Route::get('/{journal}/articles/{uuid}', [ArticleController::class, 'show'])->name('article.show');
 Route::get('/api/public/{journal}/articles/{uuid}', [ArticleController::class, 'data'])->name('article.data');
 Route::get('/articles/{uuid}/download', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
+
+//Pages module for frontend
+Route::get('/{slug}', [RootResolverController::class, 'resolve'])->name('journal-details');
 
 // ── Protected Admin Routes ────────────────────────────────────────
 Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function () {
@@ -75,7 +79,8 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/editorial-board', fn() => view('admin.editorialboard'))->middleware('permission:view editorial board')->name('editorial-board');
     Route::get('/editorial-board-roles', fn() => view('admin.editorialboardroles'))->middleware('permission:view editorial board roles')->name('editorial-board-roles');
     Route::get('/all-article-lists', fn() => view('admin.submitarticle'))->middleware('permission:view submit article')->name('submit-article');
-
+   //Pages Module
+    Route::get('/pages', fn() => view('admin.pages'))->middleware('permission:view pages')->name('pages');
 
     Route::prefix('submit-articles')->name('submit-articles.')->group(function () {
 
