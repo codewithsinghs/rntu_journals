@@ -40,7 +40,7 @@ class DashboardController extends Controller
         return $query;
     }
 
-   
+
     private function scopeJoinedToUser($query, $user, string $userCol, string $reviewerCol)
     {
         $canViewAll = $user && $user->can('view all articles');

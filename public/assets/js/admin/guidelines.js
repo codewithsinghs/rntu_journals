@@ -36,9 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
 
     // CKEditor cannot mount into a hidden (display:none) element — the
-    // modal starts hidden, so editors are only created once, on the
-    // FIRST time the modal is shown, then reused/cleared on every
-    // subsequent open (add or edit).
+
     let editorsReady = false;
 
     async function initEditors() {

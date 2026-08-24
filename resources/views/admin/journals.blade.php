@@ -70,7 +70,6 @@
                                 <th>Title</th>
                                 <th>Abbreviation</th>
                                 <th>ISSN</th>
-                                <th>Volume / Issue</th>
                                 <th>Sequence</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -173,22 +172,7 @@
                                 <input type="text" id="issn_online">
                             </span>
 
-                            {{-- Volume / Issue --}}
-                            <span class="input-set">
-                                <label>Volume</label>
-                                <input type="text" id="volume">
-                            </span>
-
-                            <span class="input-set">
-                                <label>Issue</label>
-                                <input type="text" id="issue">
-                            </span>
-
-                            <span class="input-set">
-                                <label>Latest Volume</label>
-                                <input type="text" id="latest_volume" placeholder="e.g. Sept, 2025">
-                            </span>
-
+                        
                             {{-- Publishing info --}}
                             <span class="input-set">
                                 <label>Publication Language</label>

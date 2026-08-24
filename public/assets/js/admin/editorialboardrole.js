@@ -45,20 +45,20 @@ document.addEventListener("DOMContentLoaded", function () {
         el.setAttribute("aria-live", "assertive");
         el.setAttribute("aria-atomic", "true");
         el.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body d-flex align-items-start gap-2">
-                    <span id="ebrToastIcon" class="flex-shrink-0"></span>
-                    <div>
-                        <div id="ebrToastTitle" class="fw-semibold"></div>
-                        <div id="ebrToastMsg" class="small"></div>
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-start gap-2">
+                        <span id="ebrToastIcon" class="flex-shrink-0"></span>
+                        <div>
+                            <div id="ebrToastTitle" class="fw-semibold"></div>
+                            <div id="ebrToastMsg" class="small"></div>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div style="height:3px;background:rgba(255,255,255,.25);">
-                <div id="ebrToastBar" style="height:100%;background:rgba(255,255,255,.8);width:100%;"></div>
-            </div>
-        `;
+                <div style="height:3px;background:rgba(255,255,255,.25);">
+                    <div id="ebrToastBar" style="height:100%;background:rgba(255,255,255,.8);width:100%;"></div>
+                </div>
+            `;
         container.appendChild(el);
         return el;
     }
@@ -121,12 +121,14 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("ebr_status").checked = true;
         document.getElementById("ebr_journal_id").value = "";
         document.getElementById("ebr_role").value = "";
+        document.getElementById("ebr_sequence").value = 0;
         clearErrors();
     }
 
     function fillForm(r) {
         document.getElementById("ebr_journal_id").value = r.journal_id ?? "";
         document.getElementById("ebr_role").value = r.role ?? "";
+        document.getElementById("ebr_sequence").value = r.sequence ?? 0;
         document.getElementById("ebr_status").checked = !!Number(r.status);
         document.getElementById("ebrId").value = r.id;
         document.getElementById("ebrMethod").value = "PUT";
@@ -190,90 +192,145 @@ document.addEventListener("DOMContentLoaded", function () {
             const payload = {
                 journal_id: document.getElementById("ebr_journal_id").value || null,
                 role: document.getElementById("ebr_role").value.trim(),
+                sequence: parseInt(document.getElementById("ebr_sequence").value, 10) || 0,
                 status: document.getElementById("ebr_status").checked ? 1 : 0,
             };
 
             const url = method === "PUT" ? `${API_BASE}/${id}` : API_BASE;
 
-            try {
-                const res = await apiFetch(url, {
-                    method,
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-                const json = await res.json();
+            await submitRole(url, method, payload, spinner, btnText);
+        });
 
-                if (!res.ok) {
-                    if (res.status === 422 && json.errors) {
-                        showErrors(json.errors);
-                        showToast(
-                            "error",
-                            "Validation failed",
-                            "Please fix the highlighted fields.",
-                        );
+    async function submitRole(url, method, payload, spinner, btnText) {
+        try {
+            const res = await apiFetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+
+            if (!res.ok) {
+                // Role is renamed and currently in use — ask for confirmation via SweetAlert
+                if (res.status === 409 && json.needs_confirmation) {
+                    spinner.classList.add("d-none");
+                    btnText.textContent = "Update";
+
+                    const result = await Swal.fire({
+                        icon: "warning",
+                        title: "Role is in use",
+                        text: json.message,
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, update it",
+                        cancelButtonText: "Cancel",
+                        confirmButtonColor: "#d33",
+                        reverseButtons: true,
+                    });
+
+                    if (result.isConfirmed) {
+                        spinner.classList.remove("d-none");
+                        btnText.textContent = "Updating…";
+                        const retryPayload = { ...payload, confirm_update_members: 1 };
+                        return submitRole(url, method, retryPayload, spinner, btnText);
                     } else {
-                        showToast(
-                            "error",
-                            "Error",
-                            json.message ?? "Something went wrong.",
-                        );
+                        // showToast("error", "Not updated", "Role change was cancelled.");
+                        return;
                     }
+                }
+
+                if (res.status === 409) {
+                    // Delete-blocked or other conflict (e.g. role in use, can't delete)
+                    Swal.fire({
+                        icon: "error",
+                        title: "Action blocked",
+                        text: json.message ?? "This role is currently in use.",
+                    });
                     return;
                 }
 
-                bootstrap.Modal.getOrCreateInstance(ebrModalEl).hide();
-                showToast(
-                    "success",
-                    method === "PUT" ? "Updated!" : "Created!",
-                    json.message ?? "",
-                );
-                loadRoles();
-            } catch (err) {
-                showToast("error", "Request failed", err.message);
-            } finally {
-                spinner.classList.add("d-none");
-                btnText.textContent = method === "PUT" ? "Update" : "Save";
+                if (res.status === 422 && json.errors) {
+                    showErrors(json.errors);
+                    showToast(
+                        "error",
+                        "Validation failed",
+                        "Please fix the highlighted fields.",
+                    );
+                } else {
+                    showToast(
+                        "error",
+                        "Error",
+                        json.message ?? "Something went wrong.",
+                    );
+                }
+                return;
             }
-        });
 
+            bootstrap.Modal.getOrCreateInstance(ebrModalEl).hide();
+            showToast(
+                "success",
+                method === "PUT" ? "Updated!" : "Created!",
+                json.message ?? "",
+            );
+            loadRoles();
+        } catch (err) {
+            showToast("error", "Request failed", err.message);
+        } finally {
+            spinner.classList.add("d-none");
+            btnText.textContent = method === "PUT" ? "Update" : "Save";
+        }
+    }
     /* ── Delete flow ────────────────────────────────────────────── */
     function askDelete(id) {
         deleteTargetId = id;
         bootstrap.Modal.getOrCreateInstance(ebrDeleteModalEl).show();
     }
 
-    document
-        .getElementById("ebrConfirmDeleteBtn")
-        .addEventListener("click", async () => {
-            if (!deleteTargetId) return;
-            const spinner = document.getElementById("ebrDeleteSpinner");
-            spinner.classList.remove("d-none");
+   document
+    .getElementById("ebrConfirmDeleteBtn")
+    .addEventListener("click", async () => {
+        if (!deleteTargetId) return;
+        const spinner = document.getElementById("ebrDeleteSpinner");
+        const label = document.getElementById("ebrDeleteLabel");
 
-            try {
-                const res = await apiFetch(`${API_BASE}/${deleteTargetId}`, {
-                    method: "DELETE",
-                });
-                const json = await res.json();
+        spinner.classList.remove("d-none");
+        label.textContent = "Deleting…";
 
-                if (!res.ok) {
+        try {
+            const res = await apiFetch(`${API_BASE}/${deleteTargetId}`, {
+                method: "DELETE",
+            });
+            const json = await res.json();
+
+            bootstrap.Modal.getInstance(ebrDeleteModalEl)?.hide();
+
+            if (!res.ok) {
+                if (res.status === 409) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Cannot delete role",
+                        text: json.message ?? "This role is currently in use.",
+                    });
+                } else {
                     showToast(
                         "error",
                         "Error",
                         json.message ?? "Failed to delete role.",
                     );
-                    return;
                 }
-
-                bootstrap.Modal.getOrCreateInstance(ebrDeleteModalEl).hide();
-                showToast("success", "Deleted!", json.message ?? "");
-                loadRoles();
-            } catch (err) {
-                showToast("error", "Request failed", err.message);
-            } finally {
-                deleteTargetId = null;
+                return;
             }
-        });
 
+            showToast("success", "Deleted!", json.message ?? "");
+            loadRoles();
+        } catch (err) {
+            bootstrap.Modal.getInstance(ebrDeleteModalEl)?.hide();
+            showToast("error", "Request failed", err.message);
+        } finally {
+            spinner.classList.add("d-none");
+            label.textContent = "Delete";
+            deleteTargetId = null;
+        }
+    });
     /* ── Toggle status ──────────────────────────────────────────── */
     async function toggleStatus(id) {
         try {
@@ -302,9 +359,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const esc = (s) =>
         s
             ? String(s)
-                  .replace(/&/g, "&amp;")
-                  .replace(/</g, "&lt;")
-                  .replace(/>/g, "&gt;")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
             : "";
 
     function journalCell(r) {
@@ -318,21 +375,22 @@ document.addEventListener("DOMContentLoaded", function () {
         return roles
             .map(
                 (r) => `
-                <tr>
-                    <td>${journalCell(r)}</td>
-                    <td class="eb-name-cell" title="${esc(r.role)}">${esc(r.role)}</td>
-                    <td>
-                        <span class="${Number(r.status) ? "green-btn" : "delete-btn"}" style="cursor:pointer" onclick="window.__ebrToggle(${r.id})">
-                            ${Number(r.status) ? "Active" : "Inactive"}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="d-flex">
-                            <button class="edit-btn" onclick="window.__ebrEdit(${r.id})">Edit</button>
-                            <button class="delete-btn" onclick="window.__ebrDelete(${r.id})">Delete</button>
-                        </div>
-                    </td>
-                </tr>`,
+                    <tr>
+                        <td>${journalCell(r)}</td>
+                        <td class="eb-name-cell" title="${esc(r.role)}">${esc(r.role)}</td>
+                        <td>${r.sequence ?? 0}</td>
+                        <td>
+                            <span class="${Number(r.status) ? "green-btn" : "delete-btn"}" style="cursor:pointer" onclick="window.__ebrToggle(${r.id})">
+                                ${Number(r.status) ? "Active" : "Inactive"}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex">
+                                <button class="edit-btn" onclick="window.__ebrEdit(${r.id})">Edit</button>
+                                <button class="delete-btn" onclick="window.__ebrDelete(${r.id})">Delete</button>
+                            </div>
+                        </td>
+                    </tr>`,
             )
             .join("");
     }
@@ -349,9 +407,11 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("ebrEmpty").classList.add("d-none");
         document.getElementById("ebrTableWrap").classList.remove("d-none");
 
-        const sorted = [...roles].sort((a, b) =>
-            (a.role || "").localeCompare(b.role || ""),
-        );
+        const sorted = [...roles].sort((a, b) => {
+            const seqDiff = (a.sequence ?? 0) - (b.sequence ?? 0);
+            if (seqDiff !== 0) return seqDiff;
+            return (a.role || "").localeCompare(b.role || "");
+        });
 
         document.getElementById("ebrTbody").innerHTML = renderRows(sorted);
     }

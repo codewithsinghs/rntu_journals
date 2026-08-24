@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const slug = a.journal_slug || '';
                 const href = slug
                     ? `/${escapeHtml(slug)}/articles/${escapeHtml(a.uuid)}`
-                    : '#'; // no valid journal slug, avoid broken //articles/ URL
+                    : '#'; 
 
                 return `
                     <div class="issue_item">

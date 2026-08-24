@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('journal_id')
-                ->constrained('journal')
+                ->constrained('journals')
                 ->cascadeOnDelete();
 
             $table->string('role');
+            $table->unsignedInteger('sequence')->default(0);
 
             $table->boolean('status')->default(true);
 

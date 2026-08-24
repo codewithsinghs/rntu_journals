@@ -15,6 +15,7 @@ class EditorialBoardRole extends Model
     protected $fillable = [
         'journal_id',
         'role',
+        'sequence',
         'status',
     ];
 

@@ -10,6 +10,17 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 const YEAR_RANGE_BACK = 50;
 
+function formatDate(value) {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value; // fallback: show raw value if unparseable
+    return d.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    });
+}
+
 function authHeaders() {
     return {
         Authorization: `Bearer ${token}`,
@@ -109,7 +120,7 @@ async function loadVolumes(page = 1) {
     tbody.innerHTML = "";
 
     if (!json.status || !json.data.data.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4">No volumes found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4">No volumes found.</td></tr>`;
         return;
     }
 
@@ -124,6 +135,7 @@ async function loadVolumes(page = 1) {
                 <td>${v.journal?.title ?? "-"}</td>
                 <td>${v.volume}</td>
                 <td>${v.year ?? "-"}</td>
+                <td>${formatDate(v.published_date)}</td>
                 <td><span class="green-btn">${v.status}</span></td>
                 <td>
                     ${
@@ -180,6 +192,9 @@ async function editVolume(id) {
     document.getElementById("volume_id").value = v.id;
     document.getElementById("volume").value = v.volume;
     populateYearOptions(v.year);
+    document.getElementById("published_date").value = v.published_date
+        ? v.published_date.substring(0, 10)
+        : "";
     document.getElementById("status").value = v.status;
     document.getElementById("is_current").checked = !!v.is_current;
     document.getElementById("volumeModalTitle").innerText = "Edit Volume";
@@ -201,6 +216,7 @@ async function viewVolume(id) {
         <p><strong>Journal:</strong> ${v.journal?.title ?? "-"}</p>
         <p><strong>Volume:</strong> ${v.volume}</p>
         <p><strong>Year:</strong> ${v.year ?? "-"}</p>
+        <p><strong>Published Date:</strong> ${formatDate(v.published_date)}</p>
         <p><strong>Status:</strong> ${v.status}</p>
         <p><strong>Current:</strong> ${v.is_current ? "Yes" : "No"}</p>
     `;
@@ -267,6 +283,7 @@ document
             journal_id: document.getElementById("journal_id").value,
             volume: document.getElementById("volume").value,
             year: yearValue,
+            published_date: document.getElementById("published_date").value || null,
             status: document.getElementById("status").value,
             is_current: document.getElementById("is_current").checked,
         };

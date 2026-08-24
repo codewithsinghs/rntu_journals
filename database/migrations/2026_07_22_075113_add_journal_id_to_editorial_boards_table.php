@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('journal_id')
                 ->nullable()
                 ->after('id')
-                ->constrained('journal')
+                ->constrained('journals')
                 ->nullOnDelete();
         });
     }

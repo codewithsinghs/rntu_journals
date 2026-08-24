@@ -16,7 +16,7 @@ class GuidelinesController extends Controller
             'journal_id' => [
                 'required',
                 'integer',
-                'exists:journal,id',
+                'exists:journals,id',
                 Rule::unique('guidelines', 'journal_id')->ignore($id),
             ],
 

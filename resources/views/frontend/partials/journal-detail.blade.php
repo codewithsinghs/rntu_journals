@@ -6,7 +6,7 @@
 <div class="s__container_custom mt-5" id="journalDetailApp" data-journal-id="{{ $journalId }}" data-api-base="{{ url('/api/public/journals') }}" data-storage-base="{{ asset('images') }}/"></div>
     <!-- TOP HEADING -->
 <div class="journal_top text-center mb-2">
-    <h2 id="journalTitleHeading">Journal Description</h2>
+    <h2 id="journalTitleHeading"></h2>
 </div>
 
     <!-- Loading state -->

@@ -11,16 +11,20 @@ class Volume extends Model
 {
     use HasFactory;
 
+    protected $table = 'volumes' ;
+
     protected $fillable = [
         'journal_id',
         'volume',
         'year',
         'status',
+        'published_date',
         'is_current',
     ];
 
     protected $casts = [
         'is_current' => 'boolean',
+        'published_date' => 'date'
     ];
 
     public function journal(): BelongsTo

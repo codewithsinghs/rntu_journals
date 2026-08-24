@@ -15,6 +15,8 @@ class Issue extends Model
 {
     // use HasFactory,HasUuids;
     use HasFactory;
+
+    protected $table = 'issues';
     protected $fillable = [
         'uuid',
         'journal_id',
@@ -72,5 +74,5 @@ class Issue extends Model
 {
     return 'uuid';
 }
-    
+
 }

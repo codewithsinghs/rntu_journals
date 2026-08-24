@@ -9,7 +9,7 @@ class EditorialBoard extends Model
 {
     use HasFactory;
 
-    protected $table = 'editorial_board';
+    protected $table = 'editorial_boards';
 
     protected $fillable = [
         'role',
