@@ -127,8 +127,7 @@ class HomeController extends Controller
         try {
             $ip = request()->ip();
 
-            // Scope to TODAY only — otherwise once an IP is logged once,
-            // it's never counted again on any future day.
+
             $alreadyVisitedToday = WebsiteVisitor::where('ip_address', $ip)
                 ->whereDate('created_at', now()->toDateString())
                 ->exists();

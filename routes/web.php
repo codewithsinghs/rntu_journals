@@ -68,6 +68,12 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/volumes', fn() => view('admin.volume'))->middleware('permission:view volumes')->name('volume');
     Route::get('/issues', fn() => view('admin.issue'))->middleware('permission:view issues')->name('issue');
     Route::get('/menus', fn() => view('admin.menus'))->middleware('permission:view menus')->name('menus');
+    Route::get('/menus/{id}/manage', function ($id) {
+        return view('admin.managemenu', ['id' => $id]);
+    })->middleware('permission:view menus')->name('menus.manage');
+    Route::get('/menus/{id}/edit', function ($id) {
+        return view('admin.editmenu', ['id' => $id]);
+    })->middleware('permission:view menus')->name('editmenu');
     Route::get('/medias', fn() => view('admin.medias'))->middleware('permission:view medias')->name('medias');
     Route::get('/settings', fn() => view('admin.settings'))->middleware('permission:view settings')->name('settings');
     Route::get('/announcements', fn() => view('admin.announcements'))->middleware('permission:view announcements')->name('announcements');
@@ -79,7 +85,7 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/editorial-board', fn() => view('admin.editorialboard'))->middleware('permission:view editorial board')->name('editorial-board');
     Route::get('/editorial-board-roles', fn() => view('admin.editorialboardroles'))->middleware('permission:view editorial board roles')->name('editorial-board-roles');
     Route::get('/all-article-lists', fn() => view('admin.submitarticle'))->middleware('permission:view submit article')->name('submit-article');
-   //Pages Module
+    //Pages Module
     Route::get('/pages', fn() => view('admin.pages'))->middleware('permission:view pages')->name('pages');
 
     Route::prefix('submit-articles')->name('submit-articles.')->group(function () {

@@ -42,7 +42,7 @@
 
         <div class="visitors">
             <img src="{{ asset('/images/home_page/visitor.png') }}" alt="Visitors">
-            <p>Website Visitor : <span id="visitor-count">0</span></p>
+            <p>Website Visitor : <span id="visitor-count">11562</span></p>
         </div>
 
         <p>Copyright {{ date('Y') }} <span id="footerWebsiteName">RNTU Journal</span>. All Rights Reserved.</p>
