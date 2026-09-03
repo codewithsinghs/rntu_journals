@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Frontend\ArticleController;
 use App\Http\Controllers\Frontend\GuidelinesController;
 use App\Http\Controllers\Frontend\HomeController;
@@ -60,6 +61,17 @@ Route::get('/{slug}', [RootResolverController::class, 'resolve'])->name('journal
 Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
+
+        Route::get('/dashboard/monthly-submissions/export', [DashboardController::class, 'exportMonthlySubmissions'])
+        ->name('dashboard.monthly-submissions.export');
+    Route::get('/dashboard/monthly-published/export', [DashboardController::class, 'exportMonthlyPublished'])
+        ->name('dashboard.monthly-published.export');
+    Route::get('/dashboard/article-downloads/export', [DashboardController::class, 'exportArticleDownloads'])
+        ->name('dashboard.article-downloads.export');
+    Route::get('/dashboard/recent-submissions/export', [DashboardController::class, 'exportRecentSubmissions'])
+        ->name('dashboard.recent-submissions.export');
+    Route::get('/dashboard/latest-publications/export', [DashboardController::class, 'exportLatestPublications'])
+        ->name('dashboard.latest-publications.export');
 
     Route::get('/users', fn() => view('admin.users'))->middleware('permission:view users')->name('users');
     Route::get('/roles', fn() => view('admin.roles'))->middleware('permission:view roles')->name('roles');
@@ -123,6 +135,6 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
             return view('admin.forwardrevisionarticles', ['id' => $id]);
         })->name('forward-revision');
     });
-
+    
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
