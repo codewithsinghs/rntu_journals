@@ -27,6 +27,8 @@ Route::get('/submit-article', [SubmitArticleController::class, 'index'])->name('
 Route::get('/menus/{location}', [FrontendMenuController::class, 'byLocation'])->name('menus.byLocation');
 Route::get('/peer-review-process', [PrpController::class, 'index'])->name('prp');
 // Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
+Route::get('/admin/dashboard/reports', [DashboardController::class, 'reports'])
+    ->name('admin.dashboard.reports');
 
 Route::post('/password/send-otp', [ForgotPasswordOtpController::class, 'sendOtp'])->name('password.send-otp');
 Route::post('/password/reset-otp', [ForgotPasswordOtpController::class, 'resetWithOtp'])->name('password.reset-otp');

@@ -12,6 +12,12 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DashboardController extends Controller
 {
+
+    public function reports()
+    {
+        return view('admin.reports');
+    }
+
     private function scopeToUser($query, $user)
     {
         $canViewAll = $user && $user->can('view all articles');

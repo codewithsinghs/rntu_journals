@@ -68,3 +68,4 @@
 @section('scripts')
     <script src="{{ asset('assets/js/admin/reviewarticles.js') }}"></script>
 @endsection
+
