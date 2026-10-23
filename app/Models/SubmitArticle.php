@@ -67,6 +67,8 @@ class SubmitArticle extends Model
         'hidden_by',
     ];
 
+    // NOTE: declare $casts only ONCE. A second declaration causes
+    // "Cannot redeclare App\Models\SubmitArticle::$casts".
     protected $casts = [
         'keywords'        => 'array',
         'declarations'    => 'array',
@@ -75,6 +77,7 @@ class SubmitArticle extends Model
         'is_hidden'       => 'boolean',
         'is_waiver'       => 'boolean',
         'hidden_at'       => 'datetime',
+        'deleted_at'      => 'datetime',
         'page_start'      => 'integer',
         'page_end'        => 'integer',
     ];
@@ -104,21 +107,11 @@ class SubmitArticle extends Model
     }
 
     public function resolveRouteBinding($value, $field = null)
-{
-    return $this->where('uuid', $value)
-        ->orWhere($this->getKeyName(), $value)
-        ->firstOrFail();
-}
-
-    protected $casts = [
-        'keywords'        => 'array',
-        'declarations'    => 'array',
-        'submission_date' => 'date',
-        'terms_accepted'  => 'boolean',
-        'is_hidden'       => 'boolean',
-        'hidden_at'       => 'datetime',
-        'deleted_at'      => 'datetime',
-    ];
+    {
+        return $this->where('uuid', $value)
+            ->orWhere($this->getKeyName(), $value)
+            ->firstOrFail();
+    }
 
     // ─── Relationships ───────────────────────────────────────────────
 
@@ -150,6 +143,18 @@ class SubmitArticle extends Model
     public function review(): HasOne
     {
         return $this->hasOne(ArticleReview::class);
+    }
+
+    // Fee concession / waiver row (waivers.submit_articles_id)
+    public function waiver(): HasOne
+    {
+        return $this->hasOne(Waiver::class, 'submit_articles_id');
+    }
+
+    // Payment attempts (article_payments.submit_article_id)
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ArticlePayment::class, 'submit_article_id');
     }
 
     public function downloads()

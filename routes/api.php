@@ -185,6 +185,9 @@ Route::middleware('jwt')->prefix('admin')->name('admin.')->group(function () {
             Route::post('submit-articles/{id}/publish', [SubmitArticleController::class, 'publish']);
             Route::get('reviewers', [SubmitArticleController::class, 'reviewers']);
             Route::get('submit-articles-issues', [SubmitArticleController::class, 'issuesForJournal']);
+            Route::delete('submit-articles/{id}', [SubmitArticleController::class, 'destroy']);
+            Route::post('submit-articles/{id}/toggle-hide', [SubmitArticleController::class, 'toggleHide']);
+
 
 
     // Volumes
