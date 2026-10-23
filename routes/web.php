@@ -64,7 +64,7 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
 
     Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
 
-        Route::get('/dashboard/monthly-submissions/export', [DashboardController::class, 'exportMonthlySubmissions'])
+    Route::get('/dashboard/monthly-submissions/export', [DashboardController::class, 'exportMonthlySubmissions'])
         ->name('dashboard.monthly-submissions.export');
     Route::get('/dashboard/monthly-published/export', [DashboardController::class, 'exportMonthlyPublished'])
         ->name('dashboard.monthly-published.export');
@@ -99,7 +99,8 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/editorial-board', fn() => view('admin.editorialboard'))->middleware('permission:view editorial board')->name('editorial-board');
     Route::get('/editorial-board-roles', fn() => view('admin.editorialboardroles'))->middleware('permission:view editorial board roles')->name('editorial-board-roles');
     Route::get('/all-article-lists', fn() => view('admin.submitarticle'))->middleware('permission:view submit article')->name('submit-article');
-    //Pages Module
+
+    // Pages Module
     Route::get('/pages', fn() => view('admin.pages'))->middleware('permission:view pages')->name('pages');
 
     Route::prefix('submit-articles')->name('submit-articles.')->group(function () {
@@ -107,7 +108,6 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
         Route::get('/', function () {
             return view('admin.submitarticle');
         })->name('index');
-
 
         Route::get('/create', function () {
             return view('admin.addarticles');
@@ -137,6 +137,6 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
             return view('admin.forwardrevisionarticles', ['id' => $id]);
         })->name('forward-revision');
     });
-    
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

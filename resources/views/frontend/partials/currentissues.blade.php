@@ -20,9 +20,9 @@
                 <p>
                     <i class="fa-regular fa-calendar"></i>
                     Published: <span id="issuePublishedDate">-</span>
-                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <!-- &nbsp;&nbsp;|&nbsp;&nbsp;
                     DOI :
-                    <a href="#">https://doi.org/10.54392/ijrmt263</a>
+                    <a href="#">https://doi.org/10.54392/ijrmt263</a> -->
                 </p>
             </div>
 

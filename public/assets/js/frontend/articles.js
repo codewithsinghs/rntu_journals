@@ -75,8 +75,9 @@
         const citationAuthors = authorsLine(article);
         els.citation.textContent =
             `${citationAuthors}. ${year}. \u201C${article.manuscript_title}\u201D. ` +
-            `${article.journal_title || 'Journal'}. Volume 8 (3):152-65. ` +
-            `https://doi.org/10.54392/irjmt26310.`;
+            `${article.journal_title || 'Journal'}. Volume 8 (3) `;
+             
+            <!-- :152-65. +`https://doi.org/10.54392/irjmt26310.` -->;
 
         els.references.textContent = article.references
             ? article.references

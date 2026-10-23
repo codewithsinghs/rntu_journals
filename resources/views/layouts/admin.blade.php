@@ -22,6 +22,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/admin/popup&tabs.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/admin/style.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/admin/table.css') }}">
+        <link rel="stylesheet" href="{{ asset('assets/css/admin/payment.css') }}">
+
 
     {{-- <link rel="stylesheet" href="{{ asset('assets/css/admin/style_hidden.css') }}"> --}}
 

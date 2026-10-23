@@ -2,24 +2,24 @@
 
 namespace App\Models;
 
-// use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-// use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class SubmitArticle extends Model
 {
-    // use HasUuids;
     use SoftDeletes;
 
     protected $table = 'submit_articles';
 
     protected $fillable = [
         'uuid',
+        'article_uid',           // human-readable ID, e.g. ART-2026-00042
+
         // Ownership
         'user_id',
 
@@ -34,7 +34,7 @@ class SubmitArticle extends Model
 
         // Abstract / manuscript details
         'journal_id',
-        'issue_id',              // NEW — set when the article is published
+        'issue_id',              // set when the article is published
         'manuscript_title',
         'abstract_summary',
         'keywords',
@@ -45,17 +45,40 @@ class SubmitArticle extends Model
         // Declaration
         'declarations',
 
-        //references
+        // References
         'references',
 
         // Copyright
         'author_signature',
         'submission_date',
         'terms_accepted',
+
+        // Page range inside the issue (editor-entered or auto-numbered)
+        'page_start',
+        'page_end',
+
+        // Fee waiver
+        'is_waiver',
+
+        // Hide / unhide
+        'is_hidden',
+        'hidden_at',
+        'hidden_by',
     ];
 
+    protected $casts = [
+        'keywords'        => 'array',
+        'declarations'    => 'array',
+        'submission_date' => 'date',
+        'terms_accepted'  => 'boolean',
+        'is_hidden'       => 'boolean',
+        'is_waiver'       => 'boolean',
+        'hidden_at'       => 'datetime',
+        'page_start'      => 'integer',
+        'page_end'        => 'integer',
+    ];
 
-     protected static function boot()
+    protected static function boot()
     {
         parent::boot();
 
@@ -64,24 +87,31 @@ class SubmitArticle extends Model
                 $model->uuid = (string) Str::uuid();
             }
         });
+
+        // The row id is only known after insert, so build the ID here.
+        static::created(function (SubmitArticle $article) {
+            $uid = 'ART-' . $article->created_at->format('Y')
+                 . '-' . str_pad($article->id, 5, '0', STR_PAD_LEFT);
+
+            DB::table('submit_articles')
+                ->where('id', $article->id)
+                ->update(['article_uid' => $uid]);
+
+            $article->setAttribute('article_uid', $uid);
+            $article->syncOriginalAttribute('article_uid');
+        });
     }
 
     public function resolveRouteBinding($value, $field = null)
-{
-    return $this->where('uuid', $value)
-        ->orWhere($this->getKeyName(), $value)
-        ->firstOrFail();
-}
+    {
+        $query = $this->where('uuid', $value);
 
-    protected $casts = [
-        'keywords'        => 'array',
-        'declarations'    => 'array',
-        'submission_date' => 'date',
-        'terms_accepted'  => 'boolean',
-        'is_hidden'       => 'boolean',
-        'hidden_at'       => 'datetime',
-        'deleted_at'      => 'datetime',
-    ];
+        if (ctype_digit((string) $value)) {
+            $query->orWhere($this->getKeyName(), $value);
+        }
+
+        return $query->firstOrFail();
+    }
 
     // ─── Relationships ───────────────────────────────────────────────
 
@@ -110,13 +140,23 @@ class SubmitArticle extends Model
         return $this->hasMany(ArticleReviewer::class)->orderBy('order');
     }
 
-    public function review()
+    public function review(): HasOne
     {
         return $this->hasOne(ArticleReview::class);
     }
 
-    public function downloads()
+    public function downloads(): HasMany
     {
         return $this->hasMany(ArticleDownload::class);
+    }
+
+    public function waiver(): HasOne
+    {
+        return $this->hasOne(Waiver::class, 'submit_articles_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ArticlePayment::class, 'submit_article_id');
     }
 }

@@ -32,6 +32,17 @@
         return d.toISOString().slice(0, 10);
     }
 
+    // Builds "56-100" from page_start / page_end stored in the database.
+    // Returns '' when no pages are stored, so nothing is shown.
+    function formatPageRange(start, end) {
+        const s = start !== null && start !== undefined && start !== '' ? Number(start) : null;
+        const e = end !== null && end !== undefined && end !== '' ? Number(end) : null;
+
+        if (s === null && e === null) return '';
+        if (s !== null && e !== null) return s === e ? String(s) : `${s}-${e}`;
+        return String(s ?? e);
+    }
+
     function renderIssueHeading(issue) {
         const volumeLabel = issue.volume?.volume ?? '-';
         els.heading.textContent = `Volume ${volumeLabel}, Issue ${issue.issue}, Year ${issue.year}`;
@@ -68,6 +79,11 @@
                     </a>`
                     : '';
 
+                const pageRange = formatPageRange(article.page_start, article.page_end);
+                const pagesHtml = pageRange
+                    ? `<div class="pages">${escapeHtml(pageRange)}</div>`
+                    : '';
+
                 return `
                 <div class="article-card">
                     <div class="article-number">${number}</div>
@@ -78,15 +94,15 @@
                                 ${escapeHtml(article.manuscript_title)}
                             </a>
                         </h3>
-
+<!--
                         <p>
                             DOI :
                             <a href="#">https://doi.org/10.54392/ijrmt263</a>
                         </p>
-
+  -->
                         <span class="authors">${authorsText}</span>
 
-                        <div class="pages">317-665</div>
+                        ${pagesHtml}
                     </div>
 
                     ${pdfBtn}

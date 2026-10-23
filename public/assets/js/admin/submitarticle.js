@@ -6,18 +6,18 @@ document.addEventListener("DOMContentLoaded", function () {
         Authorization: `Bearer ${TOKEN}`,
     });
 
-
     const truncate = (s, len = 15) => {
-    if (!s) return "—";
-    const str = s.toString();
-    return str.length > len ? str.slice(0, len) + "…" : str;
-};
+        if (!s) return "—";
+        const str = s.toString();
+        return str.length > len ? str.slice(0, len) + "…" : str;
+    };
 
     let currentPage = 1;
     let currentForwardId = null;
     let currentFinalDecisionId = null;
     let currentRevisionId = null;
     let currentRejectId = null;
+    let currentWaiverId = null;
     let searchTimer = null;
 
     let canViewReviewDates = false;
@@ -38,30 +38,43 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("saConfirmModal"),
     );
 
+    /* type: success | warning | error */
     function showToast(type, title, msg) {
         const el = document.getElementById("saToast");
         document.getElementById("saToastTitle").textContent = title;
         const msgEl = document.getElementById("saToastMsg");
         msgEl.textContent = msg || "";
         msgEl.style.display = msg ? "block" : "none";
+
+        const icon =
+            type === "success" ? "fa-check-circle" : "fa-exclamation-circle";
         document.getElementById("saToastIcon").innerHTML =
+            `<i class="fa ${icon}" style="font-size:18px;"></i>`;
+
+        el.classList.remove("bg-success", "bg-danger", "bg-warning");
+        el.classList.add(
             type === "success"
-                ? `<i class="fa fa-check-circle" style="font-size:18px;"></i>`
-                : `<i class="fa fa-exclamation-circle" style="font-size:18px;"></i>`;
-        el.classList.remove("bg-success", "bg-danger");
-        el.classList.add(type === "success" ? "bg-success" : "bg-danger");
+                ? "bg-success"
+                : type === "warning"
+                  ? "bg-warning"
+                  : "bg-danger",
+        );
         bootstrap.Toast.getOrCreateInstance(el, {
             delay: 4000,
             autohide: true,
         }).show();
     }
 
+    window.saShowToast = showToast;
+
     const esc = (s) =>
         (s ?? "")
             .toString()
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
 
     const fmtDate = (d) => {
         if (!d) return "—";
@@ -105,11 +118,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Generic styled confirm dialog (replaces window.confirm) ──── */
-    const ICONS = {
-        approve: `<i class="fa fa-check"></i>`,
-        warn: `<i class="fa fa-exclamation-triangle"></i>`,
-    };
-
     let confirmResolver = null;
 
     function showConfirm({
@@ -121,7 +129,6 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("saConfirmTitle").textContent = title;
         document.getElementById("saConfirmDesc").textContent = desc;
 
-        const iconEl = document.getElementById("saConfirmIcon");
         const okBtn = document.getElementById("saConfirmOkBtn");
 
         okBtn.textContent = okLabel;
@@ -173,29 +180,28 @@ document.addEventListener("DOMContentLoaded", function () {
                 label: "Edit",
                 show: r.can_edit,
             },
-            // {
-            //     action: "approve",
-            //     label: "Approve",
-            //     show: r.can_approve,
-            // },
-            // {
-            //     action: "reject",
-            //     label: "Reject",
-            //     show: r.can_reject,
-            // },
+            {
+                action: "pay",
+                label: "Pay Now",
+                show: r.can_pay,
+            },
+            {
+                action: "receipt",
+                label: "View Receipt",
+                show: !!r.latest_payment_order_id,
+                extraAttrs: `data-order="${esc(r.latest_payment_order_id)}"`,
+            },
+            {
+                // Editor-only: fee concession / full waiver for an approved article
+                action: "waive",
+                label: "Waiver",
+                show: r.can_waive_approved,
+            },
             {
                 action: "forward",
                 label: "Forward to Reviewer",
                 show: r.can_forward,
             },
-            // "Submit Review" removed from the list dropdown.
-            // Reviewers now submit their Approved / Correction Needed / Reject
-            // decision from the article's own View page instead.
-            // {
-            //     action: "final-decide",
-            //     label: "Final Decision",
-            //     show: r.can_editor_final_decide,
-            // },
             {
                 action: "forward-revision",
                 label: "Send Back to Author",
@@ -226,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 (i) => `
                     <li>
                         <a class="dropdown-item sa-dropdown-item${i.danger ? " text-danger" : ""}"
-                           href="#" data-action="${i.action}" data-id="${r.uuid}" ${i.extraAttrs || ""}>
+                           href="#" data-action="${i.action}" data-id="${esc(r.uuid)}" ${i.extraAttrs || ""}>
                             ${i.label}
                         </a>
                     </li>`,
@@ -288,38 +294,47 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("saTableWrap").classList.remove("d-none");
             document.getElementById("saTableBody").innerHTML = rows
                 .map((r) => {
-                    const reviewDateCells = canViewReviewDates
+                    // Reviewer name + review date cells are only rendered when
+                    // their <th> headers are visible, so columns stay aligned.
+                    const reviewerCells = canViewReviewDates
                         ? `
-                                                <td>${fmtDate(r.review?.forwarded_to_reviewer_date)}</td>
-                                                <td>${fmtDate(r.review?.reviewer_approval_date)}</td>`
+                            <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
+                            <td>${fmtDate(r.review?.forwarded_to_reviewer_date)}</td>
+                            <td>${fmtDate(r.review?.reviewer_approval_date)}</td>`
+                        : "";
+
+                    // data-action="pay" -> opens the payment modal (handled below)
+                    const payBtn = r.can_pay
+                        ? `<a class="btn btn-success btn-sm me-1" href="#" data-action="pay" data-id="${esc(r.uuid)}">Pay Now</a>`
                         : "";
 
                     return `
-                                        <tr data-id="${r.uuid}" class="${r.is_hidden ? "sa-row-hidden" : ""}">
-                                            <td>${esc(r.full_name)}</td>
-                                            <td>${esc(r.email)}</td>
-                                            <td>${r.journal ? `<span class="edit-btn">${esc(truncate(r.journal.title, 15))}</span>` : "—"}</td>
-
-                                            <td>${stageChip(r)}</td>
-                                            <td>${fmtDate(r.submission_date)}</td>
-                                            <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
-                                            ${reviewDateCells}
-                                            <td>
-                                                ${actionDropdown(r)}
-                                            </td>
-                                        </tr>
-                                    `;
+                        <tr data-id="${esc(r.uuid)}" class="${r.is_hidden ? "sa-row-hidden" : ""}">
+                            <td><strong>${esc(r.article_uid) || "—"}</strong></td>
+                            <td>${esc(r.full_name)}</td>
+                            <td>${esc(r.email)}</td>
+                            <td>${r.journal ? `<span class="edit-btn">${esc(truncate(r.journal.title, 15))}</span>` : "—"}</td>
+                            <td>${stageChip(r)}</td>
+                            <td>${fmtDate(r.submission_date)}</td>
+                            ${reviewerCells}
+                            <td>
+                                ${payBtn}
+                                ${actionDropdown(r)}
+                            </td>
+                        </tr>
+                    `;
                 })
                 .join("");
 
             document.querySelectorAll("#saTableBody tr").forEach((tr) => {
                 tr.addEventListener("click", (e) => {
                     if (e.target.closest(".sa-action-dropdown")) return;
+                    if (e.target.closest("a.btn")) return; // let Pay Now button work
                     goToShow(tr.dataset.id);
                 });
             });
 
-            // Dropdown menu item clicks
+            // Dropdown menu item + Pay Now button clicks
             document
                 .querySelectorAll("#saTableBody [data-action]")
                 .forEach((btn) => {
@@ -330,6 +345,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         const action = btn.dataset.action;
                         if (action === "show") goToShow(id);
                         if (action === "edit") goToEdit(id);
+                        if (action === "pay") ArticlePayment.open(id);
+                        if (action === "receipt")
+                            ArticlePayment.showReceipt(btn.dataset.order);
+                        if (action === "waive") openWaiver(id);
                         if (action === "approve") doApprove(id);
                         if (action === "reject") openReject(id);
                         if (action === "forward") openForward(id);
@@ -379,7 +398,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function doApprove(id) {
         const ok = await showConfirm({
             title: "Approve this submission?",
-            desc: "This manuscript will move forward so it can be forwarded to a reviewer.",
+            desc: "The author will be able to pay once this is approved.",
             okLabel: "Approve",
             variant: "approve",
         });
@@ -401,6 +420,185 @@ document.addEventListener("DOMContentLoaded", function () {
             loadList(currentPage);
         } catch (e) {
             showToast("error", "Approve failed", e.message);
+        }
+    }
+
+    /* ── Waiver (editor) for an already approved article ───────────
+       Fee concession (author pays a reduced amount) or full fee waiver
+       (published directly). Modal is built dynamically so no blade
+       changes are required. ──────────────────────────────────────── */
+    let saWaiverModal = null;
+
+    function ensureWaiverModal() {
+        if (document.getElementById("saWaiverModal")) {
+            saWaiverModal = bootstrap.Modal.getOrCreateInstance(
+                document.getElementById("saWaiverModal"),
+            );
+            return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = `
+            <div class="modal fade" id="saWaiverModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header border-bottom py-3">
+                            
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverConcession" value="concession">
+                                    <label class="form-check-label" for="saWaiverConcession">
+                                        Fee Concession <span class="text-muted">(author pays a reduced amount)</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverFull" value="full_waiver">
+                                    <label class="form-check-label" for="saWaiverFull">
+                                        Full Fee Waiver <span class="text-muted">(publish directly, no payment)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3" id="saWaiverAmountBox" style="display:none;">
+                                <label class="form-label" for="saWaiverAmount" style="font-size:13px;font-weight:600;">
+                                    Amount payable by the author (₹)
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 1500">
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label" id="saWaiverReasonLabel" style="font-size:13px;font-weight:600;">Reason (required)</label>
+                                <textarea class="form-control form-control-sm" id="saWaiverReason" rows="3" placeholder="Reason…"></textarea>
+                            </div>
+
+                            <p class="mb-0 text-muted" id="saWaiverHint" style="font-size:13px;">
+                                Choose Fee Concession or Full Fee Waiver.
+                            </p>
+                        </div>
+                        <div class="modal-footer border-top py-3">
+                            <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saWaiverConfirmBtn">Apply Waiver</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+
+        saWaiverModal = bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("saWaiverModal"),
+        );
+
+        const refreshHint = () => {
+            const type = document.querySelector(
+                'input[name="saWaiverType"]:checked',
+            )?.value;
+
+            document.getElementById("saWaiverAmountBox").style.display =
+                type === "concession" ? "block" : "none";
+
+            document.getElementById("saWaiverReasonLabel").textContent =
+                type === "full_waiver"
+                    ? "Reason for full fee waiver (required)"
+                    : type === "concession"
+                      ? "Reason for fee concession (required)"
+                      : "Reason (required)";
+
+            document.getElementById("saWaiverHint").textContent =
+                type === "full_waiver"
+                    ? "The article will be published immediately. No payment will be requested."
+                    : type === "concession"
+                      ? "The author will see your reason and the amount they have to pay, with a Pay Now option."
+                      : "Choose Fee Concession or Full Fee Waiver.";
+        };
+
+        document
+            .querySelectorAll('input[name="saWaiverType"]')
+            .forEach((r) => r.addEventListener("change", refreshHint));
+
+        document
+            .getElementById("saWaiverConfirmBtn")
+            .addEventListener("click", submitWaiver);
+    }
+
+    function openWaiver(id) {
+        currentWaiverId = id;
+        ensureWaiverModal();
+        document
+            .querySelectorAll('input[name="saWaiverType"]')
+            .forEach((r) => (r.checked = false));
+        document.getElementById("saWaiverAmountBox").style.display = "none";
+        document.getElementById("saWaiverAmount").value = "";
+        document.getElementById("saWaiverReason").value = "";
+        document.getElementById("saWaiverReasonLabel").textContent =
+            "Reason (required)";
+        document.getElementById("saWaiverHint").textContent =
+            "Choose Fee Concession or Full Fee Waiver.";
+        saWaiverModal.show();
+    }
+
+    async function submitWaiver() {
+        const waiverType = document.querySelector(
+            'input[name="saWaiverType"]:checked',
+        )?.value;
+        const amount = parseFloat(
+            document.getElementById("saWaiverAmount").value,
+        );
+        const reason = document.getElementById("saWaiverReason").value.trim();
+
+        if (!waiverType) {
+            showToast(
+                "error",
+                "Waiver failed",
+                "Choose Fee Concession or Full Fee Waiver.",
+            );
+            return;
+        }
+        if (waiverType === "concession" && !(amount > 0)) {
+            showToast(
+                "error",
+                "Waiver failed",
+                "Enter the amount payable by the author (greater than 0).",
+            );
+            return;
+        }
+        if (!reason) {
+            showToast(
+                "error",
+                "Waiver failed",
+                "A reason is required for the concession / waiver.",
+            );
+            return;
+        }
+
+        const payload = {
+            waiver_type: waiverType,
+            waiver_reason: reason,
+            ...(waiverType === "concession" ? { waiver_amount: amount } : {}),
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/${currentWaiverId}/waive`, {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.status)
+                throw new Error(json.message || "Waiver failed.");
+            showToast("success", "Waiver applied", json.message);
+            saWaiverModal.hide();
+            loadList(currentPage);
+        } catch (e) {
+            showToast("error", "Waiver failed", e.message);
         }
     }
 
@@ -445,36 +643,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
     /* ── Forward to Reviewer ────────────────────────────────────── */
-async function openForward(id) {
-    currentForwardId = id;
-    document.getElementById("saForwardRemarks").value = "";
-    const select = document.getElementById("saForwardReviewer");
-    select.innerHTML = '<option value="">Loading…</option>';
-    saForwardModal.show();
+    async function openForward(id) {
+        currentForwardId = id;
+        document.getElementById("saForwardRemarks").value = "";
+        const select = document.getElementById("saForwardReviewer");
+        select.innerHTML = '<option value="">Loading…</option>';
+        saForwardModal.show();
 
-    try {
-        const res = await fetch("/api/admin/reviewers", {
-            headers: authHeaders(),
-        });
-        const json = await res.json();
-        const currentUserId = window.APP_CONFIG?.CURRENT_USER_ID;
-        const list = (json.data || []).filter(
-            (u) => String(u.id) !== String(currentUserId),
-        );
+        try {
+            const res = await fetch("/api/admin/reviewers", {
+                headers: authHeaders(),
+            });
+            const json = await res.json();
+            const currentUserId = window.APP_CONFIG?.CURRENT_USER_ID;
+            const list = (json.data || []).filter(
+                (u) => String(u.id) !== String(currentUserId),
+            );
 
-        select.innerHTML = list.length
-            ? list
-                  .map(
-                      (u) =>
-                          `<option value="${u.id}">${esc(u.name)} (${esc(u.email)})</option>`,
-                  )
-                  .join("")
-            : '<option value="">No reviewers found</option>';
-    } catch (e) {
-        select.innerHTML =
-            '<option value="">Failed to load reviewers</option>';
+            select.innerHTML = list.length
+                ? list
+                      .map(
+                          (u) =>
+                              `<option value="${esc(u.id)}">${esc(u.name)} (${esc(u.email)})</option>`,
+                      )
+                      .join("")
+                : '<option value="">No reviewers found</option>';
+        } catch (e) {
+            select.innerHTML =
+                '<option value="">Failed to load reviewers</option>';
+        }
     }
-}
 
     document
         .getElementById("saForwardConfirmBtn")
@@ -516,31 +714,6 @@ async function openForward(id) {
             }
         });
 
-    // /* ── Editor's Final Decision (after reviewer approved/rejected) ── */
-    // async function openFinalDecision(id) {
-    //     currentFinalDecisionId = id;
-    //     document.getElementById("saFinalDecisionRemarks").value = "";
-    //     document.getElementById("saFinalDecisionApprove").checked = true;
-    //     document.getElementById("saFinalReviewerRemarks").textContent =
-    //         "Loading…";
-    //     saFinalDecisionModal.show();
-
-    //     try {
-    //         const res = await fetch(`${API_BASE}/${id}`, {
-    //             headers: authHeaders(),
-    //         });
-    //         const json = await res.json();
-    //         if (!res.ok || !json.status)
-    //             throw new Error(json.message || "Failed to load submission.");
-    //         document.getElementById("saFinalReviewerRemarks").textContent =
-    //             json.data.review?.reviewer_remarks ||
-    //             "No remarks provided by reviewer.";
-    //     } catch (e) {
-    //         document.getElementById("saFinalReviewerRemarks").textContent =
-    //             "Failed to load reviewer remarks.";
-    //     }
-    // }
-
     document
         .getElementById("saFinalDecisionConfirmBtn")
         .addEventListener("click", async () => {
@@ -580,9 +753,7 @@ async function openForward(id) {
                     throw new Error(json.message || "Submit failed.");
                 showToast(
                     "success",
-                    decision === "approve"
-                        ? "Author notified for payment"
-                        : "Rejected",
+                    decision === "approve" ? "Approved" : "Rejected",
                     json.message,
                 );
                 saFinalDecisionModal.hide();
