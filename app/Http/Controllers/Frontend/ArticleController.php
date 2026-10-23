@@ -14,27 +14,13 @@ use Carbon\Carbon;
 
 class ArticleController extends Controller
 {
-    /**
-     * Resolve a Journal by slug or fail with 404.
-     */
-    private function resolveJournal(string $slug): Journal
+  
+    public function show($uuid)
     {
-        return Journal::where('slug', $slug)->firstOrFail();
-    }
-
-    public function show(string $journal, string $uuid)
-    {
-        try {
-            $journalModel = $this->resolveJournal($journal);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            abort(404);
-        }
-
+      
         $article = SubmitArticle::where('uuid', $uuid)->firstOrFail();
 
-        // Make sure this article actually belongs to the journal in the URL —
-        // same guard as the issue/journal check in CurrentIssuesController.
-        if ($article->journal_id !== $journalModel->id) {
+        if ($article->is_hidden) {
             abort(404);
         }
 
@@ -44,15 +30,14 @@ class ArticleController extends Controller
         ]);
     }
 
-    public function data(string $journal, string $uuid)
+
+    public function data($uuid)
     {
         try {
             $journalModel = $this->resolveJournal($journal);
 
             $article = SubmitArticle::with(['journal:id,title', 'coAuthors', 'review', 'issue.volume'])
                 ->where('uuid', $uuid)
-                ->where('journal_id', $journalModel->id)
-                ->whereNull('deleted_at')
                 ->where('is_hidden', false)
                 ->firstOrFail();
 
@@ -114,7 +99,9 @@ class ArticleController extends Controller
 
     public function downloadManuscript($uuid)
     {
-        $article = SubmitArticle::where('uuid', $uuid)->firstOrFail();
+        $article = SubmitArticle::where('uuid', $uuid)
+            ->where('is_hidden', false)
+            ->firstOrFail();
 
         if (!$article->signed_manuscript_pdf || !Storage::disk('public')->exists($article->signed_manuscript_pdf)) {
             abort(404, 'Manuscript file not found.');

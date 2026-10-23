@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 
 class SubmitArticle extends Model
 {
+    // use HasUuids;
     use SoftDeletes;
 
     protected $table = 'submit_articles';
@@ -103,15 +104,21 @@ class SubmitArticle extends Model
     }
 
     public function resolveRouteBinding($value, $field = null)
-    {
-        $query = $this->where('uuid', $value);
+{
+    return $this->where('uuid', $value)
+        ->orWhere($this->getKeyName(), $value)
+        ->firstOrFail();
+}
 
-        if (ctype_digit((string) $value)) {
-            $query->orWhere($this->getKeyName(), $value);
-        }
-
-        return $query->firstOrFail();
-    }
+    protected $casts = [
+        'keywords'        => 'array',
+        'declarations'    => 'array',
+        'submission_date' => 'date',
+        'terms_accepted'  => 'boolean',
+        'is_hidden'       => 'boolean',
+        'hidden_at'       => 'datetime',
+        'deleted_at'      => 'datetime',
+    ];
 
     // ─── Relationships ───────────────────────────────────────────────
 
@@ -145,18 +152,8 @@ class SubmitArticle extends Model
         return $this->hasOne(ArticleReview::class);
     }
 
-    public function downloads(): HasMany
+    public function downloads()
     {
         return $this->hasMany(ArticleDownload::class);
-    }
-
-    public function waiver(): HasOne
-    {
-        return $this->hasOne(Waiver::class, 'submit_articles_id');
-    }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(ArticlePayment::class, 'submit_article_id');
     }
 }

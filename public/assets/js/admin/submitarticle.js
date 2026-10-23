@@ -114,6 +114,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? ` <span class="sa-stage-chip is_live" title="Visible on the public site">Live</span>`
                 : "";
 
+        // return `<span class="sa-stage-chip ${esc(stage)}">${esc(label)}</span>${reviewerSuffix}`;
+        const hiddenBadge = article.is_hidden
+            ? ` <span class="sa-stage-chip is_hidden" title="Hidden from the author's own list">Hidden</span>`
+            : "";
+
+        // "Live" reflects exactly what the public ArticleController checks:
+        // review.is_published === true AND is_hidden === false.
+        const liveBadge =
+            article.is_published && !article.is_hidden
+                ? ` <span class="sa-stage-chip is_live" title="Visible on the public site">Live</span>`
+                : "";
+
         return `<span class="sa-stage-chip ${esc(stage)}">${esc(label)}</span>${hiddenBadge}${liveBadge}`;
     }
 
@@ -294,13 +306,90 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("saTableWrap").classList.remove("d-none");
             document.getElementById("saTableBody").innerHTML = rows
                 .map((r) => {
-                    // Reviewer name + review date cells are only rendered when
-                    // their <th> headers are visible, so columns stay aligned.
-                    const reviewerCells = canViewReviewDates
+                    const buttons = [
+                        // Show — always available, redirects to the read-only detail page
+                        `
+                                                <button type="button" class="sa-action-btn show" title="View" data-action="show" data-id="${r.uuid}">
+                                                    <i class="fa fa-eye"></i>
+                                                </button>`,
+                        // Edit — owner while submitted/with_author, or full access any time
+                        r.can_edit
+                            ? `
+                                                <button type="button" class="sa-action-btn edit" title="Edit" data-action="edit" data-id="${r.uuid}">
+                                                    <i class="fa fa-pencil-alt"></i>
+                                                </button>`
+                            : "",
+                        // Approve — editor, stage "submitted"
+                        r.can_approve
+                            ? `
+                                                <button type="button" class="sa-action-btn approve" title="Approve" data-action="approve" data-id="${r.uuid}">
+                                                    <i class="fa fa-check"></i>
+                                                </button>`
+                            : "",
+                        // Reject — editor, stage "submitted"
+                        r.can_reject
+                            ? `
+                                                <button type="button" class="sa-action-btn reject" title="Reject" data-action="reject" data-id="${r.uuid}">
+                                                    <i class="fa fa-times"></i>
+                                                </button>`
+                            : "",
+                        // Forward to Reviewer — editor, stage "editor_approved"
+                        r.can_forward
+                            ? `
+                                                <button type="button" class="sa-action-btn forward" title="Forward to Reviewer" data-action="forward" data-id="${r.uuid}">
+                                                    <i class="fa fa-paper-plane"></i>
+                                                </button>`
+                            : "",
+                        // Submit Review — reviewer's own 3-way decision, stage "with_reviewer"
+                        r.can_review_decide
+                            ? `
+                                                <button type="button" class="sa-action-btn review-decide" title="Submit Review" data-action="review-decide" data-id="${r.uuid}">
+                                                    <i class="fa fa-clipboard-check"></i>
+                                                </button>`
+                            : "",
+                        // Editor Final Decision — stage "reviewer_approved" or "reviewer_rejected"
+                        r.can_editor_final_decide
+                            ? `
+                                                <button type="button" class="sa-action-btn final-decide" title="Final Decision" data-action="final-decide" data-id="${r.uuid}">
+                                                    <i class="fa fa-check-circle"></i>
+                                                </button>`
+                            : "",
+                        // Forward to Author (Revision) — stage "reviewer_correction"
+                        r.can_forward_to_author_revision
+                            ? `
+                                                <button type="button" class="sa-action-btn forward-author" title="Send Back to Author (Revision)" data-action="forward-revision" data-id="${r.uuid}">
+                                                    <i class="fa fa-undo"></i>
+                                                </button>`
+                            : "",
+                        // Publish — stage "with_author_payment"
+                        r.can_publish
+                            ? `
+                                                <button type="button" class="sa-action-btn publish" title="Publish" data-action="publish" data-id="${r.uuid}">
+                                                    <i class="fa fa-arrow-up"></i>
+                                                </button>`
+                            : "",
+                        // Hide / Unhide — editor / admin / superadmin only
+                        r.can_hide
+                            ? `
+                                                <button type="button" class="sa-action-btn hide" title="${r.is_hidden ? "Unhide" : "Hide"}" data-action="toggle-hide" data-id="${r.uuid}" data-hidden="${r.is_hidden ? "1" : "0"}">
+                                                    <i class="fa fa-${r.is_hidden ? "eye-slash" : "low-vision"}"></i>
+                                                </button>`
+                            : "",
+                        // Delete — editor / admin / superadmin only
+                        r.can_delete
+                            ? `
+                                                <button type="button" class="sa-action-btn delete" title="Delete" data-action="delete" data-id="${r.uuid}">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>`
+                            : "",
+                    ]
+                        .filter(Boolean)
+                        .join("");
+
+                    const reviewDateCells = canViewReviewDates
                         ? `
-                            <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
-                            <td>${fmtDate(r.review?.forwarded_to_reviewer_date)}</td>
-                            <td>${fmtDate(r.review?.reviewer_approval_date)}</td>`
+                                                <td>${fmtDate(r.review?.forwarded_to_reviewer_date)}</td>
+                                                <td>${fmtDate(r.review?.reviewer_approval_date)}</td>`
                         : "";
 
                     // data-action="pay" -> opens the payment modal (handled below)
@@ -309,20 +398,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         : "";
 
                     return `
-                        <tr data-id="${esc(r.uuid)}" class="${r.is_hidden ? "sa-row-hidden" : ""}">
-                            <td><strong>${esc(r.article_uid) || "—"}</strong></td>
-                            <td>${esc(r.full_name)}</td>
-                            <td>${esc(r.email)}</td>
-                            <td>${r.journal ? `<span class="edit-btn">${esc(truncate(r.journal.title, 15))}</span>` : "—"}</td>
-                            <td>${stageChip(r)}</td>
-                            <td>${fmtDate(r.submission_date)}</td>
-                            ${reviewerCells}
-                            <td>
-                                ${payBtn}
-                                ${actionDropdown(r)}
-                            </td>
-                        </tr>
-                    `;
+                                        <tr data-id="${r.uuid}" class="${r.is_hidden ? "sa-row-hidden" : ""}">
+                                            <td>${esc(r.full_name)}</td>
+                                            <td>${esc(r.email)}</td>
+                                            <td>${r.journal ? `<span class="edit-btn">${esc(r.journal.title)}</span>` : "—"}</td>
+                                            <td>${esc(r.manuscript_title)}</td>
+                                            <td>${stageChip(r)}</td>
+                                            <td>${fmtDate(r.submission_date)}</td>
+                                            <td>${r.reviewer_name ? esc(r.reviewer_name) : "—"}</td>
+                                            ${reviewDateCells}
+                                            <td>
+                                                <div class="sa-actions">
+                                                    ${buttons}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
                 })
                 .join("");
 

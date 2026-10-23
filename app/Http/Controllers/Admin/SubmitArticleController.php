@@ -60,6 +60,7 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Issues Dropdown for a Journal (Editor override) ────────────
 
     public function issuesForJournal(Request $request)
     {
@@ -431,9 +432,14 @@ class SubmitArticleController extends Controller
         $article->latest_payment_status   = $latestPayment?->status;
 
         $article->can_edit_issue = $canViewAll;
+
+        // ─── Delete / Hide — editor / admin / superadmin only ───────
+        // Deliberately tied to the same "view all articles" gate as the
+        // rest of the editor-only surface (issue override, reviewer
+        // names, granular stage) rather than a separate permission, so
+        // it can never be granted to an author or a plain reviewer.
         $article->can_delete = $canViewAll;
         $article->can_hide   = $canViewAll;
-        $article->is_published = (bool) ($article->review->is_published ?? false);
 
         $article->reviewer_name = $canViewAll
             ? ($article->review?->reviewer?->name ?? null)
@@ -498,6 +504,8 @@ class SubmitArticleController extends Controller
                     $query->where('user_id', $user->id);
                 }
 
+                // Hidden submissions are an editor/admin-only concern —
+                // authors and reviewers never see a hidden row at all.
                 $query->where('is_hidden', false);
             }
 
@@ -1658,6 +1666,8 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Delete Submission — editor / admin / superadmin only ───────
+
     public function destroy(Request $request, $id)
     {
         try {
@@ -1710,6 +1720,7 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Hide / Unhide Submission — editor / admin / superadmin only ─
     public function toggleHide(Request $request, $id)
     {
         try {
@@ -1769,6 +1780,7 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Reviewers Dropdown (for Forward modal) — permission-based ──
     public function reviewers(Request $request)
     {
         try {

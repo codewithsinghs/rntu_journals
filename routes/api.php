@@ -171,31 +171,21 @@ Route::middleware('jwt')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('/editorial-board-roles/{id}',       [EditorialBoardRoleController::class, 'destroy'])->name('editorial-board-roles.destroy');
     Route::patch('/editorial-board-roles/{id}/toggle', [EditorialBoardRoleController::class, 'toggleStatus'])->name('editorial-board-roles.toggle');
 
-    // Submit Articles
-    Route::get('submit-articles',                             [SubmitArticleController::class, 'adminIndex']);
-    Route::get('submit-articles/{id}',                        [SubmitArticleController::class, 'show']);
-    Route::put('submit-articles/{id}',                        [SubmitArticleController::class, 'update']);
-    Route::post('submit-articles/{id}/approve',               [SubmitArticleController::class, 'approve']);
-    Route::post('submit-articles/{id}/reject',                [SubmitArticleController::class, 'reject']);
-    Route::post('submit-articles/{id}/forward-to-reviewer',   [SubmitArticleController::class, 'forwardToReviewer']);
-    Route::post('submit-articles/{id}/review-decision',       [SubmitArticleController::class, 'reviewerDecision']);
-    Route::post('submit-articles/{id}/editor-final-decision', [SubmitArticleController::class, 'editorFinalDecision']);
-    Route::post('submit-articles/{id}/forward-to-author-revision', [SubmitArticleController::class, 'forwardToAuthorRevision']);
-    Route::post('submit-articles/{id}/resubmit',              [SubmitArticleController::class, 'resubmit']);
-    Route::post('submit-articles/{id}/publish',               [SubmitArticleController::class, 'publish']);
-    // Fee concession / full waiver for an already approved article
-    Route::post('submit-articles/{id}/waive',                 [SubmitArticleController::class, 'waiveAfterApproval']);
-    Route::get('reviewers',                                   [SubmitArticleController::class, 'reviewers']);
-    Route::get('submit-articles-issues',                      [SubmitArticleController::class, 'issuesForJournal']);
-    Route::delete('submit-articles/{id}',                     [SubmitArticleController::class, 'destroy']);
-    Route::post('submit-articles/{id}/toggle-hide',           [SubmitArticleController::class, 'toggleHide']);
+            // Submit Articles
+            Route::get('submit-articles', [SubmitArticleController::class, 'adminIndex']);
+            Route::get('submit-articles/{id}', [SubmitArticleController::class, 'show']);
+            Route::put('submit-articles/{id}', [SubmitArticleController::class, 'update']);
+            Route::post('submit-articles/{id}/approve', [SubmitArticleController::class, 'approve']);
+            Route::post('submit-articles/{id}/reject', [SubmitArticleController::class, 'reject']);
+            Route::post('submit-articles/{id}/forward-to-reviewer', [SubmitArticleController::class, 'forwardToReviewer']);
+            Route::post('submit-articles/{id}/review-decision', [SubmitArticleController::class, 'reviewerDecision']);
+            Route::post('submit-articles/{id}/editor-final-decision', [SubmitArticleController::class, 'editorFinalDecision']);
+            Route::post('submit-articles/{id}/forward-to-author-revision', [SubmitArticleController::class, 'forwardToAuthorRevision']);
+            Route::post('submit-articles/{id}/resubmit', [SubmitArticleController::class, 'resubmit']);
+            Route::post('submit-articles/{id}/publish', [SubmitArticleController::class, 'publish']);
+            Route::get('reviewers', [SubmitArticleController::class, 'reviewers']);
+            Route::get('submit-articles-issues', [SubmitArticleController::class, 'issuesForJournal']);
 
-    // Payment: author starts payment; Paytm result comes via the public callback above
-    Route::post('submit-articles/{uuid}/payment/initiate', [ArticlePaymentController::class, 'initiate']);
-
-    // Payment receipts (owner or users with "view submit article" permission)
-    Route::get('payments/{orderId}/receipt',          [ArticlePaymentController::class, 'receipt']);
-    Route::get('payments/{orderId}/receipt/download', [ArticlePaymentController::class, 'downloadReceipt']);
 
     // Volumes
     Route::get('/volumes',                       [VolumeController::class, 'adminIndex'])->name('volumes.data');
