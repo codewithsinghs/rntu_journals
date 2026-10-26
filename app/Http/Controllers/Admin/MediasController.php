@@ -130,90 +130,86 @@ class MediasController extends Controller
     /**
      * Update Media (metadata and/or replace file)
      */
-    public function update(Request $request, Media $media)
-    {
-        try {
-            $validated = $request->validate([
-                'original_name' => 'required|string|max:255',
-                'new_file'      => 'nullable|file|max:10240|mimes:' . self::ALLOWED_MIMES,
-            ]);
+public function update(Request $request, Media $media)
+{
+    try {
+        $validated = $request->validate([
+            'original_name' => 'required|string|max:255',
+            'new_file' => 'nullable|file|max:10240|mimes:' . self::ALLOWED_MIMES,
+        ]);
 
-            $userId = Auth::id();
+        $userId = Auth::id();
 
-            DB::beginTransaction();
+        DB::beginTransaction();
 
-            $data = [
-                'original_name' => $validated['original_name'],
-            ];
+        $data = [
+            'original_name' => $validated['original_name'],
+        ];
 
+        if ($request->hasFile('new_file')) {
+
+            $file = $request->file('new_file');
+
+            // Keep the existing filename and path
+            $filename = $media->filename;
             $oldPath = $media->path;
-            $oldDisk = $media->disk;
+            $disk = $media->disk ?? 'public';
 
-            if ($request->hasFile('new_file')) {
-                $file = $request->file('new_file');
+            // Store the new file at the existing path
+            $path = $file->storeAs(
+                dirname($oldPath),
+                $filename,
+                $disk
+            );
 
-                $ext      = strtolower($file->getClientOriginalExtension());
-                $baseName = Str::slug(pathinfo($validated['original_name'], PATHINFO_FILENAME));
-
-                if ($baseName === '') {
-                    $baseName = 'file';
-                }
-
-                $filename = $baseName . '-' . Str::random(8) . '.' . $ext;
-
-                $path = $file->storeAs('media', $filename, 'public');
-
-                $data['filename']  = $filename;
-                $data['mime_type'] = $file->getMimeType();
-                $data['size']      = $file->getSize();
-                $data['disk']      = 'public';
-                $data['path']      = $path;
-                $data['url']       = Storage::disk('public')->url($path);
-            }
-
-            $media->update($data);
-
-            if ($request->hasFile('new_file') && $oldPath && Storage::disk($oldDisk)->exists($oldPath)) {
-                Storage::disk($oldDisk)->delete($oldPath);
-            }
-
-            DB::commit();
-
-            Log::info('Media updated', [
-                'media_id' => $media->id,
-                'user_id'  => $userId,
-                'replaced_file' => $request->hasFile('new_file'),
-            ]);
-
-            return response()->json([
-                'status'  => true,
-                'message' => 'Media updated successfully.',
-                'data'    => $media->fresh(),
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation failed.',
-                'errors'  => $e->errors(),
-            ], 422);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Media update failed: ' . $e->getMessage(), [
-                'media_id' => $media->id ?? null,
-                'user_id'  => Auth::id(),
-            ]);
-
-            return response()->json([
-                'status'  => false,
-                'message' => 'Failed to update media.',
-                'error'   => $e->getMessage(),
-            ], 500);
+            $data['filename'] = $filename;
+            $data['mime_type'] = $file->getMimeType();
+            $data['size'] = $file->getSize();
+            $data['disk'] = $disk;
+            $data['path'] = $oldPath;
+            $data['url'] = Storage::disk($disk)->url($oldPath);
         }
-    }
 
+        $media->update($data);
+
+        DB::commit();
+
+        Log::info('Media updated', [
+            'media_id' => $media->id,
+            'user_id' => $userId,
+            'replaced_file' => $request->hasFile('new_file'),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Media updated successfully.',
+            'data' => $media->fresh(),
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Validation failed.',
+            'errors' => $e->errors(),
+        ], 422);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        Log::error('Media update failed: ' . $e->getMessage(), [
+            'media_id' => $media->id ?? null,
+            'user_id' => Auth::id(),
+        ]);
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Failed to update media.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
     /**
      * Delete Media
      */

@@ -37,9 +37,6 @@ class JournalsController extends Controller
             'e_issn'                       => 'nullable|string|max:50',
             'p_issn'                       => 'nullable|string|max:50',
             'issn_online'                  => 'nullable|string|max:50',
-            'volume'                       => 'nullable|string|max:100',
-            'issue'                        => 'nullable|string|max:100',
-            'latest_volume'                => 'nullable|string|max:100',
             'publication_language'         => 'nullable|string|max:100',
             'publishing_frequency'         => 'nullable|string|max:100',
             'publishing_months'            => 'nullable|string|max:255',
@@ -191,9 +188,6 @@ class JournalsController extends Controller
                 'e_issn'                    => $validated['e_issn'] ?? null,
                 'p_issn'                    => $validated['p_issn'] ?? null,
                 'issn_online'               => $validated['issn_online'] ?? null,
-                'volume'                    => $validated['volume'] ?? null,
-                'issue'                     => $validated['issue'] ?? null,
-                'latest_volume'             => $validated['latest_volume'] ?? null,
                 'publication_language'      => $validated['publication_language'] ?? null,
                 'publishing_frequency'      => $validated['publishing_frequency'] ?? null,
                 'publishing_months'         => $validated['publishing_months'] ?? null,
@@ -341,9 +335,6 @@ class JournalsController extends Controller
             $journal->e_issn                    = $validated['e_issn'] ?? null;
             $journal->p_issn                    = $validated['p_issn'] ?? null;
             $journal->issn_online               = $validated['issn_online'] ?? null;
-            $journal->volume                    = $validated['volume'] ?? null;
-            $journal->issue                     = $validated['issue'] ?? null;
-            $journal->latest_volume             = $validated['latest_volume'] ?? null;
             $journal->publication_language       = $validated['publication_language'] ?? null;
             $journal->publishing_frequency       = $validated['publishing_frequency'] ?? null;
             $journal->publishing_months          = $validated['publishing_months'] ?? null;

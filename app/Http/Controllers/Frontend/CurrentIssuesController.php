@@ -27,16 +27,12 @@ class CurrentIssuesController extends Controller
             abort(404);
         }
 
-        // If an issue uuid WAS given in the URL, make sure it actually
-        // belongs to this journal — otherwise someone could open
-        // /anusandhan/current-issues/{uuid-of-a-different-journal}.
+
         if ($issue && $issue->journal_id !== $journalModel->id) {
             abort(404);
         }
 
-        // No uuid in the URL → find this journal's latest issue and
-        // redirect to its uuid URL. Nav link stays clean/uuid-less,
-        // browser ends up on /{journal}/current-issues/{uuid}.
+
         if (!$issue) {
             $latest = Issue::where('journal_id', $journalModel->id)
                 ->orderByDesc('published_date')
@@ -48,9 +44,6 @@ class CurrentIssuesController extends Controller
                     'issue'   => $latest->uuid,
                 ]);
             }
-
-            // No issues exist yet for this journal — fall through and
-            // render the empty-state view instead of redirecting nowhere.
         }
 
         return view('frontend.currentissues', [
@@ -72,12 +65,12 @@ class CurrentIssuesController extends Controller
 
             $articles = SubmitArticle::with(['journal:id,title', 'coAuthors'])
                 ->where('issue_id', $issue->id)
-                ->where('journal_id', $journalModel->id)
                 ->where('is_hidden', false)
-                ->whereNull('deleted_at')
                 ->whereHas('review', function ($q) {
-                    $q->where('editor_status', 'approved');
+                    $q->where('is_published', true);
                 })
+
+                ->orderByDesc('created_at')
                 ->orderByDesc('id')
                 ->paginate(8);
 
@@ -88,6 +81,8 @@ class CurrentIssuesController extends Controller
                     'manuscript_title' => $article->manuscript_title,
                     'full_name' => $article->full_name,
                     'co_authors' => $article->coAuthors->map(fn($c) => ['name' => $c->name])->values(),
+                    'page_start' => $article->page_start,
+                    'page_end' => $article->page_end,
                     'pdf_url' => $article->signed_manuscript_pdf
                         ? route('article.download-manuscript', $article->uuid)
                         : null,

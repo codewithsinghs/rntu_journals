@@ -56,6 +56,12 @@ document.addEventListener("DOMContentLoaded", function () {
               });
     };
 
+    const fmtMoney = (n) =>
+        new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+        }).format(Number(n) || 0);
+
     const STAGE_LABELS = {
         submitted: "Submitted",
         editor_approved: "Editor Approved",
@@ -255,8 +261,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         currentReviewDecision = decisionKey;
 
-        // document.getElementById("saReviewDecisionTitle").textContent =
-        //     `Submit Review — ${cfg.label}`;
         document.getElementById("saReviewDecisionRemarksLabel").textContent =
             cfg.remarksRequired ? "Remarks (required)" : "Remarks (optional)";
         document.getElementById("saReviewDecisionRemarks").value = "";
@@ -315,66 +319,372 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    /* ── Action buttons ──
+       Only ONE Approve and ONE Reject button are ever rendered.
+       - Reviewer (can_review_decide): Approve, Correction Needed, Reject
+         -> all go through the review-decision modal.
+       - Editor: Approve, Reject, Send to Reviewer
+         -> Approve opens the payment-waiver modal when the editor has the
+            "waive article payment" permission (r.can_waive).
+       Correction Needed is reviewer-only. ─────────────────────────── */
     function renderActions(r) {
-        const editorButtons = [
-            r.can_approve
-                ? `<div class="button_d"> <button type="button" class="green_d" id="saApproveBtn"> Approve </button> </div>`
+        const bar = document.getElementById("saActionsBar");
+        if (!bar) return;
+
+        // If the user is the assigned reviewer, the reviewer flow wins
+        const isReviewer = !!r.can_review_decide;
+
+        const showApprove = isReviewer || !!r.can_approve;
+        const showReject = isReviewer || !!r.can_reject;
+        const showCorrection = isReviewer; // reviewer only
+        const showForward = !isReviewer && !!r.can_forward;
+        const showPay = !isReviewer && !!r.can_pay; // author only
+
+        bar.innerHTML = [
+            showApprove
+                ? `<div class="button_d"><button type="button" class="green_d" id="saApproveBtn">Approve</button></div>`
                 : "",
-            r.can_reject
-                ? `<div class="button_d"> <button type="button" class="red_d" id="saRejectBtn"> Reject </button> </div>`
+            showCorrection
+                ? `<div class="button_d"><button type="button" class="orange_d" id="saCorrectionBtn">Correction Needed</button></div>`
                 : "",
-            r.can_forward
-                ? `<div class="button_d"><button type="button" id="saForwardBtn"> Send to Reviewer </button> </div>`
+            showReject
+                ? `<div class="button_d"><button type="button" class="red_d" id="saRejectBtn">Reject</button></div>`
+                : "",
+            showForward
+                ? `<div class="button_d"><button type="button" id="saForwardBtn">Send to Reviewer</button></div>`
+                : "",
+            showPay
+                ? `<div class="button_d"><button type="button" class="green_d" id="saPayBtn">Pay Now</button></div>`
                 : "",
         ]
             .filter(Boolean)
             .join("");
 
-        // Reviewer's own 3-way decision — shown only to the assigned
-        // reviewer while the submission is with_reviewer.
-        const reviewerButtons = r.can_review_decide
-            ? `
-                <div class="button_d"> <button type="button" class="green_d" id="saReviewApprovedBtn"> Approved </button> </div>
-                <div class="button_d"> <button type="button" class="orange_d" id="saReviewCorrectionBtn"> Correction Needed </button> </div>
-                <div class="button_d"> <button type="button" class="red_d" id="saReviewRejectBtn"> Reject </button> </div>
-            `
-            : "";
-
-        const bar = document.getElementById("saActionsBar");
-        if (!bar) return;
-        bar.innerHTML = editorButtons + reviewerButtons;
-
-        if (r.can_approve) {
+        if (showApprove) {
             document
                 .getElementById("saApproveBtn")
-                .addEventListener("click", doApprove);
+                .addEventListener("click", () =>
+                    isReviewer
+                        ? openReviewDecision("approved")
+                        : doApprove(!!r.can_waive),
+                );
         }
-        if (r.can_reject) {
+        if (showCorrection) {
+            document
+                .getElementById("saCorrectionBtn")
+                .addEventListener("click", () =>
+                    openReviewDecision("correction_needed"),
+                );
+        }
+        if (showReject) {
             document
                 .getElementById("saRejectBtn")
-                .addEventListener("click", openReject);
+                .addEventListener("click", () =>
+                    isReviewer ? openReviewDecision("rejected") : openReject(),
+                );
         }
-        if (r.can_forward) {
+        if (showForward) {
             document
                 .getElementById("saForwardBtn")
                 .addEventListener("click", openForward);
         }
-        if (r.can_review_decide) {
+        if (showPay) {
             document
-                .getElementById("saReviewApprovedBtn")
-                .addEventListener("click", () => openReviewDecision("approved"));
-            document
-                .getElementById("saReviewCorrectionBtn")
-                .addEventListener("click", () =>
-                    openReviewDecision("correction_needed"),
-                );
-            document
-                .getElementById("saReviewRejectBtn")
-                .addEventListener("click", () => openReviewDecision("rejected"));
+                .getElementById("saPayBtn")
+                .addEventListener("click", () => startPayment(r));
         }
     }
 
-    async function doApprove() {
+    /* ── Pay Now (author) ──
+       If the editor granted a fee concession (amount > 0), the author first
+       sees a modal stating exactly how much they have to pay. ─────────── */
+
+    // TODO: point this at your existing payment page / route.
+    const PAYMENT_URL = (uuid) => `/author/submit-articles/${uuid}/pay`;
+
+    function showPayableAmountModal({ amount, reason }) {
+        return new Promise((resolve) => {
+            let modalEl = document.getElementById("saPayableModal");
+            if (modalEl) modalEl.remove();
+
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = `
+                <div class="modal fade" id="saPayableModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header border-bottom py-3">
+                                <h5 class="modal-title fw-semibold mb-0">Fee Concession Applied</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4 text-center">
+                                <p class="mb-1 text-muted" style="font-size:14px;">You have to pay</p>
+                                <div class="fw-bold mb-3" style="font-size:32px;">${fmtMoney(amount)}</div>
+                                <p class="mb-0 text-muted" style="font-size:13px;">
+                                    The editor has granted you a concession on the publication fee.
+                                </p>
+                                ${
+                                    reason
+                                        ? `<p class="mt-3 mb-0" style="font-size:13px;"><strong>Reason:</strong> ${esc(reason)}</p>`
+                                        : ""
+                                }
+                            </div>
+                            <div class="modal-footer border-top py-3">
+                                <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saPayableProceedBtn">Proceed to Payment</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(wrapper.firstElementChild);
+
+            modalEl = document.getElementById("saPayableModal");
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+            let settled = false;
+            const done = (val) => {
+                if (settled) return;
+                settled = true;
+                resolve(val);
+            };
+
+            document
+                .getElementById("saPayableProceedBtn")
+                .addEventListener("click", () => {
+                    done(true);
+                    modal.hide();
+                });
+            modalEl.addEventListener("hidden.bs.modal", () => done(false));
+
+            modal.show();
+        });
+    }
+
+    async function startPayment(r) {
+        const amount = Number(r.waiver?.payable_amount) || 0;
+
+        // Concession with an amount > 0 → show the amount first
+        if (r.is_waiver && r.waiver?.partial_payment && amount > 0) {
+            const proceed = await showPayableAmountModal({
+                amount,
+                reason: r.waiver.reason,
+            });
+            if (!proceed) return;
+        }
+
+        window.location.href = PAYMENT_URL(id);
+    }
+
+    /* ── Approve (editor) with optional fee concession / full waiver ──
+       Modal is built dynamically so no blade changes are required. ───── */
+    let saApproveModal = null;
+
+    function ensureApproveModal() {
+        if (document.getElementById("saApproveModal")) {
+            saApproveModal = bootstrap.Modal.getOrCreateInstance(
+                document.getElementById("saApproveModal"),
+            );
+            return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = `
+            <div class="modal fade" id="saApproveModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header border-bottom py-3">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="saWaiverCheck">
+                                <label class="form-check-label" for="saWaiverCheck" style="font-weight:600;">
+                                    Grant fee concession / waiver
+                                </label>
+                            </div>
+
+                            <div id="saWaiverBox" style="display:none;">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverConcession" value="concession">
+                                        <label class="form-check-label" for="saWaiverConcession">
+                                            Fee Concession <span class="text-muted">(author pays a reduced amount)</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverFull" value="full_waiver">
+                                        <label class="form-check-label" for="saWaiverFull">
+                                            Full Fee Waiver <span class="text-muted">(publish directly, no payment)</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3" id="saWaiverAmountBox" style="display:none;">
+                                    <label class="form-label" for="saWaiverAmount" style="font-size:13px;font-weight:600;">
+                                        Amount payable by the author (₹)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 1500">
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label" id="saWaiverReasonLabel" style="font-size:13px;font-weight:600;">Reason (required)</label>
+                                    <textarea class="form-control form-control-sm" id="saWaiverReason" rows="3"
+                                        placeholder="Reason…"></textarea>
+                                </div>
+                            </div>
+
+                            <p class="mb-0 text-muted" id="saApproveHint" style="font-size:13px;">
+                                The author will be able to pay once this is approved.
+                            </p>
+                        </div>
+                        <div class="modal-footer border-top py-3">
+                            <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saApproveConfirmBtn">Approve</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+
+        saApproveModal = bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("saApproveModal"),
+        );
+
+        const check = document.getElementById("saWaiverCheck");
+        const box = document.getElementById("saWaiverBox");
+        const amountBox = document.getElementById("saWaiverAmountBox");
+        const hint = document.getElementById("saApproveHint");
+
+        const refreshHint = () => {
+            const type = document.querySelector(
+                'input[name="saWaiverType"]:checked',
+            )?.value;
+
+            amountBox.style.display = type === "concession" ? "block" : "none";
+
+            document.getElementById("saWaiverReasonLabel").textContent =
+                type === "full_waiver"
+                    ? "Reason for full fee waiver (required)"
+                    : type === "concession"
+                      ? "Reason for fee concession (required)"
+                      : "Reason (required)";
+
+            hint.textContent = !check.checked
+                ? "The author will be able to pay once this is approved."
+                : type === "full_waiver"
+                  ? "The article will be published immediately. No payment will be requested."
+                  : type === "concession"
+                    ? "The author will see your reason and the amount they have to pay, with a Pay Now option."
+                    : "Choose Fee Concession or Full Fee Waiver.";
+        };
+
+        check.addEventListener("change", () => {
+            box.style.display = check.checked ? "block" : "none";
+            refreshHint();
+        });
+
+        document
+            .querySelectorAll('input[name="saWaiverType"]')
+            .forEach((r) => r.addEventListener("change", refreshHint));
+
+        document
+            .getElementById("saApproveConfirmBtn")
+            .addEventListener("click", submitApprove);
+    }
+
+    function openApproveModal() {
+        ensureApproveModal();
+        document.getElementById("saWaiverCheck").checked = false;
+        document.getElementById("saWaiverBox").style.display = "none";
+        document.getElementById("saWaiverAmountBox").style.display = "none";
+        document
+            .querySelectorAll('input[name="saWaiverType"]')
+            .forEach((r) => (r.checked = false));
+        document.getElementById("saWaiverAmount").value = "";
+        document.getElementById("saWaiverReason").value = "";
+        document.getElementById("saWaiverReasonLabel").textContent =
+            "Reason (required)";
+        document.getElementById("saApproveHint").textContent =
+            "The author will be able to pay once this is approved.";
+        saApproveModal.show();
+    }
+
+    async function submitApprove() {
+        const isWaiver = document.getElementById("saWaiverCheck").checked;
+        const waiverType = document.querySelector(
+            'input[name="saWaiverType"]:checked',
+        )?.value;
+        const amount = parseFloat(
+            document.getElementById("saWaiverAmount").value,
+        );
+        const reason = document.getElementById("saWaiverReason").value.trim();
+
+        if (isWaiver && !waiverType) {
+            showToast(
+                "error",
+                "Approve failed",
+                "Choose Fee Concession or Full Fee Waiver.",
+            );
+            return;
+        }
+        if (isWaiver && waiverType === "concession" && !(amount > 0)) {
+            showToast(
+                "error",
+                "Approve failed",
+                "Enter the amount payable by the author (greater than 0).",
+            );
+            return;
+        }
+        if (isWaiver && !reason) {
+            showToast(
+                "error",
+                "Approve failed",
+                "A reason is required for the concession / waiver.",
+            );
+            return;
+        }
+
+        const payload = isWaiver
+            ? {
+                  is_waiver: 1,
+                  waiver_type: waiverType,
+                  waiver_reason: reason,
+                  ...(waiverType === "concession"
+                      ? { waiver_amount: amount }
+                      : {}),
+              }
+            : {};
+
+        await sendApprove(payload, true);
+    }
+
+    async function sendApprove(payload, closeModal = false) {
+        try {
+            const res = await fetch(`${API_BASE}/${id}/approve`, {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.status)
+                throw new Error(json.message || "Approve failed.");
+            showToast("success", "Approved", json.message);
+            if (closeModal && saApproveModal) saApproveModal.hide();
+            load();
+        } catch (e) {
+            showToast("error", "Approve failed", e.message);
+        }
+    }
+
+    async function doApprove(canWaive = false) {
+        // Editors with the waive permission get the waiver modal
+        if (canWaive) return openApproveModal();
+
         const ok = await showConfirm({
             title: "Approve this submission?",
             desc: "This manuscript will move forward so it can be forwarded to a reviewer.",
@@ -383,23 +693,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         if (!ok) return;
 
-        try {
-            const res = await fetch(`${API_BASE}/${id}/approve`, {
-                method: "POST",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({}),
-            });
-            const json = await res.json();
-            if (!res.ok || !json.status)
-                throw new Error(json.message || "Approve failed.");
-            showToast("success", "Approved", json.message);
-            load();
-        } catch (e) {
-            showToast("error", "Approve failed", e.message);
-        }
+        await sendApprove({});
     }
 
     function openReject() {
@@ -590,6 +884,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const review = r.review || {};
 
+        // Fee concession / waiver info (visible to the author and the editor)
+        const payable = Number(r.waiver?.payable_amount) || 0;
+        const waiverBlock =
+            r.is_waiver && r.waiver
+                ? `
+                                <div class="partitions_inner">
+                                    <label>Fee Status</label>
+                                    <div class="content_show">${r.waiver.full_payment ? "Full Fee Waiver" : "Fee Concession"}</div>
+                                </div>
+
+                                ${
+                                    !r.waiver.full_payment && payable > 0
+                                        ? `<div class="partitions_inner">
+                                    <label>Amount Payable</label>
+                                    <div class="content_show">${fmtMoney(payable)}</div>
+                                </div>`
+                                        : ""
+                                }
+
+                                <div class="partitions_inner">
+                                    <label>${r.waiver.full_payment ? "Waiver Reason" : "Concession Reason"}</label>
+                                    <div class="content_show">${html(r.waiver.reason)}</div>
+                                </div>`
+                : "";
+
         document.getElementById("saShowBody").innerHTML = `
             <form id="saShowForm" onsubmit="return false;">
 
@@ -632,6 +951,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <label>Created At</label>
                                     <div class="content_show">${fmtDateTime(r.created_at)}</div>
                                 </div>
+
+                                ${waiverBlock}
 
                             </div>
                     
@@ -869,7 +1190,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <!-- Workflow Actions -->
                         <section class="term_con">
                             <div id="saActionsBar"></div>
-                            <div class="button_d"><button type="button"><a href="/admin/submit-articles">Back</button></div>
+                            <div class="button_d"><button type="button"><a href="/admin/submit-articles">Back</a></button></div>
                         </section>
 
             </form>

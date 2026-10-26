@@ -1,0 +1,578 @@
+/* public/assets/css/admin/payment.css
+   Styles for the "Pay Now" modal (#saPayModal) and receipt modal (#saReceiptModal). */
+
+#saPayModal,
+#saReceiptModal {
+    --sa-pay-ink: #1f2933;
+    --sa-pay-muted: #6b7785;
+    --sa-pay-line: #e4e8ec;
+    --sa-pay-green: #002b5b;
+    --sa-pay-green-deep: #002b5b;
+    --sa-pay-green-tint: #e8eef6;
+    --sa-pay-surface: #f7f9fa;
+}
+
+#saPayModal .modal-content {
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    color: var(--sa-pay-ink);
+    box-shadow: 0 18px 48px rgba(15, 30, 45, 0.22);
+}
+
+/* ---------- Header ---------- */
+#saPayModal .sa-pay-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--sa-pay-green-deep);
+    color: #fff;
+}
+
+#saPayModal .sa-pay-header h5 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+#saPayModal .sa-pay-header small {
+    display: block;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.74rem;
+}
+
+#saPayModal .sa-pay-icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 1rem;
+}
+
+#saPayModal .sa-pay-header .btn-close {
+    margin-left: auto;
+    filter: invert(1) grayscale(1) brightness(2);
+    opacity: 0.8;
+}
+
+#saPayModal .sa-pay-header .btn-close:hover {
+    opacity: 1;
+}
+
+/* ---------- Body ---------- */
+#saPayModal .sa-pay-body {
+    padding: 20px;
+}
+
+#saPayModal .sa-pay-details {
+    border: 1px solid var(--sa-pay-line);
+    border-radius: 10px;
+    background: var(--sa-pay-surface);
+}
+
+#saPayModal .sa-pay-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 14px;
+}
+
+#saPayModal .sa-pay-row + .sa-pay-row {
+    border-top: 1px solid var(--sa-pay-line);
+}
+
+#saPayModal .sa-pay-row .label {
+    flex: 0 0 auto;
+    color: var(--sa-pay-muted);
+    font-size: 0.78rem;
+}
+
+#saPayModal .sa-pay-row .value {
+    min-width: 0;
+    text-align: right;
+    font-size: 0.84rem;
+    font-weight: 500;
+    overflow-wrap: anywhere; /* long manuscript titles wrap instead of overflowing */
+}
+
+/* ---------- Amount: the one prominent element ---------- */
+#saPayModal .sa-pay-amount {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 10px;
+    background: var(--sa-pay-green-tint);
+    border: 1px solid #c9d6e6;
+    text-align: center;
+}
+
+#saPayModal .sa-pay-amount .caption {
+    color: var(--sa-pay-muted);
+    font-size: 0.78rem;
+}
+
+#saPayModal #saPayAmount {
+    margin-top: 2px;
+    color: var(--sa-pay-green-deep);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Confirmation ---------- */
+#saPayModal .sa-pay-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+#saPayModal .sa-pay-confirm input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--sa-pay-green);
+    cursor: pointer;
+}
+
+#saPayModal .sa-pay-confirm label {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    cursor: pointer;
+}
+
+#saPayModal .sa-pay-secure {
+    margin: 14px 0 0;
+    color: var(--sa-pay-muted);
+    font-size: 0.74rem;
+}
+
+#saPayModal .sa-pay-secure i {
+    margin-right: 4px;
+    color: var(--sa-pay-green);
+}
+
+/* ---------- Footer ---------- */
+#saPayModal .sa-pay-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--sa-pay-line);
+    background: var(--sa-pay-surface);
+}
+
+#saPayModal .sa-pay-footer .btn {
+    min-width: 110px;
+}
+
+#saPayModal .sa-pay-footer .btn {
+    font-size: 0.85rem;
+}
+
+/* Navy primary button (overrides Bootstrap's btn-success) */
+#saPayModal .sa-pay-footer .btn-success {
+    background-color: #002b5b;
+    border-color: #002b5b;
+    color: #fff;
+}
+
+#saPayModal .sa-pay-footer .btn-success:hover:not(:disabled) {
+    background-color: #003d80;
+    border-color: #003d80;
+}
+
+#saPayModal .sa-pay-footer .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+#saPayModal .btn:focus-visible,
+#saPayModal .sa-pay-confirm input:focus-visible,
+#saPayModal .btn-close:focus-visible {
+    outline: 2px solid var(--sa-pay-green);
+    outline-offset: 2px;
+}
+
+#saPayModal .sa-pay-header .btn-close:focus-visible {
+    outline-color: #fff;
+}
+
+/* ---------- Receipt modal ---------- */
+#saReceiptModal .modal-content {
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    color: var(--sa-pay-ink);
+    box-shadow: 0 18px 48px rgba(15, 30, 45, 0.22);
+}
+
+#saReceiptModal .sa-receipt-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--sa-pay-green-deep);
+    color: #fff;
+}
+
+#saReceiptModal .sa-receipt-modal-header h5 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+#saReceiptModal .sa-receipt-modal-header small {
+    display: block;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.74rem;
+}
+
+#saReceiptModal .sa-receipt-modal-icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 1rem;
+}
+
+#saReceiptModal .sa-receipt-modal-header .btn-close {
+    margin-left: auto;
+    filter: invert(1) grayscale(1) brightness(2);
+    opacity: 0.8;
+}
+
+#saReceiptModal .sa-receipt-modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+#saReceiptModal .modal-body {
+    padding: 20px;
+}
+
+#saReceiptModal .sa-receipt-modal-content {
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+#saReceiptModal .sa-receipt-no-line {
+    margin-top: 10px;
+    color: var(--sa-pay-muted);
+    font-size: 11.5px;
+}
+
+#saReceiptModal .sa-receipt-state {
+    padding: 28px 0;
+    text-align: center;
+    color: var(--sa-pay-muted);
+    font-size: 0.85rem;
+}
+
+#saReceiptModal .sa-receipt-state.is-error {
+    color: #b42318;
+}
+
+#saReceiptModal .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--sa-pay-line);
+    background: var(--sa-pay-surface);
+    gap: 10px;
+}
+
+#saReceiptModal .modal-footer .btn {
+    min-width: 110px;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+#saReceiptModal .modal-footer .btn-primary {
+    background-color: #002b5b;
+    border-color: #002b5b;
+}
+
+#saReceiptModal .modal-footer .btn-primary:hover:not(:disabled) {
+    background-color: #003d80;
+    border-color: #003d80;
+}
+
+#saReceiptModal .modal-footer .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+#saReceiptModal .btn:focus-visible,
+#saReceiptModal .btn-close:focus-visible {
+    outline: 2px solid var(--sa-pay-green);
+    outline-offset: 2px;
+}
+
+#saReceiptModal .sa-receipt-modal-header .btn-close:focus-visible {
+    outline-color: #fff;
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 420px) {
+    #saPayModal .sa-pay-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    #saPayModal .sa-pay-row .value {
+        text-align: left;
+    }
+
+    #saPayModal #saPayAmount {
+        font-size: 1.35rem;
+    }
+
+    #saPayModal .sa-pay-footer .btn,
+    #saReceiptModal .modal-footer .btn {
+        flex: 1 1 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #saPayModal *,
+    #saReceiptModal * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+
+/* =====================================================================
+   RECEIPT (receipt page + PDF)
+   Shared by the browser page and the DomPDF template, so this section
+   uses plain CSS only: no variables, flex or grid, and px units.
+   ===================================================================== */
+
+.sa-receipt-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 8px 0 24px;
+}
+
+.sa-receipt-page .sa-receipt-sheet {
+    border: 1px solid #e4e8ec;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.sa-receipt-sheet {
+    background: #fff;
+    color: #1f2933;
+    font-size: 12.5px;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Header band */
+.sa-receipt-head {
+    width: 100%;
+    border-collapse: collapse;
+    background: #002b5b;
+    color: #fff;
+}
+
+.sa-receipt-head td {
+    padding: 18px 24px;
+    vertical-align: middle;
+}
+
+.sa-receipt-org {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.sa-receipt-doc {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: #c9d6e6;
+}
+
+.sa-receipt-meta {
+    text-align: right;
+}
+
+.sa-receipt-meta .label {
+    font-size: 11px;
+    color: #c9d6e6;
+}
+
+.sa-receipt-meta .number {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.sa-receipt-body {
+    padding: 22px 24px 8px;
+}
+
+/* Amount + status summary */
+.sa-receipt-summary {
+    width: 100%;
+    border-collapse: collapse;
+    background: #e8eef6;
+    border: 1px solid #c9d6e6;
+}
+
+.sa-receipt-summary td {
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+.sa-receipt-summary .status-cell {
+    text-align: right;
+}
+
+.sa-receipt-caption {
+    font-size: 11.5px;
+    color: #6b7785;
+}
+
+.sa-receipt-amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #002b5b;
+}
+
+.sa-receipt-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    background: #6b7785;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: bold;
+}
+
+.sa-receipt-badge.is-paid { background: #198754; }
+.sa-receipt-badge.is-pending { background: #b7791f; }
+.sa-receipt-badge.is-failed,
+.sa-receipt-badge.is-created { background: #b42318; }
+
+.sa-receipt-date {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: #6b7785;
+}
+
+/* Detail sections */
+.sa-receipt-section {
+    margin: 20px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #002b5b;
+    font-size: 12px;
+    font-weight: bold;
+    color: #002b5b;
+}
+
+.sa-receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sa-receipt-table td {
+    padding: 7px 4px;
+    border-bottom: 1px solid #e4e8ec;
+    vertical-align: top;
+}
+
+.sa-receipt-table td.k {
+    width: 34%;
+    color: #6b7785;
+}
+
+.sa-receipt-table td.v {
+    font-weight: bold;
+    word-wrap: break-word;
+}
+
+/* Notes */
+.sa-receipt-note {
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-left: 3px solid #b7791f;
+    background: #fdf6e7;
+    font-size: 12px;
+}
+
+.sa-receipt-note.is-danger {
+    border-left-color: #b42318;
+    background: #fdecea;
+}
+
+/* Footer */
+.sa-receipt-foot {
+    margin-top: 22px;
+    padding: 12px 24px 18px;
+    border-top: 1px solid #e4e8ec;
+    color: #6b7785;
+    font-size: 11px;
+}
+
+/* Buttons under the sheet (page only) */
+.sa-receipt-actions {
+    margin-top: 16px;
+}
+
+.sa-receipt-actions .btn-primary {
+    background-color: #002b5b;
+    border-color: #002b5b;
+}
+
+.sa-receipt-actions .btn-primary:hover {
+    background-color: #003d80;
+    border-color: #003d80;
+}
+
+/* Print: show only the receipt, whatever the admin layout looks like */
+@media print {
+    body:has(.sa-receipt-sheet) * {
+        visibility: hidden !important;
+    }
+
+    body:has(.sa-receipt-sheet) .sa-receipt-sheet,
+    body:has(.sa-receipt-sheet) .sa-receipt-sheet * {
+        visibility: visible !important;
+    }
+
+    body:has(.sa-receipt-sheet) .sa-receipt-sheet {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .sa-receipt-actions {
+        display: none !important;
+    }
+}
+
+@media (max-width: 520px) {
+    .sa-receipt-amount {
+        font-size: 20px;
+    }
+
+    .sa-receipt-head td,
+    .sa-receipt-body {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}

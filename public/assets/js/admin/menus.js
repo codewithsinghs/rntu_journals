@@ -164,7 +164,7 @@ function renderTable() {
                     <td><span class="green-btn">${countItems(menu.items)} items</span></td>
                     <td>
                         <div class="d-flex">
-                            <button class="edit-btn" onclick="openEditModal(${menu.id})">Edit</button>
+                            <button class="edit-btn" onclick="goToManagePage(${menu.id})">Manage</button>
                             <button class="delete-btn" onclick="deleteMenu(${menu.id}, '${escapeHtml(menu.name).replace(/'/g, "\\'")}')">Delete</button>
                         </div>
                     </td>
@@ -206,6 +206,19 @@ function goToPage(page) {
     renderPagination();
 }
 
+// ── Navigate to full-page "Manage" view ───────────────────────────
+// Replaces the old modal-based edit flow for the list's Manage button.
+// window.MENUS_MANAGE_ROUTE_BASE is injected by menus.blade.php from the
+// named Laravel route, e.g.:
+//   <script>
+//       window.MENUS_MANAGE_ROUTE_BASE = "{{ route('admin.menus.manage', ['id' => '__ID__']) }}";
+//   </script>
+// Falls back to a hardcoded path if that isn't present.
+function goToManagePage(menuId) {
+    const base = window.MENUS_MANAGE_ROUTE_BASE || "/admin/menus/__ID__/manage";
+    window.location.href = base.replace("__ID__", menuId);
+}
+
 // ── Location toggle ──────────────────────────────────────────────
 function onLocationChange() {
     const isHeader = document.getElementById("location").value === "header";
@@ -221,7 +234,7 @@ function isHeaderMode() {
     return document.getElementById("location").value === "header";
 }
 
-// ── Page-visibility picker (new) ──────────────────────────────────
+// ── Page-visibility picker ─────────────────────────────────────────
 // Builds the "Everywhere / Only on / Hide on" control for one tree item.
 // Storage model on the item element itself:
 //   el.dataset.visMode = 'everywhere' | 'show' | 'hide'

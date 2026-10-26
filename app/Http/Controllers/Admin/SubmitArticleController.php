@@ -7,17 +7,19 @@ use App\Models\Journal;
 use App\Models\Issue;
 use App\Models\SubmitArticle;
 use App\Models\User;
+use App\Models\Waiver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class SubmitArticleController extends Controller
 {
 
     private const STAGE_ACTIONS = [
         'submitted'           => ['approve', 'reject', 'forward'],
-        'approved'            => [],
+        'approved'            => ['waive'],
         'with_reviewer'       => ['approve', 'reject'],
         'reviewer_approved'   => ['approve', 'reject', 'editor_final_decide'],
         'reviewer_correction' => ['approve', 'reject'],
@@ -26,10 +28,11 @@ class SubmitArticleController extends Controller
         'with_author_payment' => ['publish'],
         'rejected'            => [],
         'published'           => [],
+
     ];
 
-
     private const OWNER_EDITABLE_STAGES = ['submitted', 'with_author', 'reviewer_correction'];
+    private const STANDARD_FEE = 2000.00;
 
     public function index()
     {
@@ -57,6 +60,7 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Issues Dropdown for a Journal (Editor override) ────────────
 
     public function issuesForJournal(Request $request)
     {
@@ -147,162 +151,319 @@ class SubmitArticleController extends Controller
         return $user->can('view all articles') || $user->can($permission);
     }
 
+    /**
+     * True only while the article sits in the "approved" stage. Once a
+     * concession moves it to "with_author_payment" (Awaiting Payment) the
+     * waiver can no longer be granted.
+     */
+    private function isWaivableApproved(SubmitArticle $article): bool
+    {
+        $stage = $article->review->current_stage ?? 'submitted';
+
+        return $stage === 'approved'
+            && in_array('waive', self::STAGE_ACTIONS[$stage] ?? [], true);
+    }
+
+    private function standardFee(SubmitArticle $article): float
+    {
+        return self::STANDARD_FEE;
+    }
+
+
+    private function countPdfPages(?string $path): int
+    {
+        if (!$path) {
+            return 1;
+        }
+
+        try {
+            $fullPath = Storage::disk('public')->path($path);
+            $pdf      = (new \Smalot\PdfParser\Parser())->parseFile($fullPath);
+
+            return max(1, count($pdf->getPages()));
+        } catch (\Throwable $e) {
+            Log::warning('Could not count PDF pages', [
+                'path'  => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            return 1;
+        }
+    }
+
+    /**
+     * Assign issue + pages and mark the article as published.
+     * Shared by publish() and the "No payment" waiver flow.
+     * Returns an error message, or null on success.
+     */
+    private function finalizePublish(SubmitArticle $article, array $extraReview = []): ?string
+    {
+        $latestIssue = $article->issue_id
+            ? Issue::find($article->issue_id)
+            : Issue::where('journal_id', $article->journal_id)
+            ->orderByDesc('published_date')
+            ->first();
+
+        if (!$latestIssue) {
+            return 'No issue is available for this journal yet. Please create an issue before publishing.';
+        }
+
+        // If the editor already entered a page range, keep it and skip auto-numbering.
+        $hasManualPages = !empty($article->page_start) && !empty($article->page_end);
+
+        // Count pages BEFORE the transaction (parsing a big PDF is slow
+        // and shouldn't hold a DB lock).
+        $pageCount = $hasManualPages
+            ? 0
+            : $this->countPdfPages($article->signed_manuscript_pdf);
+
+        DB::transaction(function () use ($article, $latestIssue, $pageCount, $hasManualPages, $extraReview) {
+            $article->issue_id = $latestIssue->id;
+
+            if (!$hasManualPages) {
+                // Continue numbering from the last published article in this issue.
+                // lockForUpdate prevents two simultaneous publishes getting the same range.
+                $lastEnd = SubmitArticle::where('issue_id', $latestIssue->id)
+                    ->lockForUpdate()
+                    ->max('page_end') ?? 0;
+
+                $article->page_start = $lastEnd + 1;
+                $article->page_end   = $lastEnd + $pageCount;
+            }
+
+            $article->save();
+
+            $article->review()->updateOrCreate(
+                ['submit_article_id' => $article->id],
+                array_merge([
+                    'final_status'  => 'published',
+                    'current_stage' => 'published',
+                    'is_published'  => true,
+                    'published_at'  => now(),
+                ], $extraReview)
+            );
+        });
+
+        return null;
+    }
+
+    /**
+     * Store (or clear) the row in the waivers table.
+     *
+     *  - concession   → partial_payment = 1, payable_amount = amount the author must pay
+     *  - full_waiver  → full_payment = 1, payable_amount = null (nothing to pay)
+     */
+    private function saveWaiver(SubmitArticle $article, ?string $type, ?string $reason, ?float $amount = null): void
+    {
+        if (!$type) {
+            Waiver::where('submit_articles_id', $article->id)->delete();
+            return;
+        }
+
+        Waiver::updateOrCreate(
+            ['submit_articles_id' => $article->id],
+            [
+                'reason'          => $reason,
+                'payable_amount'  => $type === 'concession' ? $amount : null,
+                'partial_payment' => $type === 'concession',
+                'full_payment'    => $type === 'full_waiver',
+            ]
+        );
+    }
+
+
+    private function approveWithWaiver(Request $request, SubmitArticle $article, $user, array $extra = [])
+    {
+        $isWaiver     = $request->boolean('is_waiver');
+        $isConcession = $isWaiver && $request->input('waiver_type') === 'concession';
+
+        $request->validate([
+            'is_waiver'     => 'sometimes|boolean',
+            'waiver_type'   => [Rule::requiredIf($isWaiver), 'nullable', 'in:concession,full_waiver'],
+            'waiver_reason' => [Rule::requiredIf($isWaiver), 'nullable', 'string', 'max:1000'],
+            'waiver_amount' => [Rule::requiredIf($isConcession), 'nullable', 'numeric', 'gt:0', 'max:99999999.99'],
+        ], [
+            'waiver_type.required'   => 'Please choose Fee Concession or Full Fee Waiver.',
+            'waiver_type.in'         => 'Invalid waiver type.',
+            'waiver_reason.required' => 'A reason is required for a fee concession or waiver.',
+            'waiver_amount.required' => 'Please enter the amount payable by the author.',
+            'waiver_amount.numeric'  => 'The payable amount must be a number.',
+            'waiver_amount.gt'       => 'The payable amount must be greater than 0.',
+        ]);
+
+        if ($isWaiver) {
+            $canWaive = $user->can('view all articles') || $user->can('waive article payment');
+
+            if (!$canWaive) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'You are not authorized to grant a fee concession or waiver.',
+                ], 403);
+            }
+        }
+
+        $type   = $isWaiver ? $request->input('waiver_type') : null;
+        $reason = $isWaiver ? trim((string) $request->input('waiver_reason')) : null;
+        $amount = $isConcession ? round((float) $request->input('waiver_amount'), 2) : null;
+
+        $article->is_waiver = $isWaiver;
+
+        // ── Full fee waiver → publish straight away ──
+        if ($isWaiver && $type === 'full_waiver') {
+            $error = $this->finalizePublish($article, array_merge($extra, [
+                'editor_id'     => $user->id,
+                'editor_status' => 'approved_full_waiver',
+                'approval_date' => now(),
+            ]));
+
+            if ($error) {
+                return response()->json(['status' => false, 'message' => $error], 422);
+            }
+
+            $this->saveWaiver($article, $type, $reason);
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Submission approved with a full fee waiver and published.',
+            ]);
+        }
+
+        // ── Normal / fee concession → author pays ──
+        DB::transaction(function () use ($article, $user, $extra, $type, $reason, $amount) {
+            $article->save(); // persists is_waiver
+
+            $article->review()->updateOrCreate(
+                ['submit_article_id' => $article->id],
+                array_merge($extra, [
+                    'editor_id'     => $user->id,
+                    'editor_status' => 'approved_pending_payment',
+                    'current_stage' => 'with_author_payment',
+                    'approval_date' => now(),
+                ])
+            );
+
+            $this->saveWaiver($article, $type, $reason, $amount);
+        });
+
+        $message = $isConcession
+            ? 'Submission approved with a fee concession. The author can now pay ₹' . number_format($amount, 2) . '.'
+            : 'Submission approved. The author can now pay.';
+
+        return response()->json([
+            'status'  => true,
+            'message' => $message,
+        ]);
+    }
+
+
 
     private function attachPermissionFlags(SubmitArticle $article, $user): void
-{
-    $canViewAll = $user && $user->can('view all articles');
-    $isOwner    = $user && $article->user_id === $user->id;
+    {
+        $canViewAll = $user && $user->can('view all articles');
+        $isOwner    = $user && $article->user_id === $user->id;
 
-    $allowedActions = $this->allowedActionsFor($article);
-    $stage = $article->review->current_stage ?? 'submitted';
+        $allowedActions = $this->allowedActionsFor($article);
+        $stage = $article->review->current_stage ?? 'submitted';
 
-    $isOwnerEditable = in_array($stage, self::OWNER_EDITABLE_STAGES, true);
+        $isOwnerEditable = in_array($stage, self::OWNER_EDITABLE_STAGES, true);
 
-    $hasApprove         = $canViewAll || ($user?->can('approve article') ?? false);
-    $hasReject          = $canViewAll || ($user?->can('reject article') ?? false);
-    $hasForward         = $canViewAll || ($user?->can('forward article') ?? false);
-    $hasForwardToAuthor = $canViewAll || ($user?->can('forward article to author') ?? false);
-    $hasPublish         = $canViewAll || ($user?->can('publish article') ?? false);
-    $hasReview          = $canViewAll || ($user?->can('review article') ?? false);
+        $hasApprove         = $canViewAll || ($user?->can('approve article') ?? false);
+        $hasReject          = $canViewAll || ($user?->can('reject article') ?? false);
+        $hasForward         = $canViewAll || ($user?->can('forward article') ?? false);
+        $hasForwardToAuthor = $canViewAll || ($user?->can('forward article to author') ?? false);
+        $hasPublish         = $canViewAll || ($user?->can('publish article') ?? false);
+        $hasReview          = $canViewAll || ($user?->can('review article') ?? false);
+        $hasWaive           = $canViewAll || ($user?->can('waive article payment') ?? false);
 
-    $isAssignedReviewer = $hasReview
-        && $article->review
-        && $article->review->reviewer_id === $user?->id;
+        $isAssignedReviewer = $hasReview
+            && $article->review
+            && $article->review->reviewer_id === $user?->id;
 
-    $isPostApproval = in_array($stage, ['approved', 'with_author_payment', 'published', 'rejected', 'reviewer_rejected'], true);
+        $isPostApproval = in_array($stage, ['approved', 'with_author_payment', 'published', 'rejected', 'reviewer_rejected'], true);
 
-    // FIX: previously `!$isPostApproval` gated the WHOLE expression, so
-    // editors ($canViewAll) lost edit access once a submission passed
-    // approval. Now the post-approval restriction only applies to the
-    // owner/author — editors can edit at any stage.
-    $article->can_edit = ($isOwner && $isOwnerEditable && !$isPostApproval) || $canViewAll;
+        // The post-approval restriction only applies to the owner/author —
+        // editors can edit at any stage.
+        $article->can_edit = ($isOwner && $isOwnerEditable && !$isPostApproval) || $canViewAll;
 
-    $article->can_approve = !$isPostApproval && $hasApprove && in_array('approve', $allowedActions, true);
-    $article->can_reject  = !$isPostApproval && $hasReject && in_array('reject', $allowedActions, true);
-    $article->can_forward = !$isPostApproval && $hasForward && in_array('forward', $allowedActions, true);
+        $article->can_approve = !$isPostApproval && $hasApprove && in_array('approve', $allowedActions, true);
+        $article->can_reject  = !$isPostApproval && $hasReject && in_array('reject', $allowedActions, true);
+        $article->can_forward = !$isPostApproval && $hasForward && in_array('forward', $allowedActions, true);
 
-    $article->can_review        = $hasReview;
-    $article->can_review_decide = !$isPostApproval && $isAssignedReviewer && $stage === 'with_reviewer';
+        // Editor-only: the payment waiver controls appear only where an editor can approve.
+        $article->can_waive = $hasWaive && $article->can_approve;
 
-    $canFinalDecide = !$isPostApproval && $hasForwardToAuthor
-        && in_array('editor_final_decide', $allowedActions, true);
+        // Waiver button AFTER approval (editor_status = approved_pending_payment)
+        $article->can_waive_approved = $hasWaive && $this->isWaivableApproved($article);
 
-    $article->can_approve_final = $canFinalDecide;
-    $article->can_reject_final  = $canFinalDecide;
+        $article->can_review        = $hasReview;
+        $article->can_review_decide = !$isPostApproval && $isAssignedReviewer && $stage === 'with_reviewer';
 
-    $article->can_editor_final_decide = $canFinalDecide;
+        $canFinalDecide = !$isPostApproval && $hasForwardToAuthor
+            && in_array('editor_final_decide', $allowedActions, true);
 
-    $article->can_forward_to_author_revision = !$isPostApproval && $hasForwardToAuthor
-        && in_array('forward_to_author_revision', $allowedActions, true);
+        $article->can_approve_final = $canFinalDecide;
+        $article->can_reject_final  = $canFinalDecide;
 
-    $article->can_resubmit = ($isOwner || $canViewAll) && in_array('resubmit', $allowedActions, true);
+        $article->can_editor_final_decide = $canFinalDecide;
 
-    $article->can_publish = $hasPublish && in_array('publish', $allowedActions, true);
+        $article->can_forward_to_author_revision = !$isPostApproval && $hasForwardToAuthor
+            && in_array('forward_to_author_revision', $allowedActions, true);
 
-    $article->can_pay = ($isOwner || $canViewAll) && $stage === 'with_author_payment';
+        $article->can_resubmit = ($isOwner || $canViewAll) && in_array('resubmit', $allowedActions, true);
 
-    $article->can_edit_issue = $canViewAll;
-    $article->can_delete = $canViewAll;
-    $article->can_hide   = $canViewAll;
-    $article->is_published = (bool) ($article->review->is_published ?? false);
+        $article->can_publish = $hasPublish && in_array('publish', $allowedActions, true);
 
-    $article->reviewer_name = $canViewAll
-        ? ($article->review?->reviewer?->name ?? null)
-        : null;
+        $article->can_pay = $isOwner && $stage === 'with_author_payment';
 
-    $editorPendingStages = [
-        'submitted',
-        'with_reviewer',
-        'reviewer_approved',
-        'reviewer_rejected',
-        'reviewer_correction',
-        'approved',
-    ];
+        $article->payable_amount = ($article->relationLoaded('waiver')
+            && $article->waiver
+            && $article->waiver->partial_payment
+            && (float) $article->waiver->payable_amount > 0)
+            ? (float) $article->waiver->payable_amount
+            : null;
 
-    if ($isOwner && !$canViewAll) {
-        $article->display_stage = in_array($stage, $editorPendingStages, true)
-            ? 'with_editor'
-            : $stage;
-    } else {
-        $article->display_stage = $stage;
+        // Latest payment attempt (for the "View Receipt" action). Only the owner
+        // and editors can open a receipt, so only expose it to them.
+        $latestPayment = ($article->relationLoaded('payments') && ($isOwner || $canViewAll))
+            ? $article->payments->sortByDesc('id')->first()
+            : null;
+
+        $article->latest_payment_order_id = $latestPayment?->order_id;
+        $article->latest_payment_status   = $latestPayment?->status;
+
+        $article->can_edit_issue = $canViewAll;
+
+        // ─── Delete / Hide — editor / admin / superadmin only ───────
+        // Deliberately tied to the same "view all articles" gate as the
+        // rest of the editor-only surface (issue override, reviewer
+        // names, granular stage) rather than a separate permission, so
+        // it can never be granted to an author or a plain reviewer.
+        $article->can_delete = $canViewAll;
+        $article->can_hide   = $canViewAll;
+
+        $article->reviewer_name = $canViewAll
+            ? ($article->review?->reviewer?->name ?? null)
+            : null;
+
+        $article->payment_amount   = $article->payable_amount ?? $this->standardFee($article);
+        $article->payment_currency = 'INR';
+        $editorPendingStages = [
+            'submitted',
+            'with_reviewer',
+            'reviewer_approved',
+            'reviewer_rejected',
+            'reviewer_correction',
+            'approved',
+        ];
+
+        if ($isOwner && !$canViewAll) {
+            $article->display_stage = in_array($stage, $editorPendingStages, true)
+                ? 'with_editor'
+                : $stage;
+        } else {
+            $article->display_stage = $stage;
+        }
     }
-}
-
-    // private function attachPermissionFlags(SubmitArticle $article, $user): void
-    // {
-    //     $canViewAll = $user && $user->can('view all articles');
-    //     $isOwner    = $user && $article->user_id === $user->id;
-
-    //     $allowedActions = $this->allowedActionsFor($article);
-    //     $stage = $article->review->current_stage ?? 'submitted';
-
-    //     $isOwnerEditable = in_array($stage, self::OWNER_EDITABLE_STAGES, true);
-
-    //     $hasApprove         = $canViewAll || ($user?->can('approve article') ?? false);
-    //     $hasReject          = $canViewAll || ($user?->can('reject article') ?? false);
-    //     $hasForward         = $canViewAll || ($user?->can('forward article') ?? false);
-    //     $hasForwardToAuthor = $canViewAll || ($user?->can('forward article to author') ?? false);
-    //     $hasPublish         = $canViewAll || ($user?->can('publish article') ?? false);
-    //     $hasReview          = $canViewAll || ($user?->can('review article') ?? false);
-
-    //     $isAssignedReviewer = $hasReview
-    //         && $article->review
-    //         && $article->review->reviewer_id === $user?->id;
-
-    //     $isPostApproval = in_array($stage, ['approved', 'with_author_payment', 'published', 'rejected', 'reviewer_rejected'], true);
-
-    //     $article->can_edit = !$isPostApproval && (($isOwner && $isOwnerEditable) || $canViewAll);
-
-    //     $article->can_approve = !$isPostApproval && $hasApprove && in_array('approve', $allowedActions, true);
-    //     $article->can_reject  = !$isPostApproval && $hasReject && in_array('reject', $allowedActions, true);
-    //     $article->can_forward = !$isPostApproval && $hasForward && in_array('forward', $allowedActions, true);
-
-    //     $article->can_review        = $hasReview;
-    //     $article->can_review_decide = !$isPostApproval && $isAssignedReviewer && $stage === 'with_reviewer';
-
-    //     $canFinalDecide = !$isPostApproval && $hasForwardToAuthor
-    //         && in_array('editor_final_decide', $allowedActions, true);
-
-    //     $article->can_approve_final = $canFinalDecide;
-    //     $article->can_reject_final  = $canFinalDecide;
-
-    //     $article->can_editor_final_decide = $canFinalDecide;
-
-    //     $article->can_forward_to_author_revision = !$isPostApproval && $hasForwardToAuthor
-    //         && in_array('forward_to_author_revision', $allowedActions, true);
-
-    //     $article->can_resubmit = ($isOwner || $canViewAll) && in_array('resubmit', $allowedActions, true);
-
-    //     $article->can_publish = $hasPublish && in_array('publish', $allowedActions, true);
-
-    //     $article->can_pay = ($isOwner || $canViewAll) && $stage === 'with_author_payment';
-
-    //     $article->can_edit_issue = $canViewAll;
-    //     $article->can_delete = $canViewAll;
-    //     $article->can_hide   = $canViewAll;
-    //     $article->is_published = (bool) ($article->review->is_published ?? false);
-
-    //     $article->reviewer_name = $canViewAll
-    //         ? ($article->review?->reviewer?->name ?? null)
-    //         : null;
-
-    //     $editorPendingStages = [
-    //         'submitted',
-    //         'with_reviewer',
-    //         'reviewer_approved',
-    //         'reviewer_rejected',
-    //         'reviewer_correction',
-    //         'approved',
-    //     ];
-
-    //     if ($isOwner && !$canViewAll) {
-    //         $article->display_stage = in_array($stage, $editorPendingStages, true)
-    //             ? 'with_editor'
-    //             : $stage;
-    //     } else {
-    //         $article->display_stage = $stage;
-    //     }
-    // }
 
     public function adminIndex(Request $request)
     {
@@ -313,9 +474,12 @@ class SubmitArticleController extends Controller
                 'journal:id,title',
                 'review:id,submit_article_id,editor_id,editor_status,editor_remarks,reviewer_id,forwarded_to_reviewer_date,reviewer_status,reviewer_approval_date,reviewer_remarks,final_status,current_stage,is_published,published_at,revision_count',
                 'review.reviewer:id,name,email',
+                'waiver:id,submit_articles_id,reason,payable_amount,partial_payment,full_payment',
+                'payments:id,submit_article_id,order_id,status,created_at',
             ])
                 ->select([
                     'id',
+                    'article_uid',
                     'uuid',
                     'user_id',
                     'full_name',
@@ -340,13 +504,16 @@ class SubmitArticleController extends Controller
                     $query->where('user_id', $user->id);
                 }
 
+                // Hidden submissions are an editor/admin-only concern —
+                // authors and reviewers never see a hidden row at all.
                 $query->where('is_hidden', false);
             }
 
             if ($request->filled('q')) {
                 $term = $request->string('q');
                 $query->where(function ($q) use ($term) {
-                    $q->where('full_name', 'like', "%{$term}%")
+                    $q->where('article_uid', 'like', "%{$term}%")
+                        ->orWhere('full_name', 'like', "%{$term}%")
                         ->orWhere('email', 'like', "%{$term}%")
                         ->orWhere('manuscript_title', 'like', "%{$term}%");
                 });
@@ -390,6 +557,7 @@ class SubmitArticleController extends Controller
                 'reviewers',
                 'review',
                 'review.reviewer:id,name,email',
+                'waiver',
             ]);
             $user = $request->user('api');
 
@@ -493,6 +661,8 @@ class SubmitArticleController extends Controller
                 'affiliating_institute_address' => 'sometimes|required|string|max:1000',
                 'journal_id'                    => 'sometimes|required|integer|exists:journals,id',
                 'issue_id'                      => 'sometimes|nullable|integer|exists:issues,id',
+                'page_start'                    => 'sometimes|nullable|integer|min:1|max:99999',
+                'page_end'                      => 'sometimes|nullable|integer|min:1|max:99999',
                 'manuscript_title'              => 'sometimes|required|string|min:10|max:500',
                 'abstract_summary'              => 'sometimes|required|string|min:100|max:5000',
                 'keywords'                      => 'sometimes|required|array|min:1|max:8',
@@ -527,6 +697,10 @@ class SubmitArticleController extends Controller
                 'journal_id.required'                   => 'Please select a journal.',
                 'journal_id.exists'                     => 'Selected journal is invalid.',
                 'issue_id.exists'                       => 'Selected issue is invalid.',
+                'page_start.integer'                    => 'Start page must be a whole number.',
+                'page_start.min'                        => 'Start page must be at least 1.',
+                'page_end.integer'                      => 'End page must be a whole number.',
+                'page_end.min'                          => 'End page must be at least 1.',
                 'manuscript_title.required'             => 'Manuscript title is required.',
                 'manuscript_title.min'                  => 'Manuscript title must be at least 10 characters.',
                 'abstract_summary.required'             => 'Abstract is required.',
@@ -564,7 +738,8 @@ class SubmitArticleController extends Controller
             ]);
 
             if (!$canViewAll) {
-                unset($validated['issue_id']);
+                // Authors can never set the issue or the page range — editors only.
+                unset($validated['issue_id'], $validated['page_start'], $validated['page_end']);
             } elseif (array_key_exists('issue_id', $validated) && !empty($validated['issue_id'])) {
                 $targetJournalId = $validated['journal_id'] ?? $article->journal_id;
                 $selectedIssue = Issue::find($validated['issue_id']);
@@ -573,6 +748,23 @@ class SubmitArticleController extends Controller
                     return response()->json([
                         'status'  => false,
                         'message' => 'Selected issue does not belong to the selected journal.',
+                    ], 422);
+                }
+            }
+
+            if ($canViewAll) {
+                $pageStart = array_key_exists('page_start', $validated)
+                    ? $validated['page_start']
+                    : $article->page_start;
+                $pageEnd = array_key_exists('page_end', $validated)
+                    ? $validated['page_end']
+                    : $article->page_end;
+
+                if ($pageStart !== null && $pageEnd !== null && (int) $pageEnd < (int) $pageStart) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Validation failed.',
+                        'errors'  => ['page_end' => ['End page cannot be before the start page.']],
                     ], 422);
                 }
             }
@@ -676,7 +868,7 @@ class SubmitArticleController extends Controller
                 throw $e;
             }
 
-            $article->load(['journal:id,title', 'issue.volume', 'coAuthors', 'reviewers', 'review']);
+            $article->load(['journal:id,title', 'issue.volume', 'coAuthors', 'reviewers', 'review', 'waiver']);
             $article = $this->withFileUrls($article);
             $this->attachPermissionFlags($article, $user);
 
@@ -746,69 +938,31 @@ class SubmitArticleController extends Controller
                     'message' => 'This submission is not in a stage that can be approved.',
                 ], 409);
             }
-            if ($article->issue_id) {
-                $currentIssue = Issue::find($article->issue_id);
-            } else {
-                $currentIssue = Issue::where('journal_id', $article->journal_id)
-                    ->whereDate('published_date', '<=', now())
-                    ->orderByDesc('published_date')
-                    ->first();
-            }
-
-            if (!$currentIssue) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'No current issue is available for this journal yet. Please create/publish an issue before approving.',
-                ], 422);
-            }
 
             $stage = $article->review->current_stage ?? 'submitted';
 
-            if ($stage === 'with_reviewer') {
-                DB::transaction(function () use ($article, $currentIssue, $user) {
-                    $article->issue_id = $currentIssue->id;
-                    $article->save();
-
-                    $article->review()->updateOrCreate(
-                        ['submit_article_id' => $article->id],
-                        [
-                            'editor_id'     => $user->id,
-                            'editor_status' => 'approved_pending_payment',
-                            'current_stage' => 'with_author_payment',
-                            'approval_date' => now(), // NEW: editor's approval timestamp
-                        ]
-                    );
-                });
-                $message = 'Submission approved directly and author notified for payment.';
-            } else {
-                DB::transaction(function () use ($article, $currentIssue, $user) {
-                    $article->issue_id = $currentIssue->id;
-                    $article->save();
-
-                    $article->review()->updateOrCreate(
-                        ['submit_article_id' => $article->id],
-                        [
-                            'editor_id'     => $user->id,
-                            'editor_status' => 'approved',
-                            'current_stage' => 'approved',
-                            'approval_date' => now(),
-                        ]
-                    );
-                });
-                $message = 'Submission approved successfully.';
-            }
+            // Normal approval moves the article to the payment stage.
+            // With a waiver: partial → payment stage, none → published directly.
+            // issue_id is only assigned at publish time, so the article does
+            // not appear on the website until it is published.
+            $response = $this->approveWithWaiver($request, $article, $user);
 
             Log::info('Submission approved by editor', [
                 'submission_id' => $id,
                 'user_id'       => $user->id,
                 'stage_before'  => $stage,
-                'issue_id'      => $currentIssue->id,
+                'is_waiver'     => $request->boolean('is_waiver'),
+                'waiver_type'   => $request->input('waiver_type'),
+                'waiver_amount' => $request->input('waiver_amount'),
             ]);
 
+            return $response;
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'status'  => true,
-                'message' => $message,
-            ]);
+                'status'  => false,
+                'message' => $e->validator->errors()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'status'  => false,
@@ -1045,9 +1199,7 @@ class SubmitArticleController extends Controller
                 'current_stage'    => $stageMap[$validated['decision']],
             ];
 
-            // NEW: record the exact date the reviewer approved, only when
-            // their decision is "approved".
-
+            // Record the date of the reviewer's decision.
             $updateData['reviewer_approval_date'] = now();
 
             $article->review()->updateOrCreate(
@@ -1126,24 +1278,28 @@ class SubmitArticleController extends Controller
             ]);
 
             if ($validated['decision'] === 'approve') {
-                $updateData = [
-                    'editor_id'      => $user->id,
-                    'editor_status'  => 'approved_pending_payment',
+                // Approval (with optional payment waiver) goes through the shared helper.
+                $response = $this->approveWithWaiver($request, $article, $user, [
                     'editor_remarks' => $validated['remarks'],
-                    'current_stage'  => 'with_author_payment',
-                    'approval_date'  => now(),
-                ];
-                $message = 'Author notified to complete payment.';
-            } else {
-                $updateData = [
-                    'editor_id'      => $user->id,
-                    'editor_status'  => 'rejected',
-                    'editor_remarks' => $validated['remarks'],
-                    'final_status'   => 'rejected',
-                    'current_stage'  => 'rejected',
-                ];
-                $message = 'Submission rejected and author notified.';
+                ]);
+
+                Log::info('Editor final decision recorded', [
+                    'submission_id' => $id,
+                    'decision'      => 'approve',
+                    'user_id'       => $user->id,
+                ]);
+
+                return $response;
             }
+
+            $updateData = [
+                'editor_id'      => $user->id,
+                'editor_status'  => 'rejected',
+                'editor_remarks' => $validated['remarks'],
+                'final_status'   => 'rejected',
+                'current_stage'  => 'rejected',
+            ];
+            $message = 'Submission rejected and author notified.';
 
             $article->review()->updateOrCreate(['submit_article_id' => $article->id], $updateData);
 
@@ -1160,7 +1316,7 @@ class SubmitArticleController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'status'  => false,
-                'message' => 'Validation failed.',
+                'message' => $e->validator->errors()->first(),
                 'errors'  => $e->errors(),
             ], 422);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -1350,43 +1506,14 @@ class SubmitArticleController extends Controller
                 ], 409);
             }
 
-            if ($article->issue_id) {
-                $latestIssue = Issue::find($article->issue_id);
-            } else {
-                // Latest issue of the SAME journal this article was submitted to.
-                $latestIssue = Issue::whereHas('volume', function ($q) use ($article) {
-                    $q->where('journal_id', $article->journal_id);
-                })
-                    ->orderByDesc('published_date')
-                    ->first();
+            if ($error = $this->finalizePublish($article)) {
+                return response()->json(['status' => false, 'message' => $error], 422);
             }
-
-            if (!$latestIssue) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'No issue is available for this journal yet. Please create an issue before publishing.',
-                ], 422);
-            }
-
-            DB::transaction(function () use ($article, $latestIssue, $user) {
-                $article->issue_id = $latestIssue->id;
-                $article->save();
-
-                $article->review()->updateOrCreate(
-                    ['submit_article_id' => $article->id],
-                    [
-                        'final_status'  => 'published',
-                        'current_stage' => 'published',
-                        'is_published'  => true,
-                        'published_at'  => now(),
-                    ]
-                );
-            });
 
             Log::info('Submission published', [
                 'submission_id' => $id,
                 'user_id'       => $user->id,
-                'issue_id'      => $latestIssue->id,
+                'issue_id'      => $article->issue_id,
             ]);
 
             return response()->json([
@@ -1411,6 +1538,136 @@ class SubmitArticleController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Grant a fee concession / full waiver AFTER the article was approved
+     * (editor_status = approved_pending_payment, stage = with_author_payment).
+     *
+     * Route: POST submit-articles/{id}/waive
+     */
+    public function waiveAfterApproval(Request $request, $id)
+    {
+        try {
+            $article = $this->findByUuid($id, ['review']);
+            $user = $request->user('api');
+
+            if (!$this->userHasAccess($user, 'waive article payment')) {
+                Log::warning('Unauthorized waive attempt', [
+                    'submission_id' => $id,
+                    'user_id'       => $user?->id,
+                ]);
+
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'You are not authorized to grant a fee concession or waiver.',
+                ], 403);
+            }
+
+            if (!$this->isWaivableApproved($article)) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'A waiver can only be granted on an approved submission awaiting payment.',
+                ], 409);
+            }
+
+            $isConcession = $request->input('waiver_type') === 'concession';
+
+            $validated = $request->validate([
+                'waiver_type'   => 'required|in:concession,full_waiver',
+                'waiver_reason' => 'required|string|max:1000',
+                'waiver_amount' => [Rule::requiredIf($isConcession), 'nullable', 'numeric', 'gt:0', 'max:99999999.99'],
+            ], [
+                'waiver_type.required'   => 'Please choose Fee Concession or Full Fee Waiver.',
+                'waiver_type.in'         => 'Invalid waiver type.',
+                'waiver_reason.required' => 'A reason is required for a fee concession or waiver.',
+                'waiver_amount.required' => 'Please enter the amount payable by the author.',
+                'waiver_amount.numeric'  => 'The payable amount must be a number.',
+                'waiver_amount.gt'       => 'The payable amount must be greater than 0.',
+            ]);
+
+            $type   = $validated['waiver_type'];
+            $reason = trim($validated['waiver_reason']);
+            $amount = $type === 'concession' ? round((float) $validated['waiver_amount'], 2) : null;
+
+            $article->is_waiver = true;
+
+            // ── Full waiver → publish straight away ──
+            if ($type === 'full_waiver') {
+                $error = $this->finalizePublish($article, [
+                    'editor_id'     => $user->id,
+                    'editor_status' => 'approved_full_waiver',
+                ]);
+
+                if ($error) {
+                    return response()->json(['status' => false, 'message' => $error], 422);
+                }
+
+                $this->saveWaiver($article, $type, $reason);
+
+                Log::info('Full waiver granted after approval', [
+                    'submission_id' => $id,
+                    'user_id'       => $user->id,
+                ]);
+
+                return response()->json([
+                    'status'  => true,
+                    'message' => 'Full fee waiver granted and the article has been published.',
+                ]);
+            }
+
+            // ── Concession → stays in payment stage with the reduced amount ──
+            DB::transaction(function () use ($article, $user, $type, $reason, $amount) {
+                $article->save(); // persists is_waiver
+
+                $article->review()->updateOrCreate(
+                    ['submit_article_id' => $article->id],
+                    [
+                        'editor_id'     => $user->id,
+                        'editor_status' => 'approved_pending_payment',
+                        'current_stage' => 'with_author_payment',
+                    ]
+                );
+
+                $this->saveWaiver($article, $type, $reason, $amount);
+            });
+
+            Log::info('Fee concession granted after approval', [
+                'submission_id' => $id,
+                'user_id'       => $user->id,
+                'amount'        => $amount,
+            ]);
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Fee concession applied. The author can now pay ₹' . number_format($amount, 2) . '.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => $e->validator->errors()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Submission not found.',
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to grant waiver', [
+                'submission_id' => $id,
+                'error'         => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Something went wrong.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ─── Delete Submission — editor / admin / superadmin only ───────
+
     public function destroy(Request $request, $id)
     {
         try {
@@ -1463,6 +1720,7 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Hide / Unhide Submission — editor / admin / superadmin only ─
     public function toggleHide(Request $request, $id)
     {
         try {
@@ -1522,6 +1780,7 @@ class SubmitArticleController extends Controller
         }
     }
 
+    // ─── Reviewers Dropdown (for Forward modal) — permission-based ──
     public function reviewers(Request $request)
     {
         try {
@@ -1728,14 +1987,18 @@ class SubmitArticleController extends Controller
             DB::commit();
 
             Log::info('Article submitted', [
-                'id'      => $article->id,
-                'user_id' => $authenticatedUser?->id,
+                'id'          => $article->id,
+                'article_uid' => $article->article_uid,
+                'user_id'     => $authenticatedUser?->id,
             ]);
 
             return response()->json([
                 'status'   => true,
                 'message'  => 'Article submitted successfully.',
-                'data'     => ['id' => $article->id],
+                'data'     => [
+                    'id'          => $article->id,
+                    'article_uid' => $article->article_uid,
+                ],
                 'redirect' => '/login',
             ], 201);
         } catch (\Exception $e) {

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Frontend\ArticleController;
 use App\Http\Controllers\Frontend\GuidelinesController;
 use App\Http\Controllers\Frontend\HomeController;
@@ -26,6 +27,8 @@ Route::get('/submit-article', [SubmitArticleController::class, 'index'])->name('
 Route::get('/menus/{location}', [FrontendMenuController::class, 'byLocation'])->name('menus.byLocation');
 Route::get('/peer-review-process', [PrpController::class, 'index'])->name('prp');
 // Route::get('/article/{uuid}/download-manuscript', [ArticleController::class, 'downloadManuscript'])->name('article.download-manuscript');
+Route::get('/admin/dashboard/reports', [DashboardController::class, 'reports'])
+    ->name('admin.dashboard.reports');
 
 Route::post('/password/send-otp', [ForgotPasswordOtpController::class, 'sendOtp'])->name('password.send-otp');
 Route::post('/password/reset-otp', [ForgotPasswordOtpController::class, 'resetWithOtp'])->name('password.reset-otp');
@@ -61,6 +64,17 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
 
     Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
 
+    Route::get('/dashboard/monthly-submissions/export', [DashboardController::class, 'exportMonthlySubmissions'])
+        ->name('dashboard.monthly-submissions.export');
+    Route::get('/dashboard/monthly-published/export', [DashboardController::class, 'exportMonthlyPublished'])
+        ->name('dashboard.monthly-published.export');
+    Route::get('/dashboard/article-downloads/export', [DashboardController::class, 'exportArticleDownloads'])
+        ->name('dashboard.article-downloads.export');
+    Route::get('/dashboard/recent-submissions/export', [DashboardController::class, 'exportRecentSubmissions'])
+        ->name('dashboard.recent-submissions.export');
+    Route::get('/dashboard/latest-publications/export', [DashboardController::class, 'exportLatestPublications'])
+        ->name('dashboard.latest-publications.export');
+
     Route::get('/users', fn() => view('admin.users'))->middleware('permission:view users')->name('users');
     Route::get('/roles', fn() => view('admin.roles'))->middleware('permission:view roles')->name('roles');
     Route::get('/permissions', fn() => view('admin.permissions'))->middleware('permission:view permissions')->name('permissions');
@@ -68,6 +82,12 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/volumes', fn() => view('admin.volume'))->middleware('permission:view volumes')->name('volume');
     Route::get('/issues', fn() => view('admin.issue'))->middleware('permission:view issues')->name('issue');
     Route::get('/menus', fn() => view('admin.menus'))->middleware('permission:view menus')->name('menus');
+    Route::get('/menus/{id}/manage', function ($id) {
+        return view('admin.managemenu', ['id' => $id]);
+    })->middleware('permission:view menus')->name('menus.manage');
+    Route::get('/menus/{id}/edit', function ($id) {
+        return view('admin.editmenu', ['id' => $id]);
+    })->middleware('permission:view menus')->name('editmenu');
     Route::get('/medias', fn() => view('admin.medias'))->middleware('permission:view medias')->name('medias');
     Route::get('/settings', fn() => view('admin.settings'))->middleware('permission:view settings')->name('settings');
     Route::get('/announcements', fn() => view('admin.announcements'))->middleware('permission:view announcements')->name('announcements');
@@ -79,7 +99,8 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
     Route::get('/editorial-board', fn() => view('admin.editorialboard'))->middleware('permission:view editorial board')->name('editorial-board');
     Route::get('/editorial-board-roles', fn() => view('admin.editorialboardroles'))->middleware('permission:view editorial board roles')->name('editorial-board-roles');
     Route::get('/all-article-lists', fn() => view('admin.submitarticle'))->middleware('permission:view submit article')->name('submit-article');
-   //Pages Module
+
+    // Pages Module
     Route::get('/pages', fn() => view('admin.pages'))->middleware('permission:view pages')->name('pages');
 
     Route::prefix('submit-articles')->name('submit-articles.')->group(function () {
@@ -87,7 +108,6 @@ Route::middleware('jwt.web')->prefix('admin')->name('admin.')->group(function ()
         Route::get('/', function () {
             return view('admin.submitarticle');
         })->name('index');
-
 
         Route::get('/create', function () {
             return view('admin.addarticles');

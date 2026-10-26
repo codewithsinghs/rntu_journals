@@ -305,6 +305,13 @@ class MenuController extends Controller
 
     /**
      * Recursively insert a tree of menu items.
+     *
+     * NOTE: `order` is always taken from the item's position in the array
+     * (`$index`), never from a client-supplied `order` value. Drag-and-drop
+     * reordering on the frontend only reshuffles array position — it does
+     * not (and cannot reliably) recompute each item's old `order` field.
+     * Trusting a stale `order` value here silently discarded every
+     * drag-and-drop reorder even though the save request "succeeded".
      */
     private function saveItemsTree(int $menuId, ?int $parentId, array $items): void
     {
@@ -319,7 +326,7 @@ class MenuController extends Controller
                 'label'          => $item['label'],
                 'url'            => $item['url'] ?? null,
                 'target'         => $item['target'] ?? '_self',
-                'order'          => $item['order'] ?? $index,
+                'order'          => $index,
                 'is_active'      => array_key_exists('is_active', $item) ? (bool) $item['is_active'] : true,
                 'hide_on_pages'  => $item['hide_on_pages'] ?? [],
                 'show_on_pages'  => $item['show_on_pages'] ?? [],

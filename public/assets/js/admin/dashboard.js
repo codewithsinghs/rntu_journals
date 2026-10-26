@@ -31,9 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .replace(/"/g, "&quot;");
     }
 
-    // Formats any date/datetime string down to just the date part,
-    // e.g. "2026-07-17T09:05:57.000000Z" -> "17 Jul 2026".
-    // Falls back to the raw (escaped) string if it isn't a parseable date.
+
     function formatDate(dateStr) {
         if (!dateStr) return "-";
         const d = new Date(dateStr);
@@ -46,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${day} ${month} ${year}`;
     }
 
-    // Truncates a title down to ~10 words and adds an ellipsis if cut off.
     function truncateWords(str, wordLimit = 10) {
         if (!str) return "-";
         const words = String(str).trim().split(/\s+/);
@@ -54,9 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return esc(words.slice(0, wordLimit).join(" ")) + "…";
     }
 
-    // Fill a full 12-month array with zeros for any month with no data,
-    // so charts always render Jan–Dec even when the API only returns
-    // rows for months that actually had activity.
+
     function toMonthlySeries(rows) {
         const map = {};
         (rows || []).forEach((r) => {
@@ -66,8 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function highlightLast(dataArr) {
-        // Highlights the most recent non-zero month, matching the
-        // original design's single-highlighted-bar look.
         let lastIdx = 0;
         dataArr.forEach((v, i) => {
             if (v > 0) lastIdx = i;
@@ -285,17 +278,17 @@ document.addEventListener("DOMContentLoaded", function () {
             tbody.innerHTML = rows
                 .map(
                     (r) => `
-                <tr>
-                    <td>${esc(r.display_id ?? "ART" + String(r.id).padStart(3, "0"))}</td>
-                    <td>${esc(r.journal?.title ?? "-")}</td>
-                    <td title="${esc(r.manuscript_title ?? "")}">${truncateWords(r.manuscript_title, 10)}</td>
-                    <td>${formatDate(r.submission_date ?? r.created_at)}</td>
-                    <td>
-                        <button class="edit-btn"><a href="/admin/submit-articles/${r.id}">View</a></button>
-                    </td>
-                </tr>
-            `,
-                )
+                    <tr>
+                        <td>${esc(r.display_id ?? "ART" + String(r.id).padStart(3, "0"))}</td>
+                        <td>${esc(r.journal?.title ?? "-")}</td>
+                        <td title="${esc(r.manuscript_title ?? "")}">${truncateWords(r.manuscript_title, 10)}</td>
+                        <td>${formatDate(r.submission_date ?? r.created_at)}</td>
+                        <td>
+                            <button class="edit-btn"><a href="/admin/submit-articles/${esc(r.uuid)}">View</a></button>
+                        </td>
+                    </tr>
+                    `,
+                    )
                 .join("");
         } catch (e) {
             tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-danger">Failed to load.</td></tr>`;

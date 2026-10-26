@@ -87,14 +87,14 @@ class HomeController extends Controller
             $approvedArticles = DB::table('submit_articles as sa')
                 ->join('article_reviews as ar', 'ar.submit_article_id', '=', 'sa.id')
                 ->leftJoin('journals as j', 'j.id', '=', 'sa.journal_id')
-                ->where('ar.editor_status', 'approved')
+                ->where('ar.editor_status', 'published')
                 ->where('sa.deleted_at', null)
                 ->where('sa.is_hidden', false)
                 ->orderByDesc('ar.updated_at')
                 ->select(
                     'sa.id',
                     'sa.uuid',
-                    'sa.manuscript_title',
+                    'sa.manuscript_title',  
                     'sa.full_name',
                     'sa.journal_id',
                     'j.slug as journal_slug',
@@ -127,8 +127,7 @@ class HomeController extends Controller
         try {
             $ip = request()->ip();
 
-            // Scope to TODAY only — otherwise once an IP is logged once,
-            // it's never counted again on any future day.
+
             $alreadyVisitedToday = WebsiteVisitor::where('ip_address', $ip)
                 ->whereDate('created_at', now()->toDateString())
                 ->exists();

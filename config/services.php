@@ -34,5 +34,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'paytm' => [
+        'env' => env('PAYTM_ENV', 'production'),
+        'mid' => env('PAYTM_MID'),
+        'key' => env('PAYTM_KEY'),
+        'website' => env('PAYTM_WEBSITE','DEFAULT'),
+    ],
+
 
 ];

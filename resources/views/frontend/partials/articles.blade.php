@@ -23,12 +23,12 @@
             </div>
 
             <!-- DOI — static, no doi column in DB yet -->
-            <div class="jrn-top-meta">
+            <!-- <div class="jrn-top-meta">
                 <span>
                     DOI :
                     <a href="#">https://doi.org/10.54392/ijrmt263</a>
                 </span>
-            </div>
+            </div> -->
 
         </div>
 
@@ -133,13 +133,13 @@
                                     Volume –, Issue –, Year –
                                 </p>
 
-                                <!-- DOI — static -->
+                                <!-- DOI — static
                                 <p class="deatils_j">
                                     DOI :
                                     <a href="#">
                                         https://doi.org/10.54392/ijrmt263
                                     </a>
-                                </p>
+                                </p> -->
 
                                 <!-- Published date -->
                                 <p class="deatils_j">

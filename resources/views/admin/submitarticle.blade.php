@@ -14,7 +14,7 @@
                     <button class="add-btn"><a href="{{ route('admin.submit-articles.create') }}">Create Article</a></button>
                     &nbsp; &nbsp;
                     <input type="text" class="form-control form-control-sm sa-search" id="saSearch"
-                        placeholder="Search by name, email, or title…" style="max-width: 320px;">
+                        placeholder="Search by article ID, name, email, or title…" style="max-width: 320px;">
                 </div>
 
                 <div class="table-container" style="margin: 0;">
@@ -32,10 +32,10 @@
                         <table class="status-table">
                             <thead>
                                 <tr>
+                                    <th>Article ID</th>
                                     <th>Author</th>
                                     <th>Email</th>
                                     <th>Journal</th>
-                                    <!-- <th>Manuscript Title</th> -->
                                     <th>Stage</th>
                                     <th>Submitted</th>
                                     <th id="saReviewerNameTh" class="d-none">Reviewer</th>
@@ -44,10 +44,7 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="saTableBody">
-                                <tr>
-                                </tr>
-                            </tbody>
+                            <tbody id="saTableBody"></tbody>
                         </table>
 
                         <div class="sa-pagination">
@@ -277,6 +274,28 @@
         </div>
     </div>
 
+    <!-- Pay Now Modal (separate partial: resources/views/admin/payment.blade.php) -->
+    @include('admin.payment')
+
+    <!-- Payment Receipt Modal
+         NOTE: if you already added #saReceiptModal inside the admin.payment partial,
+         delete one of the two copies (duplicate IDs break the modal). -->
+    <div class="modal fade" id="saReceiptModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="saReceiptBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" id="saReceiptRefreshBtn">Refresh</button>
+                    <button type="button" class="btn btn-primary" id="saReceiptDownloadBtn">Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirm Modal -->
     <div class="modal fade popup-two" id="saConfirmModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
@@ -311,9 +330,11 @@
 @endsection
 
 @section('scripts')
- <script>
+    <script>
         window.APP_CONFIG = window.APP_CONFIG || {};
         window.APP_CONFIG.CURRENT_USER_ID = "{{ auth()->id() }}";
     </script>
+    {{-- Razorpay script removed: payments now go through Paytm --}}
+    <script src="{{ asset('assets/js/admin/payment.js') }}"></script>
     <script src="{{ asset('assets/js/admin/submitarticle.js') }}"></script>
 @endsection

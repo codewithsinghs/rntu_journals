@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).show();
     }
 
-    /* ── Generic styled confirm dialog (used for Approve) ──────────────── */
+    /* ── Generic styled confirm dialog (used for Approve without waiver) ── */
     const ICONS = {
         approve: `<i class="bi bi-check-lg"></i>`,
         warn: `<i class="bi bi-exclamation-triangle"></i>`,
@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ── Workflow action buttons: Approve / Reject / Forward to Reviewer ──
      * Rendered only when the corresponding permission flag from the API
      * is true (see SubmitArticleController::attachPermissionFlags):
-     *   can_approve, can_reject, can_forward.
+     *   can_approve, can_reject, can_forward, can_waive.
      */
     function renderActions(r) {
         const buttons = [
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (r.can_approve) {
             document
                 .getElementById("saApproveBtn")
-                .addEventListener("click", doApprove);
+                .addEventListener("click", () => doApprove(!!r.can_waive));
         }
         if (r.can_reject) {
             document
@@ -256,16 +256,193 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    /* ── Approve ─────────────────────────────────────────────────────── */
-    async function doApprove() {
-        const ok = await showConfirm({
-            title: "Approve this submission?",
-            desc: "This manuscript will move forward so it can be forwarded to a reviewer.",
-            okLabel: "Approve",
-            variant: "approve",
-        });
-        if (!ok) return;
+    /* ── Approve (editor) with optional fee concession / full waiver ──
+       Modal is built dynamically so no blade changes are required. ───── */
+    let saApproveModal = null;
 
+    function ensureApproveModal() {
+        if (document.getElementById("saApproveModal")) {
+            saApproveModal = bootstrap.Modal.getOrCreateInstance(
+                document.getElementById("saApproveModal"),
+            );
+            return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = `
+            <div class="modal fade" id="saApproveModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header border-bottom py-3">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="saWaiverCheck">
+                                <label class="form-check-label" for="saWaiverCheck" style="font-weight:600;">
+                                    Grant fee concession / waiver
+                                </label>
+                            </div>
+
+                            <div id="saWaiverBox" style="display:none;">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverConcession" value="concession">
+                                        <label class="form-check-label" for="saWaiverConcession">
+                                            Fee Concession <span class="text-muted">(author pays a reduced amount)</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverFull" value="full_waiver">
+                                        <label class="form-check-label" for="saWaiverFull">
+                                            Full Fee Waiver <span class="text-muted">(publish directly, no payment)</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3" id="saWaiverAmountBox" style="display:none;">
+                                    <label class="form-label" for="saWaiverAmount" style="font-size:13px;font-weight:600;">
+                                        Amount payable by the author (₹)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 1500">
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label" id="saWaiverReasonLabel" style="font-size:13px;font-weight:600;">Reason (required)</label>
+                                    <textarea class="form-control form-control-sm" id="saWaiverReason" rows="3"
+                                        placeholder="Reason…"></textarea>
+                                </div>
+                            </div>
+
+                            <p class="mb-0 text-muted" id="saApproveHint" style="font-size:13px;">
+                                The author will be able to pay once this is approved.
+                            </p>
+                        </div>
+                        <div class="modal-footer border-top py-3">
+                            <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saApproveConfirmBtn">Approve</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+
+        saApproveModal = bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("saApproveModal"),
+        );
+
+        const check = document.getElementById("saWaiverCheck");
+        const box = document.getElementById("saWaiverBox");
+        const amountBox = document.getElementById("saWaiverAmountBox");
+        const hint = document.getElementById("saApproveHint");
+
+        const refreshHint = () => {
+            const type = document.querySelector(
+                'input[name="saWaiverType"]:checked',
+            )?.value;
+
+            amountBox.style.display = type === "concession" ? "block" : "none";
+
+            document.getElementById("saWaiverReasonLabel").textContent =
+                type === "full_waiver"
+                    ? "Reason for full fee waiver (required)"
+                    : type === "concession"
+                      ? "Reason for fee concession (required)"
+                      : "Reason (required)";
+
+            hint.textContent = !check.checked
+                ? "The author will be able to pay once this is approved."
+                : type === "full_waiver"
+                  ? "The article will be published immediately. No payment will be requested."
+                  : type === "concession"
+                    ? "The author will see your reason and the amount they have to pay, with a Pay Now option."
+                    : "Choose Fee Concession or Full Fee Waiver.";
+        };
+
+        check.addEventListener("change", () => {
+            box.style.display = check.checked ? "block" : "none";
+            refreshHint();
+        });
+
+        document
+            .querySelectorAll('input[name="saWaiverType"]')
+            .forEach((r) => r.addEventListener("change", refreshHint));
+
+        document
+            .getElementById("saApproveConfirmBtn")
+            .addEventListener("click", submitApprove);
+    }
+
+    function openApproveModal() {
+        ensureApproveModal();
+        document.getElementById("saWaiverCheck").checked = false;
+        document.getElementById("saWaiverBox").style.display = "none";
+        document.getElementById("saWaiverAmountBox").style.display = "none";
+        document
+            .querySelectorAll('input[name="saWaiverType"]')
+            .forEach((r) => (r.checked = false));
+        document.getElementById("saWaiverAmount").value = "";
+        document.getElementById("saWaiverReason").value = "";
+        document.getElementById("saWaiverReasonLabel").textContent =
+            "Reason (required)";
+        document.getElementById("saApproveHint").textContent =
+            "The author will be able to pay once this is approved.";
+        saApproveModal.show();
+    }
+
+    async function submitApprove() {
+        const isWaiver = document.getElementById("saWaiverCheck").checked;
+        const waiverType = document.querySelector(
+            'input[name="saWaiverType"]:checked',
+        )?.value;
+        const amount = parseFloat(
+            document.getElementById("saWaiverAmount").value,
+        );
+        const reason = document.getElementById("saWaiverReason").value.trim();
+
+        if (isWaiver && !waiverType) {
+            showToast(
+                "error",
+                "Approve failed",
+                "Choose Fee Concession or Full Fee Waiver.",
+            );
+            return;
+        }
+        if (isWaiver && waiverType === "concession" && !(amount > 0)) {
+            showToast(
+                "error",
+                "Approve failed",
+                "Enter the amount payable by the author (greater than 0).",
+            );
+            return;
+        }
+        if (isWaiver && !reason) {
+            showToast(
+                "error",
+                "Approve failed",
+                "A reason is required for the concession / waiver.",
+            );
+            return;
+        }
+
+        const payload = isWaiver
+            ? {
+                  is_waiver: 1,
+                  waiver_type: waiverType,
+                  waiver_reason: reason,
+                  ...(waiverType === "concession"
+                      ? { waiver_amount: amount }
+                      : {}),
+              }
+            : {};
+
+        await sendApprove(payload, true);
+    }
+
+    async function sendApprove(payload, closeModal = false) {
         try {
             const res = await fetch(`${API_BASE}/${id}/approve`, {
                 method: "POST",
@@ -273,16 +450,32 @@ document.addEventListener("DOMContentLoaded", function () {
                     ...authHeaders(),
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({}),
+                body: JSON.stringify(payload),
             });
             const json = await res.json();
             if (!res.ok || !json.status)
                 throw new Error(json.message || "Approve failed.");
             showToast("success", "Approved", json.message);
+            if (closeModal && saApproveModal) saApproveModal.hide();
             load();
         } catch (e) {
             showToast("error", "Approve failed", e.message);
         }
+    }
+
+    async function doApprove(canWaive = false) {
+        // Editors with the waive permission get the waiver modal
+        if (canWaive) return openApproveModal();
+
+        const ok = await showConfirm({
+            title: "Approve this submission?",
+            desc: "The author will be able to pay once this is approved.",
+            okLabel: "Approve",
+            variant: "approve",
+        });
+        if (!ok) return;
+
+        await sendApprove({});
     }
 
     /* ── Reject ──────────────────────────────────────────────────────── */
@@ -611,25 +804,45 @@ document.addEventListener("DOMContentLoaded", function () {
             )
             .join("");
 
-        // Editor-only Volume/Issue override section. Backend flag
+        // Editor-only Volume/Issue override + Page Range section. Backend flag
         // `can_edit_issue` (from attachPermissionFlags) gates this — regular
-        // authors never see or submit this field.
+        // authors never see or submit these fields.
         const issueOverrideSection = r.can_edit_issue
             ? `
 
                 <div class="inner_fp mt-4">
                     <div class="ssid">Volume &amp; Issue</div>
-                        <div class="content_container">
-                            <div class="content_inner">
-                                <select class="content_show" id="edit_issue_id">
+                    <div class="content_container">
+
+                        <div class="content_inner">
+                            <select class="content_show" id="edit_issue_id">
                                 <option value="">Loading…</option>
                             </select>
                             <div class="form-text" style="font-size:11px;">
                                 Leave as "Auto" to let approval/publish assign the current issue automatically, or pick one to override manually.
                             </div>
-                                
+                        </div>
+
+                        <div class="content_inner">
+                            <div class="heading_p">Page Range</div>
+                            <div class="content_partitions">
+
+                                <div class="partitions_inner">
+                                    <label>Start Page</label>
+                                    <input type="number" min="1" step="1" class="content_show" id="edit_page_start" value="${v(r.page_start)}" placeholder="e.g. 56">
+                                </div>
+
+                                <div class="partitions_inner">
+                                    <label>End Page</label>
+                                    <input type="number" min="1" step="1" class="content_show" id="edit_page_end" value="${v(r.page_end)}" placeholder="e.g. 100">
+                                </div>
+
+                            </div>
+                            <div class="form-text" style="font-size:11px;">
+                                Leave both empty to let the system number the pages automatically when the article is published.
                             </div>
                         </div>
+
                     </div>
                 </div>
             `
@@ -941,6 +1154,29 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!keywordTags.includes(val)) keywordTags.push(val);
         }
 
+        // Editor-only page range: check before building the request.
+        const pageStartEl = document.getElementById("edit_page_start");
+        const pageEndEl = document.getElementById("edit_page_end");
+        let pageStartVal = "";
+        let pageEndVal = "";
+        if (pageStartEl && pageEndEl) {
+            pageStartVal = pageStartEl.value.trim();
+            pageEndVal = pageEndEl.value.trim();
+
+            if (
+                pageStartVal &&
+                pageEndVal &&
+                Number(pageEndVal) < Number(pageStartVal)
+            ) {
+                showToast(
+                    "error",
+                    "Invalid page range",
+                    "End page cannot be before the start page.",
+                );
+                return;
+            }
+        }
+
         const declarations = Array.from(
             document.querySelectorAll(".sa-decl-check:checked"),
         ).map((cb) => cb.value);
@@ -988,10 +1224,16 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("edit_author_signature").value,
         );
 
-
         const issueSelect = document.getElementById("edit_issue_id");
         if (issueSelect) {
             fd.append("issue_id", issueSelect.value);
+        }
+
+        // Editor-only: empty values are sent as "" and saved as NULL
+        // (clears the range so it is auto-numbered on publish).
+        if (pageStartEl && pageEndEl) {
+            fd.append("page_start", pageStartVal);
+            fd.append("page_end", pageEndVal);
         }
 
         keywordTags.forEach((kw, i) => fd.append(`keywords[${i}]`, kw));
