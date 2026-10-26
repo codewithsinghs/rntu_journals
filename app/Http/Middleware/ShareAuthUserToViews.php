@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\View;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
-class JwtWebMiddleware
+class ShareAuthUserToViews
 {
     public function handle(Request $request, Closure $next)
     {
