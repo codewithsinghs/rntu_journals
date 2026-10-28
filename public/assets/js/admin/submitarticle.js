@@ -326,13 +326,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
                 .join("");
 
-            document.querySelectorAll("#saTableBody tr").forEach((tr) => {
-                tr.addEventListener("click", (e) => {
-                    if (e.target.closest(".sa-action-dropdown")) return;
-                    if (e.target.closest("a.btn")) return; // let Pay Now button work
-                    goToShow(tr.dataset.id);
-                });
-            });
+            // NOTE: the row click handler (row -> goToShow) was removed on purpose.
+            // Rows no longer navigate when clicked. Use "View Article" in the
+            // Action dropdown instead.
 
             // Dropdown menu item + Pay Now button clicks
             document
@@ -424,65 +420,79 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Waiver (editor) for an already approved article ───────────
-       Fee concession (author pays a reduced amount) or full fee waiver
-       (published directly). Modal is built dynamically so no blade
-       changes are required. ──────────────────────────────────────── */
+       Opens the checkbox modal first (Grant fee concession / waiver),
+       then submits through the /waive API. The modal is built
+       dynamically so no blade changes are required.
+       ──────────────────────────────────────────────────────────── */
     let saWaiverModal = null;
 
+    const WAIVER_DEFAULT_HINT =
+        "The author will be able to pay once this is approved.";
+
     function ensureWaiverModal() {
-        if (document.getElementById("saWaiverModal")) {
+        if (document.getElementById("saApproveModal")) {
             saWaiverModal = bootstrap.Modal.getOrCreateInstance(
-                document.getElementById("saWaiverModal"),
+                document.getElementById("saApproveModal"),
             );
             return;
         }
 
         const wrapper = document.createElement("div");
         wrapper.innerHTML = `
-            <div class="modal fade" id="saWaiverModal" tabindex="-1">
+            <div class="modal fade" id="saApproveModal" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header border-bottom py-3">
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverConcession" value="concession">
-                                    <label class="form-check-label" for="saWaiverConcession">
-                                        Fee Concession <span class="text-muted">(author pays a reduced amount)</span>
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverFull" value="full_waiver">
-                                    <label class="form-check-label" for="saWaiverFull">
-                                        Full Fee Waiver <span class="text-muted">(publish directly, no payment)</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="mb-3" id="saWaiverAmountBox" style="display:none;">
-                                <label class="form-label" for="saWaiverAmount" style="font-size:13px;font-weight:600;">
-                                    Amount payable by the author (₹)
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="saWaiverCheck">
+                                <label class="form-check-label" for="saWaiverCheck" style="font-weight:600;">
+                                    Grant fee concession / waiver
                                 </label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 1500">
+                            </div>
+
+                            <div id="saWaiverBox" style="display:none;">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverConcession" value="concession">
+                                        <label class="form-check-label" for="saWaiverConcession">
+                                            Fee Concession <span class="text-muted">(author pays a reduced amount)</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverFull" value="full_waiver">
+                                        <label class="form-check-label" for="saWaiverFull">
+                                            Full Fee Waiver <span class="text-muted">(publish directly, no payment)</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3" id="saWaiverAmountBox" style="display:none;">
+                                    <label class="form-label" for="saWaiverAmount" style="font-size:13px;font-weight:600;">
+                                        Amount payable by the author (₹)
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 500">
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label" id="saWaiverReasonLabel" style="font-size:13px;font-weight:600;">Reason (required)</label>
+                                    <textarea class="form-control form-control-sm" id="saWaiverReason" rows="3"
+                                        placeholder="Reason…"></textarea>
                                 </div>
                             </div>
 
-                            <div class="mb-2">
-                                <label class="form-label" id="saWaiverReasonLabel" style="font-size:13px;font-weight:600;">Reason (required)</label>
-                                <textarea class="form-control form-control-sm" id="saWaiverReason" rows="3" placeholder="Reason…"></textarea>
-                            </div>
-
-                            <p class="mb-0 text-muted" id="saWaiverHint" style="font-size:13px;">
-                                Choose Fee Concession or Full Fee Waiver.
+                            <p class="mb-0 text-muted" id="saApproveHint" style="font-size:13px;">
+                                ${WAIVER_DEFAULT_HINT}
                             </p>
                         </div>
                         <div class="modal-footer border-top py-3">
                             <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saWaiverConfirmBtn">Apply Waiver</button>
+                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saApproveConfirmBtn">Approve</button>
                         </div>
                     </div>
                 </div>
@@ -490,13 +500,19 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(wrapper.firstElementChild);
 
         saWaiverModal = bootstrap.Modal.getOrCreateInstance(
-            document.getElementById("saWaiverModal"),
+            document.getElementById("saApproveModal"),
         );
 
         const refreshHint = () => {
-            const type = document.querySelector(
-                'input[name="saWaiverType"]:checked',
-            )?.value;
+            const checked = document.getElementById("saWaiverCheck").checked;
+            const type = checked
+                ? document.querySelector('input[name="saWaiverType"]:checked')
+                      ?.value
+                : null;
+
+            document.getElementById("saWaiverBox").style.display = checked
+                ? "block"
+                : "none";
 
             document.getElementById("saWaiverAmountBox").style.display =
                 type === "concession" ? "block" : "none";
@@ -508,26 +524,33 @@ document.addEventListener("DOMContentLoaded", function () {
                       ? "Reason for fee concession (required)"
                       : "Reason (required)";
 
-            document.getElementById("saWaiverHint").textContent =
+            document.getElementById("saApproveHint").textContent =
                 type === "full_waiver"
                     ? "The article will be published immediately. No payment will be requested."
                     : type === "concession"
                       ? "The author will see your reason and the amount they have to pay, with a Pay Now option."
-                      : "Choose Fee Concession or Full Fee Waiver.";
+                      : WAIVER_DEFAULT_HINT;
         };
+
+        document
+            .getElementById("saWaiverCheck")
+            .addEventListener("change", refreshHint);
 
         document
             .querySelectorAll('input[name="saWaiverType"]')
             .forEach((r) => r.addEventListener("change", refreshHint));
 
         document
-            .getElementById("saWaiverConfirmBtn")
+            .getElementById("saApproveConfirmBtn")
             .addEventListener("click", submitWaiver);
     }
 
     function openWaiver(id) {
         currentWaiverId = id;
         ensureWaiverModal();
+
+        document.getElementById("saWaiverCheck").checked = false;
+        document.getElementById("saWaiverBox").style.display = "none";
         document
             .querySelectorAll('input[name="saWaiverType"]')
             .forEach((r) => (r.checked = false));
@@ -536,12 +559,23 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("saWaiverReason").value = "";
         document.getElementById("saWaiverReasonLabel").textContent =
             "Reason (required)";
-        document.getElementById("saWaiverHint").textContent =
-            "Choose Fee Concession or Full Fee Waiver.";
+        document.getElementById("saApproveHint").textContent =
+            WAIVER_DEFAULT_HINT;
+
         saWaiverModal.show();
     }
 
     async function submitWaiver() {
+        // The checkbox must be ticked before anything can be applied
+        if (!document.getElementById("saWaiverCheck").checked) {
+            showToast(
+                "warning",
+                "Waiver failed",
+                'Tick "Grant fee concession / waiver" and choose an option.',
+            );
+            return;
+        }
+
         const waiverType = document.querySelector(
             'input[name="saWaiverType"]:checked',
         )?.value;

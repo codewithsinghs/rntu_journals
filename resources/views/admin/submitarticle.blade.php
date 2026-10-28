@@ -337,4 +337,5 @@
     {{-- Razorpay script removed: payments now go through Paytm --}}
     <script src="{{ asset('assets/js/admin/payment.js') }}"></script>
     <script src="{{ asset('assets/js/admin/submitarticle.js') }}"></script>
+    <script src="{{ asset('assets/js/admin/responsive-table.js') }}"></script>
 @endsection

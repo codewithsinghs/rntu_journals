@@ -1,6 +1,6 @@
-/* Add this to your admin stylesheet (or paste into a <style> block
-   in submitarticle.blade.php) */
-
+/* =========================================================
+   1. Actions dropdown
+   ========================================================= */
 .sa-action-dropdown {
     display: inline-block;
 }
@@ -27,6 +27,7 @@
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     padding: 6px 0;
+    z-index: 1060;
 }
 
 .sa-dropdown-item {
@@ -46,3 +47,259 @@
     background: #fee2e2;
     color: #dc2626;
 }
+
+/* =========================================================
+   2. Open-dropdown fix: lift the cell/row that has an open
+      menu above the rows below it
+   ========================================================= */
+.status-table tr:has(.dropdown-menu.show),
+.status-table td:has(.dropdown-menu.show) {
+    position: relative;
+    z-index: 50 !important;
+}
+
+/* =========================================================
+   3. Toggle (+/-) button: hidden on large screens
+   ========================================================= */
+.sa-toggle {
+    display: none;
+    width: 26px;
+    height: 26px;
+    margin-right: 8px;
+    border: 1px solid #cfd4dc;
+    border-radius: 50%;
+    background: #fff;
+    color: #0b356b;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* =========================================================
+   4. Compact layout (below 1400px)
+      Main columns: Article ID, Stage, Actions
+      Everything else opens with the + button
+   ========================================================= */
+@media (max-width: 1399.98px) {
+
+    /* No horizontal scroll; let the dropdown overflow the card */
+    .table-container,
+    #saTableWrap {
+        overflow: visible !important;
+    }
+
+    .status-table thead {
+        display: none;
+    }
+
+    .status-table,
+    .status-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    /* Each row becomes a card */
+    .status-table tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 12px;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .status-table tbody td {
+        display: block;
+        border: 0 !important;
+        padding: 4px 0 !important;
+        order: 3;
+    }
+
+    /* ---- Top row: [+ Article ID] .......... [Pay Now] [Action] ---- */
+    .status-table tbody td[data-label="Article ID"] {
+        display: flex;
+        align-items: center;
+        flex: 1 1 0;
+        min-width: 0;
+        order: 1;
+        font-weight: 600;
+    }
+
+    .status-table tbody td[data-label="Actions"] {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        margin-left: auto;
+        order: 2;
+        white-space: nowrap;
+    }
+
+    /* Stage sits on its own line under the top row */
+    .status-table tbody td[data-label="Stage"] {
+        flex: 0 0 100%;
+        order: 3;
+    }
+
+    .status-table tbody td[data-label="Actions"] .btn.me-1 {
+        margin-right: 0 !important;
+    }
+
+    .sa-action-toggle {
+        padding: 5px 12px;
+        font-size: 12.5px;
+    }
+
+    .sa-dropdown-menu {
+        min-width: 180px;
+    }
+
+    /* Secondary columns: hidden until the row is expanded */
+    .status-table tbody td.sa-secondary {
+        display: none;
+        order: 4;
+    }
+
+    .status-table tbody tr.sa-open td.sa-secondary {
+        display: flex;
+        flex: 0 0 100%;
+        justify-content: space-between;
+        gap: 12px;
+        border-top: 1px dashed #e5e7eb !important;
+        font-size: 13px;
+        word-break: break-word;
+    }
+
+    .status-table tbody tr.sa-open td.sa-secondary::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6b7280;
+        flex-shrink: 0;
+    }
+
+    /* Keep reviewer columns hidden when the header has d-none */
+    .status-table tbody td.d-none {
+        display: none !important;
+    }
+
+    .sa-toggle {
+        display: inline-flex;
+    }
+}
+
+/* =========================================================
+   5. Wide screens (1400px and up)
+      Full table, no horizontal scroll, Actions pinned right
+   ========================================================= */
+@media (min-width: 1400px) {
+
+    .table-container,
+    #saTableWrap {
+        overflow-x: visible !important;
+    }
+
+    .status-table {
+        width: 100%;
+        table-layout: auto;
+    }
+
+    .status-table th,
+    .status-table td {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Keep the Journal badge from stretching the row */
+    .status-table td:nth-child(4) {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Actions column: always the last visible column */
+    .status-table th:last-child,
+    .status-table td:last-child {
+        position: sticky;
+        right: 0;
+        background: #fff;
+        z-index: 2;
+        white-space: nowrap;
+        box-shadow: -6px 0 8px -6px rgba(0, 0, 0, 0.12);
+    }
+
+    /* The cell with an open menu must stay sticky but rise above the others */
+    .status-table td:last-child:has(.dropdown-menu.show) {
+        position: sticky;
+        z-index: 50 !important;
+    }
+
+    /* A sticky cell clips its own menu if overflow is hidden */
+    .status-table td:last-child {
+        overflow: visible;
+    }
+}
+
+/* =========================================================
+   6. Rows are not clickable (use "View Article" in Actions)
+   ========================================================= */
+.status-table tbody tr,
+.status-table tbody td {
+    cursor: default !important;
+}
+
+/* =========================================================
+   7. Small screens: heading must not overlap Create Article
+   ========================================================= */
+@media (max-width: 991.98px) {
+
+    /* Heading becomes a normal block above the controls */
+    .p_cards .heading {
+        position: static !important;
+        float: none !important;
+        transform: none !important;
+        display: block;
+        width: auto;
+        max-width: 100%;
+        margin: 0 0 12px 0 !important;
+    }
+
+    /* Create button + search wrap onto their own lines */
+    .p_cards .table-controls {
+        position: static !important;
+        clear: both;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin: 0 0 12px 0 !important;
+    }
+
+    .p_cards .table-controls .add-btn {
+        flex: 0 0 auto;
+        margin: 0 !important;
+        white-space: nowrap;
+    }
+
+    .p_cards .table-controls .add-btn a {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /* Search takes the full row (overrides the inline 320px max-width) */
+    .p_cards .table-controls .sa-search {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 100% !important;
+    }
+}   

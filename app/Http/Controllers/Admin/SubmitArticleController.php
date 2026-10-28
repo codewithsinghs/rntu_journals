@@ -32,7 +32,6 @@ class SubmitArticleController extends Controller
     ];
 
     private const OWNER_EDITABLE_STAGES = ['submitted', 'with_author', 'reviewer_correction'];
-    private const STANDARD_FEE = 2000.00;
 
     public function index()
     {
@@ -164,9 +163,13 @@ class SubmitArticleController extends Controller
             && in_array('waive', self::STAGE_ACTIONS[$stage] ?? [], true);
     }
 
+    /**
+     * Standard processing fee, read from config/payment.php
+     * (override with ARTICLE_STANDARD_FEE in .env).
+     */
     private function standardFee(SubmitArticle $article): float
     {
-        return self::STANDARD_FEE;
+        return (float) config('payment.standard_fee');
     }
 
 
@@ -446,7 +449,7 @@ class SubmitArticleController extends Controller
             : null;
 
         $article->payment_amount   = $article->payable_amount ?? $this->standardFee($article);
-        $article->payment_currency = 'INR';
+        $article->payment_currency = config('payment.currency');
         $editorPendingStages = [
             'submitted',
             'with_reviewer',

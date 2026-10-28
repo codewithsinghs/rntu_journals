@@ -1,19 +1,23 @@
 <aside class="sidebar" id="sidebar">
 
+    @php
+        // Single permission check
+        $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
+
+        // True if the user has at least one of the given permissions
+        $canAny = fn(array $perms) => count(array_intersect($perms, $authUserPerms ?? [])) > 0;
+    @endphp
+
     <!-- Logo -->
     <div class="sidebar-header">
         <button id="toggle-btn-small-screen">&#9776;</button>
         <a href="{{ route('admin.dashboard') }}">
             <img src="{{ asset('images/dashboard/logo.png') }}" alt="Logo">
         </a>
-        @php
-        $can = fn(string $perm) => in_array($perm, $authUserPerms ?? []);
-        @endphp
     </div>
 
     <input type="text" placeholder="Search" class="search-box" id="sidebarSearch" />
 
-    <!-- Journal Management -->
     <p>Journal Management</p>
 
     <ul class="nav">
@@ -52,17 +56,19 @@
         <!-- Volume Management -->
         @if ($can('view volumes'))
         <li>
-            <a href="{{ route('admin.volume') }}" class="{{ request()->routeIs('admin.volume*') ? 'active' : '' }}">
+            <a href="{{ route('admin.volume') }}"
+                class="{{ request()->routeIs('admin.volume*') ? 'active' : '' }}">
                 <i class="fa-solid fa-book-open"></i>
                 Volume Management
             </a>
         </li>
         @endif
 
-        <!-- Issues Management -->
+        <!-- Issue Management -->
         @if ($can('view issues'))
         <li>
-            <a href="{{ route('admin.issue') }}" class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
+            <a href="{{ route('admin.issue') }}"
+                class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
                 <i class="fa-solid fa-newspaper"></i>
                 Issue Management
             </a>
@@ -70,9 +76,11 @@
         @endif
 
         <!-- Article Management -->
+
         @if ($can('view'))
         <li>
-            <a href="{{ route('admin.issue') }}" class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
+            <a href="{{ route('admin.issue') }}"
+                class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
                 <i class="fa-solid fa-file-alt"></i>
                 Article Management
             </a>
@@ -80,9 +88,11 @@
         @endif
 
         <!-- Review Management -->
+        {{-- TODO: same as above --}}
         @if ($can('view'))
         <li>
-            <a href="{{ route('admin.issue') }}" class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
+            <a href="{{ route('admin.issue') }}"
+                class="{{ request()->routeIs('admin.issue*') ? 'active' : '' }}">
                 <i class="fa-solid fa-star"></i>
                 Review Management
             </a>
@@ -91,185 +101,206 @@
 
     </ul>
 
-    <!-- CMS Management -->
-    <p>CMS Management</p>
+    @if ($canAny([
+        'view menus',
+        'view home content',
+        'view announcements',
+        'view about',
+        'view editorial board',
+        'view editorial board roles',
+        'view contacts',
+        'view guidelines',
+        'view prp',
+        'view medias',
+        'view pages',
+    ]))
 
-    <ul class="nav">
+        <p>CMS Management</p>
 
-        <!-- Navbar -->
-        @if ($can('view menus'))
-        <li>
-            <a href="{{ route('admin.menus') }}" class="{{ request()->routeIs('admin.menus') ? 'active' : '' }}">
-                <i class="fa-solid fa-bars"></i>
-                Navbar
-            </a>
-        </li>
-        @endif
+        <ul class="nav">
 
-        <!-- Home Page -->
-        @if ($can('view home content'))
-        <li>
-            <a href="{{ route('admin.homebasiccontent') }}"
-                class="{{ request()->routeIs('admin.homebasiccontent*') ? 'active' : '' }}">
-                <i class="fa-solid fa-home"></i>
-                Home Page
-            </a>
-        </li>
-        @endif
+            <!-- Navbar -->
+            @if ($can('view menus'))
+            <li>
+                <a href="{{ route('admin.menus') }}"
+                    class="{{ request()->routeIs('admin.menus') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bars"></i>
+                    Navbar
+                </a>
+            </li>
+            @endif
 
-        <!-- Announcements -->
-        @if ($can('view announcements'))
-        <li>
-            <a href="{{ route('admin.announcements') }}"
-                class="{{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
-                <i class="fa-solid fa-bullhorn"></i>
-                Announcements
-            </a>
-        </li>
-        @endif
+            <!-- Home Page -->
+            @if ($can('view home content'))
+            <li>
+                <a href="{{ route('admin.homebasiccontent') }}"
+                    class="{{ request()->routeIs('admin.homebasiccontent*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-home"></i>
+                    Home Page
+                </a>
+            </li>
+            @endif
 
-        <!-- About Page -->
-        @if ($can('view about'))
-        <li>
-            <a href="{{ route('admin.aboutcontent') }}"
-                class="{{ request()->routeIs('admin.aboutcontent*') ? 'active' : '' }}">
-                <i class="fa-solid fa-info-circle"></i>
-                About Page
-            </a>
-        </li>
-        @endif
+            <!-- Announcements -->
+            @if ($can('view announcements'))
+            <li>
+                <a href="{{ route('admin.announcements') }}"
+                    class="{{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    Announcements
+                </a>
+            </li>
+            @endif
 
-        <!-- Editorial Board -->
-        @if ($can('view editorial board'))
-        <li>
-            <a href="{{ route('admin.editorial-board') }}"
-                class="{{ request()->routeIs('admin.editorial-board') ? 'active' : '' }}">
-                <i class="fa-solid fa-users"></i>
-                Editorial Board
-            </a>
-        </li>
-        @endif
+            <!-- About Page -->
+            @if ($can('view about'))
+            <li>
+                <a href="{{ route('admin.aboutcontent') }}"
+                    class="{{ request()->routeIs('admin.aboutcontent*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-info-circle"></i>
+                    About Page
+                </a>
+            </li>
+            @endif
 
-        <!-- Editorial Board Role-->
-        @if ($can('view editorial board roles'))
-        <li>
-            <a href="{{ route('admin.editorial-board-roles') }}"
-                class="{{ request()->routeIs('admin.editorial-board-roles') ? 'active' : '' }}">
-                <i class="fa-solid fa-user-tag"></i>
-                Editorial Board Role
-            </a>
-        </li>
-        @endif
+            <!-- Editorial Board -->
+            @if ($can('view editorial board'))
+            <li>
+                <a href="{{ route('admin.editorial-board') }}"
+                    class="{{ request()->routeIs('admin.editorial-board') ? 'active' : '' }}">
+                    <i class="fa-solid fa-users"></i>
+                    Editorial Board
+                </a>
+            </li>
+            @endif
 
-        <!-- Contact Page -->
-        @if ($can('view contacts'))
-        <li>
-            <a href="{{ route('admin.contact') }}"
-                class="{{ request()->routeIs('admin.contact') ? 'active' : '' }}">
-                <i class="fa-solid fa-address-book"></i>
-                Contact Page
-            </a>
-        </li>
-        @endif
+            <!-- Editorial Board Role -->
+            @if ($can('view editorial board roles'))
+            <li>
+                <a href="{{ route('admin.editorial-board-roles') }}"
+                    class="{{ request()->routeIs('admin.editorial-board-roles') ? 'active' : '' }}">
+                    <i class="fa-solid fa-user-tag"></i>
+                    Editorial Board Role
+                </a>
+            </li>
+            @endif
 
-        <!-- Guidelines Page -->
-        @if ($can('view guidelines'))
-        <li>
-            <a href="{{ route('admin.guidelines') }}"
-                class="{{ request()->routeIs('admin.guidelines*') ? 'active' : '' }}">
-                <i class="fa-solid fa-bookmark"></i>
-                Guidelines Page
-            </a>
-        </li>
-        @endif
+            <!-- Contact Page -->
+            @if ($can('view contacts'))
+            <li>
+                <a href="{{ route('admin.contact') }}"
+                    class="{{ request()->routeIs('admin.contact') ? 'active' : '' }}">
+                    <i class="fa-solid fa-address-book"></i>
+                    Contact Page
+                </a>
+            </li>
+            @endif
 
-        <!-- Guidelines Page -->
-        @if ($can('view prp'))
-        <li>
-            <a href="{{ route('admin.prp') }}"
-                class="{{ request()->routeIs('admin.prp*') ? 'active' : '' }}">
-                <i class="fa-solid fa-bookmark"></i>
-                PRP Page
-            </a>
-        </li>
-        @endif
+            <!-- Guidelines Page -->
+            @if ($can('view guidelines'))
+            <li>
+                <a href="{{ route('admin.guidelines') }}"
+                    class="{{ request()->routeIs('admin.guidelines*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bookmark"></i>
+                    Guidelines Page
+                </a>
+            </li>
+            @endif
 
+            <!-- PRP Page -->
+            @if ($can('view prp'))
+            <li>
+                <a href="{{ route('admin.prp') }}"
+                    class="{{ request()->routeIs('admin.prp*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bookmark"></i>
+                    PRP Page
+                </a>
+            </li>
+            @endif
 
-        <!-- Media -->
-        @if ($can('view medias'))
-        <li>
-            <a href="{{ route('admin.medias') }}"
-                class="{{ request()->routeIs('admin.medias') ? 'active' : '' }}">
-                <i class="fa-solid fa-images"></i>
-                Media
-            </a>
-        </li>
-        @endif
+            <!-- Media -->
+            @if ($can('view medias'))
+            <li>
+                <a href="{{ route('admin.medias') }}"
+                    class="{{ request()->routeIs('admin.medias') ? 'active' : '' }}">
+                    <i class="fa-solid fa-images"></i>
+                    Media
+                </a>
+            </li>
+            @endif
 
-        @if ($can('view pages'))
-        <li>
-            <a href="{{ route('admin.pages') }}"
-                class="{{ request()->routeIs('admin.pages*') ? 'active' : '' }}">
-                <i class="fa-solid fa-file-lines"></i>
-                Pages
-            </a>
-        </li>
-        @endif
+            <!-- Pages -->
+            @if ($can('view pages'))
+            <li>
+                <a href="{{ route('admin.pages') }}"
+                    class="{{ request()->routeIs('admin.pages*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Pages
+                </a>
+            </li>
+            @endif
 
-    </ul>
+        </ul>
 
-    <!-- User Management -->
-    <p>User Management</p>
+    @endif
 
-    <ul class="nav">
+    @if ($canAny(['view users', 'view roles', 'view permissions']))
 
-        <!-- Users Management -->
-        @if ($can('view users'))
-        <li>
-            <a href="{{ route('admin.users') }}" class="{{ request()->routeIs('admin.users*') ? 'active' : '' }}">
-                <i class="fa-solid fa-users"></i>
-                Users Management
-            </a>
-        </li>
-        @endif
+        <p>User Management</p>
 
-        <!-- Roles Management -->
-        @if ($can('view roles'))
-        <li>
-            <a href="{{ route('admin.roles') }}" class="{{ request()->routeIs('admin.roles*') ? 'active' : '' }}">
-                <i class="fa-solid fa-briefcase"></i>
-                Roles Management
-            </a>
-        </li>
-        @endif
+        <ul class="nav">
 
-        <!-- Permissions Management-->
-        @if ($can('view permissions'))
-        <li>
-            <a href="{{ route('admin.permissions') }}"
-                class="{{ request()->routeIs('admin.permissions') ? 'active' : '' }}">
-                <i class="fa-brands fa-creative-commons-by"></i>
-                Permissions Management
-            </a>
-        </li>
-        @endif
+            <!-- Users Management -->
+            @if ($can('view users'))
+            <li>
+                <a href="{{ route('admin.users') }}"
+                    class="{{ request()->routeIs('admin.users*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-users"></i>
+                    Users Management
+                </a>
+            </li>
+            @endif
 
-    </ul>
+            <!-- Roles Management -->
+            @if ($can('view roles'))
+            <li>
+                <a href="{{ route('admin.roles') }}"
+                    class="{{ request()->routeIs('admin.roles*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-briefcase"></i>
+                    Roles Management
+                </a>
+            </li>
+            @endif
 
-    <!-- Settings -->
-    <p>Settings</p>
+            <!-- Permissions Management -->
+            @if ($can('view permissions'))
+            <li>
+                <a href="{{ route('admin.permissions') }}"
+                    class="{{ request()->routeIs('admin.permissions') ? 'active' : '' }}">
+                    <i class="fa-brands fa-creative-commons-by"></i>
+                    Permissions Management
+                </a>
+            </li>
+            @endif
 
-    <ul class="nav">
-        <!-- Settings -->
-        @if ($can('view settings'))
-        <li>
-            <a href="{{ route('admin.settings') }}"
-                class="{{ request()->routeIs('admin.settings') ? 'active' : '' }}">
-                <i class="fa-solid fa-gears"></i>
-                Settings
-            </a>
-        </li>
-        @endif
-    </ul>
+        </ul>
+
+    @endif
+
+    @if ($can('view settings'))
+
+        <p>Settings</p>
+
+        <ul class="nav">
+            <li>
+                <a href="{{ route('admin.settings') }}"
+                    class="{{ request()->routeIs('admin.settings') ? 'active' : '' }}">
+                    <i class="fa-solid fa-gears"></i>
+                    Settings
+                </a>
+            </li>
+        </ul>
+
+    @endif
 
 </aside>

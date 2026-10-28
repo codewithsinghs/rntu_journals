@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     </label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">₹</span>
-                                        <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 1500">
+                                        <input type="number" min="0.01" step="0.01" class="form-control" id="saWaiverAmount" placeholder="e.g. 500">
                                     </div>
                                 </div>
 
