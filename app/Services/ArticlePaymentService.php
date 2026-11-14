@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\URL;
 
 class ArticlePaymentService
 {
-    public const STANDARD_FEE = 2000.00;
+    public const STANDARD_FEE = 1000.00;
     public const CURRENCY     = 'INR';
     public const GATEWAY      = 'paytm';
 
