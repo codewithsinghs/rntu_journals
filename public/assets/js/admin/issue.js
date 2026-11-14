@@ -8,10 +8,7 @@ let deleteIssueModal;
 let pendingDeleteId = null;
 let pendingDeleteName = null;
 
-const CURRENT_YEAR = new Date().getFullYear();
-
-// Local YYYY-MM-DD for "today", used as the max on the date input.
-// (Avoids the UTC-shift bug you get from new Date().toISOString().)
+// Local YYYY-MM-DD for "today" (avoids the UTC-shift bug of toISOString()).
 function todayStr() {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -27,17 +24,6 @@ function authHeaders() {
         Accept: "application/json",
         "Content-Type": "application/json",
     };
-}
-
-// Locks Year and Published Date inputs so neither can be set to the
-// future — Year caps at the current year, Published Date caps at today.
-// Called whenever the modal is opened (create/edit).
-function restrictDatesToPresentOrPast() {
-    const yearInput = document.getElementById("year");
-    if (yearInput) yearInput.setAttribute("max", CURRENT_YEAR);
-
-    const publishedInput = document.getElementById("published_date");
-    if (publishedInput) publishedInput.setAttribute("max", TODAY_STR);
 }
 
 // ── Lightweight toast (no HTML dependency) ──────────────────────
@@ -101,50 +87,58 @@ async function loadAllVolumes() {
     allVolumes = json.data?.data ?? [];
 }
 
+// Every volume of the journal is listed with its year. No de-duplication by
+// volume number: "Volume 1 (2024)" and "Volume 1 (2025)" are different rows
+// with different years, so each must stay selectable.
 function loadVolumeOptions(journalId, selectedVolumeId = null) {
     const select = document.getElementById("volume_id");
     select.innerHTML = '<option value="">Select volume...</option>';
 
-    const seen = new Set();
-
     allVolumes
         .filter((v) => v.journal_id == journalId)
-        .filter((v) => {
-            if (seen.has(v.volume)) return false;
-            seen.add(v.volume);
-            return true;
-        })
+        .sort((a, b) => Number(b.year) - Number(a.year))
         .forEach((v) => {
             const selected = selectedVolumeId == v.id ? "selected" : "";
-            select.innerHTML += `<option value="${v.id}" ${selected}>${v.volume}</option>`;
+            const label = v.year ? `${v.volume} (${v.year})` : `${v.volume}`;
+            select.innerHTML += `<option value="${v.id}" ${selected}>${label}</option>`;
         });
 
-    // Keep Year in sync with whatever volume ends up selected (e.g. when
-    // editing an issue and its volume is pre-selected above).
     syncYearFromVolume();
 }
 
-// An issue's year must match its volume's year, so once a volume is
-// chosen, Year is auto-filled from it and locked (read-only) to prevent
-// mismatches. With no volume selected, Year falls back to being a normal,
-// manually-typed field (still capped at the current year).
+// Year is NEVER typed by the user. It always comes from the selected volume,
+// so an issue always belongs to the same year as its volume.
 function syncYearFromVolume() {
     const volumeSelect = document.getElementById("volume_id");
     const yearInput = document.getElementById("year");
     if (!volumeSelect || !yearInput) return;
 
-    const volumeId = volumeSelect.value;
-    const volume = allVolumes.find((v) => v.id == volumeId);
+    const volume = allVolumes.find((v) => v.id == volumeSelect.value);
 
-    if (volume) {
-        yearInput.value = volume.year ?? "";
-        yearInput.readOnly = true;
-        yearInput.classList.add("bg-light");
-    } else {
-        yearInput.readOnly = false;
-        yearInput.classList.remove("bg-light");
-    }
+    yearInput.readOnly = true;
+    yearInput.classList.add("bg-light");
+    yearInput.placeholder = "Auto-filled from volume";
+    yearInput.value = volume?.year ?? "";
+
+    updatePublishedDateLimits(volume?.year ?? null);
 }
+
+// Published date must fall inside the volume's year and not be in the future.
+function updatePublishedDateLimits(year) {
+    const input = document.getElementById("published_date");
+    if (!input) return;
+
+    if (!year) {
+        input.removeAttribute("min");
+        input.setAttribute("max", TODAY_STR);
+        return;
+    }
+
+    const yearEnd = `${year}-12-31`;
+    input.setAttribute("min", `${year}-01-01`);
+    input.setAttribute("max", yearEnd < TODAY_STR ? yearEnd : TODAY_STR);
+}
+
 async function loadIssues(page = 1) {
     currentPage = page;
     const res = await fetch(`${API_BASE}?page=${page}`, {
@@ -171,7 +165,7 @@ async function loadIssues(page = 1) {
                 <td>${i.journal?.title ?? "-"}</td>
                 <td>${i.volume?.volume ?? "-"}</td>
                 <td>${i.issue}</td>
-                <td>${i.year ?? "-"}</td>
+                <td>${i.volume?.year ?? i.year ?? "-"}</td>
                 <td>${i.published_date ?? "-"}</td>
                 <td><span class="green-btn">${i.status}</span></td>
                 <td>
@@ -193,7 +187,6 @@ async function loadIssues(page = 1) {
     renderPagination(json.data);
 }
 
-
 function renderPagination(pageData) {
     const pagination = document.getElementById("pagination");
     pagination.innerHTML = "";
@@ -211,12 +204,11 @@ async function openCreateModal() {
     document.getElementById("issueForm").reset();
     document.getElementById("issue_id").value = "";
     document.getElementById("issueModalTitle").innerText = "Add Issue";
-    restrictDatesToPresentOrPast();
     await loadJournalOptions();
     await loadAllVolumes();
     document.getElementById("volume_id").innerHTML =
         '<option value="">Select volume...</option>';
-    syncYearFromVolume(); // no volume selected yet -> unlocks Year
+    syncYearFromVolume(); // no volume yet -> Year stays empty until one is chosen
     new bootstrap.Modal(document.getElementById("issueModal")).show();
 }
 
@@ -233,17 +225,18 @@ async function editIssue(id) {
     const i = json.data;
     await loadJournalOptions(i.journal_id);
     await loadAllVolumes();
-    loadVolumeOptions(i.journal_id, i.volume_id);
-
-    restrictDatesToPresentOrPast();
+    loadVolumeOptions(i.journal_id, i.volume_id); // also fills Year from the volume
 
     document.getElementById("issue_id").value = i.id;
     document.getElementById("issue").value = i.issue;
-    document.getElementById("year").value = i.year ?? "";
     document.getElementById("published_date").value = i.published_date ?? "";
     document.getElementById("status").value = i.status;
     document.getElementById("is_current").checked = !!i.is_current;
     document.getElementById("issueModalTitle").innerText = "Edit Issue";
+
+    // Fallback only if the volume could not be found in the list
+    const yearInput = document.getElementById("year");
+    if (!yearInput.value) yearInput.value = i.year ?? "";
 
     new bootstrap.Modal(document.getElementById("issueModal")).show();
 }
@@ -263,7 +256,7 @@ async function viewIssue(id) {
         <p><strong>Journal:</strong> ${i.journal?.title ?? "-"}</p>
         <p><strong>Volume:</strong> ${i.volume?.volume ?? "-"}</p>
         <p><strong>Issue:</strong> ${i.issue}</p>
-        <p><strong>Year:</strong> ${i.year ?? "-"}</p>
+        <p><strong>Year:</strong> ${i.volume?.year ?? i.year ?? "-"}</p>
         <p><strong>Published Date:</strong> ${i.published_date ?? "-"}</p>
         <p><strong>Status:</strong> ${i.status}</p>
         <p><strong>Current:</strong> ${i.is_current ? "Yes" : "No"}</p>
@@ -312,42 +305,45 @@ document
     .addEventListener("submit", async function (e) {
         e.preventDefault();
 
-        const yearValue = document.getElementById("year").value;
-        const publishedDateValue =
-            document.getElementById("published_date").value;
+        const volumeId = document.getElementById("volume_id").value;
+        const volume = allVolumes.find((v) => v.id == volumeId);
 
-        // Hard guards so manually typed/pasted values can't slip past the
-        // inputs' max attributes — only today/current-year or earlier.
-        // Skip this check when Year is locked to the selected volume's
-        // year (read-only), since that value isn't user-entered.
-        const yearIsUserEditable = !document.getElementById("year").readOnly;
-        if (
-            yearIsUserEditable &&
-            yearValue !== "" &&
-            Number(yearValue) > CURRENT_YEAR
-        ) {
-            showToast(
-                `Year cannot be a future year. Please choose ${CURRENT_YEAR} or earlier.`,
-                "danger",
-            );
-            document.getElementById("year").focus();
+        if (!volumeId || !volume) {
+            showToast("Please select a volume first.", "danger");
+            document.getElementById("volume_id").focus();
             return;
         }
 
-        if (publishedDateValue !== "" && publishedDateValue > TODAY_STR) {
-            showToast(
-                "Published Date cannot be a future date. Please choose today or an earlier date.",
-                "danger",
-            );
-            document.getElementById("published_date").focus();
-            return;
+        // Year always comes from the volume, never from typed input
+        const yearValue = volume.year;
+        const publishedDateValue =
+            document.getElementById("published_date").value;
+
+        if (publishedDateValue !== "") {
+            if (publishedDateValue > TODAY_STR) {
+                showToast(
+                    "Published Date cannot be a future date. Please choose today or an earlier date.",
+                    "danger",
+                );
+                document.getElementById("published_date").focus();
+                return;
+            }
+
+            if (String(publishedDateValue).slice(0, 4) !== String(yearValue)) {
+                showToast(
+                    `Published Date must be in ${yearValue}, the same year as the selected volume.`,
+                    "danger",
+                );
+                document.getElementById("published_date").focus();
+                return;
+            }
         }
 
         const id = document.getElementById("issue_id").value;
 
         const payload = {
             journal_id: document.getElementById("journal_id").value,
-            volume_id: document.getElementById("volume_id").value,
+            volume_id: volumeId,
             issue: document.getElementById("issue").value,
             year: yearValue,
             published_date: publishedDateValue,
@@ -382,10 +378,19 @@ document
     });
 
 document.addEventListener("DOMContentLoaded", function () {
-    deleteIssueModal = new bootstrap.Modal(document.getElementById("delete_popup"));
+    deleteIssueModal = new bootstrap.Modal(
+        document.getElementById("delete_popup"),
+    );
 
-    restrictDatesToPresentOrPast();
+    // Choosing a journal lists that journal's volumes (with their years)
+    const journalSelect = document.getElementById("journal_id");
+    if (journalSelect) {
+        journalSelect.addEventListener("change", function () {
+            loadVolumeOptions(this.value);
+        });
+    }
 
+    // Choosing a volume fills Year from it
     const volumeSelect = document.getElementById("volume_id");
     if (volumeSelect) {
         volumeSelect.addEventListener("change", syncYearFromVolume);
