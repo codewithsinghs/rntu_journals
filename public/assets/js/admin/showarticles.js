@@ -108,6 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </a>`;
     }
 
+    /* type: success | warning | error */
     function showToast(type, title, msg) {
         const el = document.getElementById("saToast");
         document.getElementById("saToastTitle").textContent = title;
@@ -119,13 +120,22 @@ document.addEventListener("DOMContentLoaded", function () {
             type === "success"
                 ? "bi bi-check-circle"
                 : "bi bi-exclamation-circle";
-        el.classList.remove("bg-success", "bg-danger");
-        el.classList.add(type === "success" ? "bg-success" : "bg-danger");
+        el.classList.remove("bg-success", "bg-danger", "bg-warning");
+        el.classList.add(
+            type === "success"
+                ? "bg-success"
+                : type === "warning"
+                  ? "bg-warning"
+                  : "bg-danger",
+        );
         bootstrap.Toast.getOrCreateInstance(el, {
             delay: 4000,
             autohide: true,
         }).show();
     }
+
+    // payment.js shows its messages through this
+    window.saShowToast = showToast;
 
     let confirmResolver = null;
 
@@ -326,6 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
        - Editor: Approve, Reject, Send to Reviewer
          -> Approve opens the payment-waiver modal when the editor has the
             "waive article payment" permission (r.can_waive).
+       - Author: Pay Now -> same popup as the list page.
        Correction Needed is reviewer-only. ─────────────────────────── */
     function renderActions(r) {
         const bar = document.getElementById("saActionsBar");
@@ -391,87 +402,24 @@ document.addEventListener("DOMContentLoaded", function () {
         if (showPay) {
             document
                 .getElementById("saPayBtn")
-                .addEventListener("click", () => startPayment(r));
+                .addEventListener("click", startPayment);
         }
     }
 
     /* ── Pay Now (author) ──
-       If the editor granted a fee concession (amount > 0), the author first
-       sees a modal stating exactly how much they have to pay. ─────────── */
-
-    // TODO: point this at your existing payment page / route.
-    const PAYMENT_URL = (uuid) => `/author/submit-articles/${uuid}/pay`;
-
-    function showPayableAmountModal({ amount, reason }) {
-        return new Promise((resolve) => {
-            let modalEl = document.getElementById("saPayableModal");
-            if (modalEl) modalEl.remove();
-
-            const wrapper = document.createElement("div");
-            wrapper.innerHTML = `
-                <div class="modal fade" id="saPayableModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header border-bottom py-3">
-                                <h5 class="modal-title fw-semibold mb-0">Fee Concession Applied</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body p-4 text-center">
-                                <p class="mb-1 text-muted" style="font-size:14px;">You have to pay</p>
-                                <div class="fw-bold mb-3" style="font-size:32px;">${fmtMoney(amount)}</div>
-                                <p class="mb-0 text-muted" style="font-size:13px;">
-                                    The editor has granted you a concession on the publication fee.
-                                </p>
-                                ${
-                                    reason
-                                        ? `<p class="mt-3 mb-0" style="font-size:13px;"><strong>Reason:</strong> ${esc(reason)}</p>`
-                                        : ""
-                                }
-                            </div>
-                            <div class="modal-footer border-top py-3">
-                                <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saPayableProceedBtn">Proceed to Payment</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            document.body.appendChild(wrapper.firstElementChild);
-
-            modalEl = document.getElementById("saPayableModal");
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-            let settled = false;
-            const done = (val) => {
-                if (settled) return;
-                settled = true;
-                resolve(val);
-            };
-
-            document
-                .getElementById("saPayableProceedBtn")
-                .addEventListener("click", () => {
-                    done(true);
-                    modal.hide();
-                });
-            modalEl.addEventListener("hidden.bs.modal", () => done(false));
-
-            modal.show();
-        });
-    }
-
-    async function startPayment(r) {
-        const amount = Number(r.waiver?.payable_amount) || 0;
-
-        // Concession with an amount > 0 → show the amount first
-        if (r.is_waiver && r.waiver?.partial_payment && amount > 0) {
-            const proceed = await showPayableAmountModal({
-                amount,
-                reason: r.waiver.reason,
-            });
-            if (!proceed) return;
+       Same flow as the list page: the popup in payment.js shows the article
+       details and the exact amount (standard fee or concession), then
+       creates the Paytm order and redirects. ─────────────────────────── */
+    function startPayment() {
+        if (!window.ArticlePayment) {
+            showToast(
+                "error",
+                "Payment",
+                "Payment module failed to load. Please refresh the page.",
+            );
+            return;
         }
-
-        window.location.href = PAYMENT_URL(id);
+        window.ArticlePayment.open(id);
     }
 
     /* ── Approve (editor) with optional fee concession / full waiver ──

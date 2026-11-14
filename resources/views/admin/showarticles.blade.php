@@ -125,6 +125,29 @@
         </div>
     </div>
 
+    <!-- Pay Now Modal (same partial as the list page: resources/views/admin/payment.blade.php) -->
+    @include('admin.payment')
+
+    <!-- Payment Receipt Modal
+         NOTE: if #saReceiptModal already exists inside the admin.payment partial,
+         delete this copy (duplicate IDs break the modal). The list page has the
+         same note. -->
+    <div class="modal fade" id="saReceiptModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="saReceiptBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" id="saReceiptRefreshBtn">Refresh</button>
+                    <button type="button" class="btn btn-primary" id="saReceiptDownloadBtn">Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index:9999">
         <div id="saToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive"
@@ -144,5 +167,11 @@
 @endsection
 
 @section('scripts')
+    <script>
+        window.APP_CONFIG = window.APP_CONFIG || {};
+        window.APP_CONFIG.CURRENT_USER_ID = "{{ auth()->id() }}";
+    </script>
+    {{-- payment.js must load BEFORE showarticles.js so ArticlePayment exists --}}
+    <script src="{{ asset('assets/js/admin/payment.js') }}"></script>
     <script src="{{ asset('assets/js/admin/showarticles.js') }}"></script>
 @endsection
