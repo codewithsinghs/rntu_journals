@@ -4,14 +4,17 @@ namespace App\Services;
 
 use App\Exceptions\PaymentException;
 use App\Models\ArticlePayment;
+use App\Models\Issue;
 use App\Models\SubmitArticle;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 class ArticlePaymentService
 {
+    /** Fallback only; the real value comes from config/payment.php */
     public const STANDARD_FEE = 1000.00;
     public const CURRENCY     = 'INR';
     public const GATEWAY      = 'paytm';
@@ -26,7 +29,8 @@ class ArticlePaymentService
             return (float) $waiver->payable_amount;
         }
 
-        return self::STANDARD_FEE;
+        // Same source the popup uses (SubmitArticleController::standardFee)
+        return (float) config('payment.standard_fee', self::STANDARD_FEE);
     }
 
     public function isPaid(SubmitArticle $article): bool
@@ -136,12 +140,30 @@ class ArticlePaymentService
     }
 
     /**
-     * Confirm an order with Paytm (server-to-server) and update our record.
-     * Safe to call many times.
+     * Confirm an order with Paytm and, if it is paid, publish the article.
+     * Safe to call many times (callback, receipt refresh, retries).
      *
      * @return array{payment: ArticlePayment, outcome: string}
      */
     public function reconcile(string $orderId): array
+    {
+        $result = $this->reconcileOrder($orderId);
+
+        // Runs after the payment transaction has committed. Also covers payments
+        // that were marked "paid" earlier but never published.
+        if ($result['outcome'] === 'success') {
+            $this->publishPaidArticle($result['payment']);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Server-to-server check with Paytm + update of our payment record.
+     *
+     * @return array{payment: ArticlePayment, outcome: string}
+     */
+    private function reconcileOrder(string $orderId): array
     {
         return DB::transaction(function () use ($orderId) {
             $payment = ArticlePayment::where('order_id', $orderId)->lockForUpdate()->first();
@@ -210,6 +232,98 @@ class ArticlePaymentService
         });
     }
 
+    /* ───────────── Paid -> Published ───────────── */
+
+    /**
+     * Failed / pending payments never reach this, so those articles
+     * stay on "Awaiting Payment".
+     */
+    private function publishPaidArticle(ArticlePayment $payment): void
+    {
+        try {
+            $article = SubmitArticle::with('review')->find($payment->submit_article_id);
+
+            if (!$article || ($article->review->current_stage ?? null) !== 'with_author_payment') {
+                return; // already published or not in the payment stage
+            }
+
+            $issue = $article->issue_id
+                ? Issue::find($article->issue_id)
+                : Issue::where('journal_id', $article->journal_id)
+                    ->orderByDesc('published_date')
+                    ->first();
+
+            if (!$issue) {
+                // Payment is safe. The editor's Publish action still works once an issue exists.
+                Log::error('Paid but no issue available to publish into', [
+                    'article_id' => $article->id,
+                    'order_id'   => $payment->order_id,
+                ]);
+                return;
+            }
+
+            $hasManualPages = !empty($article->page_start) && !empty($article->page_end);
+            $pageCount      = $hasManualPages ? 0 : $this->countPdfPages($article->signed_manuscript_pdf);
+
+            DB::transaction(function () use ($article, $issue, $pageCount, $hasManualPages) {
+                // Lock the review row so callback + receipt refresh can't publish twice
+                $review = $article->review()->lockForUpdate()->first();
+
+                if (!$review || $review->current_stage !== 'with_author_payment') {
+                    return;
+                }
+
+                $article->issue_id = $issue->id;
+
+                if (!$hasManualPages) {
+                    $lastEnd = SubmitArticle::where('issue_id', $issue->id)
+                        ->lockForUpdate()
+                        ->max('page_end') ?? 0;
+
+                    $article->page_start = $lastEnd + 1;
+                    $article->page_end   = $lastEnd + $pageCount;
+                }
+
+                $article->save();
+
+                $review->update([
+                    'final_status'  => 'published',
+                    'current_stage' => 'published',
+                    'is_published'  => true,
+                    'published_at'  => now(),
+                ]);
+            });
+
+            Log::info('Article published after successful payment', [
+                'article_id' => $article->id,
+                'order_id'   => $payment->order_id,
+            ]);
+        } catch (\Throwable $e) {
+            // Never break the payment response because publishing failed
+            Log::error('Auto-publish after payment failed', [
+                'order_id' => $payment->order_id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function countPdfPages(?string $path): int
+    {
+        if (!$path) {
+            return 1;
+        }
+
+        try {
+            $pdf = (new \Smalot\PdfParser\Parser())->parseFile(Storage::disk('public')->path($path));
+
+            return max(1, count($pdf->getPages()));
+        } catch (\Throwable $e) {
+            Log::warning('Could not count PDF pages', ['path' => $path, 'error' => $e->getMessage()]);
+
+            return 1;
+        }
+    }
+
     /* ───────────── Receipt ───────────── */
 
     public function receipt(string $orderId, $user): ArticlePayment
@@ -220,8 +334,10 @@ class ArticlePaymentService
             throw new PaymentException('Receipt not found.', 404);
         }
 
-        $isOwner = $user && (int) $payment->user_id === (int) $user->id;
-        if (!$isOwner && !($user && $user->can('view submit article'))) {
+        $isOwner  = $user && (int) $payment->user_id === (int) $user->id;
+        $isEditor = $user && ($user->can('view all articles') || $user->can('view submit article'));
+
+        if (!$isOwner && !$isEditor) {
             throw new PaymentException('You are not authorized to view this receipt.', 403);
         }
 

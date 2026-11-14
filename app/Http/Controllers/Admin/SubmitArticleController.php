@@ -1548,79 +1548,83 @@ class SubmitArticleController extends Controller
      *
      * Route: POST submit-articles/{id}/waive
      */
-    public function waiveAfterApproval(Request $request, $id)
-    {
-        try {
-            $article = $this->findByUuid($id, ['review']);
-            $user = $request->user('api');
+public function waiveAfterApproval(Request $request, $id)
+{
+    try {
+        $article = $this->findByUuid($id, ['review']);
+        $user = $request->user('api');
 
-            if (!$this->userHasAccess($user, 'waive article payment')) {
-                Log::warning('Unauthorized waive attempt', [
-                    'submission_id' => $id,
-                    'user_id'       => $user?->id,
-                ]);
-
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'You are not authorized to grant a fee concession or waiver.',
-                ], 403);
-            }
-
-            if (!$this->isWaivableApproved($article)) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'A waiver can only be granted on an approved submission awaiting payment.',
-                ], 409);
-            }
-
-            $isConcession = $request->input('waiver_type') === 'concession';
-
-            $validated = $request->validate([
-                'waiver_type'   => 'required|in:concession,full_waiver',
-                'waiver_reason' => 'required|string|max:1000',
-                'waiver_amount' => [Rule::requiredIf($isConcession), 'nullable', 'numeric', 'gt:0', 'max:99999999.99'],
-            ], [
-                'waiver_type.required'   => 'Please choose Fee Concession or Full Fee Waiver.',
-                'waiver_type.in'         => 'Invalid waiver type.',
-                'waiver_reason.required' => 'A reason is required for a fee concession or waiver.',
-                'waiver_amount.required' => 'Please enter the amount payable by the author.',
-                'waiver_amount.numeric'  => 'The payable amount must be a number.',
-                'waiver_amount.gt'       => 'The payable amount must be greater than 0.',
+        if (!$this->userHasAccess($user, 'waive article payment')) {
+            Log::warning('Unauthorized waive attempt', [
+                'submission_id' => $id,
+                'user_id'       => $user?->id,
             ]);
 
-            $type   = $validated['waiver_type'];
-            $reason = trim($validated['waiver_reason']);
-            $amount = $type === 'concession' ? round((float) $validated['waiver_amount'], 2) : null;
+            return response()->json([
+                'status'  => false,
+                'message' => 'You are not authorized to change the fee for this submission.',
+            ], 403);
+        }
 
+        if (!$this->isWaivableApproved($article)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'The fee can only be changed on an approved submission awaiting payment.',
+            ], 409);
+        }
+
+        $requestedType = $request->input('waiver_type');
+        $isConcession  = $requestedType === 'concession';
+        $isStandard    = $requestedType === 'standard_fee';
+
+        $validated = $request->validate([
+            'waiver_type'   => 'required|in:concession,full_waiver,standard_fee',
+            'waiver_reason' => [Rule::requiredIf(!$isStandard), 'nullable', 'string', 'max:1000'],
+            'waiver_amount' => [Rule::requiredIf($isConcession), 'nullable', 'numeric', 'gt:0', 'max:99999999.99'],
+        ], [
+            'waiver_type.required'   => 'Please choose an option.',
+            'waiver_type.in'         => 'Invalid fee option.',
+            'waiver_reason.required' => 'A reason is required for a fee concession or waiver.',
+            'waiver_amount.required' => 'Please enter the amount payable by the author.',
+            'waiver_amount.numeric'  => 'The payable amount must be a number.',
+            'waiver_amount.gt'       => 'The payable amount must be greater than 0.',
+        ]);
+
+        $type   = $validated['waiver_type'];
+        $reason = trim((string) ($validated['waiver_reason'] ?? ''));
+        $amount = $type === 'concession' ? round((float) $validated['waiver_amount'], 2) : null;
+
+        // ── Full waiver → publish straight away ──
+        if ($type === 'full_waiver') {
             $article->is_waiver = true;
 
-            // ── Full waiver → publish straight away ──
-            if ($type === 'full_waiver') {
-                $error = $this->finalizePublish($article, [
-                    'editor_id'     => $user->id,
-                    'editor_status' => 'approved_full_waiver',
-                ]);
+            $error = $this->finalizePublish($article, [
+                'editor_id'     => $user->id,
+                'editor_status' => 'approved_full_waiver',
+            ]);
 
-                if ($error) {
-                    return response()->json(['status' => false, 'message' => $error], 422);
-                }
-
-                $this->saveWaiver($article, $type, $reason);
-
-                Log::info('Full waiver granted after approval', [
-                    'submission_id' => $id,
-                    'user_id'       => $user->id,
-                ]);
-
-                return response()->json([
-                    'status'  => true,
-                    'message' => 'Full fee waiver granted and the article has been published.',
-                ]);
+            if ($error) {
+                return response()->json(['status' => false, 'message' => $error], 422);
             }
 
-            // ── Concession → stays in payment stage with the reduced amount ──
-            DB::transaction(function () use ($article, $user, $type, $reason, $amount) {
-                $article->save(); // persists is_waiver
+            $this->saveWaiver($article, $type, $reason);
+
+            Log::info('Full waiver granted after approval', [
+                'submission_id' => $id,
+                'user_id'       => $user->id,
+            ]);
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Full fee waiver granted and the article has been published.',
+            ]);
+        }
+
+        // ── Standard fee → author pays the full standard amount ──
+        if ($type === 'standard_fee') {
+            DB::transaction(function () use ($article, $user) {
+                $article->is_waiver = false;
+                $article->save();
 
                 $article->review()->updateOrCreate(
                     ['submit_article_id' => $article->id],
@@ -1631,44 +1635,76 @@ class SubmitArticleController extends Controller
                     ]
                 );
 
-                $this->saveWaiver($article, $type, $reason, $amount);
+                // Passing null type deletes any waiver row, so the author
+                // is charged the standard fee.
+                $this->saveWaiver($article, null, null);
             });
 
-            Log::info('Fee concession granted after approval', [
+            $fee = $this->standardFee($article);
+
+            Log::info('Standard fee set after approval', [
                 'submission_id' => $id,
                 'user_id'       => $user->id,
-                'amount'        => $amount,
+                'amount'        => $fee,
             ]);
 
             return response()->json([
                 'status'  => true,
-                'message' => 'Fee concession applied. The author can now pay ₹' . number_format($amount, 2) . '.',
+                'message' => 'Standard fee applied. The author can now pay ₹' . number_format($fee, 2) . '.',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => $e->validator->errors()->first(),
-                'errors'  => $e->errors(),
-            ], 422);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Submission not found.',
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('Failed to grant waiver', [
-                'submission_id' => $id,
-                'error'         => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'status'  => false,
-                'message' => 'Something went wrong.',
-                'error'   => $e->getMessage(),
-            ], 500);
         }
-    }
 
+        // ── Concession → reduced amount ──
+        DB::transaction(function () use ($article, $user, $type, $reason, $amount) {
+            $article->is_waiver = true;
+            $article->save();
+
+            $article->review()->updateOrCreate(
+                ['submit_article_id' => $article->id],
+                [
+                    'editor_id'     => $user->id,
+                    'editor_status' => 'approved_pending_payment',
+                    'current_stage' => 'with_author_payment',
+                ]
+            );
+
+            $this->saveWaiver($article, $type, $reason, $amount);
+        });
+
+        Log::info('Fee concession granted after approval', [
+            'submission_id' => $id,
+            'user_id'       => $user->id,
+            'amount'        => $amount,
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Fee concession applied. The author can now pay ₹' . number_format($amount, 2) . '.',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => $e->validator->errors()->first(),
+            'errors'  => $e->errors(),
+        ], 422);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Submission not found.',
+        ], 404);
+    } catch (\Exception $e) {
+        Log::error('Failed to update fee', [
+            'submission_id' => $id,
+            'error'         => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Something went wrong.',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+}
     // ─── Delete Submission — editor / admin / superadmin only ───────
 
     public function destroy(Request $request, $id)

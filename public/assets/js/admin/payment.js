@@ -501,7 +501,7 @@
         if (!status || !orderId) return;
 
         if (status === "success") {
-            toast("success", "Payment successful", "Your submission will be published by the editor.");
+            toast("success", "Payment successful", "Your article has been published.");
         } else if (status === "pending") {
             toast("warning", "Payment pending", "Your payment is still being processed. Please check again shortly.");
         } else {

@@ -192,7 +192,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 extraAttrs: `data-order="${esc(r.latest_payment_order_id)}"`,
             },
             {
-                // Editor-only: fee concession / full waiver for an approved article
+                // Editor-only: fee decision (standard fee / concession / full waiver)
+                // for an approved article
                 action: "waive",
                 label: "Waiver",
                 show: r.can_waive_approved,
@@ -419,15 +420,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    /* ── Waiver (editor) for an already approved article ───────────
-       Opens the checkbox modal first (Grant fee concession / waiver),
-       then submits through the /waive API. The modal is built
+    /* ── Author fee (editor) for an already approved article ───────
+       Options:
+         - Standard Fee  : author pays the full standard amount
+         - Fee Concession: author pays a reduced amount
+         - Full Waiver   : no payment, published straight away
+       Submits through the /waive API. The modal is built
        dynamically so no blade changes are required.
        ──────────────────────────────────────────────────────────── */
     let saWaiverModal = null;
 
-    const WAIVER_DEFAULT_HINT =
-        "The author will be able to pay once this is approved.";
+    const WAIVER_DEFAULT_HINT = "Choose how much the author should pay.";
 
     function ensureWaiverModal() {
         if (document.getElementById("saApproveModal")) {
@@ -449,12 +452,18 @@ document.addEventListener("DOMContentLoaded", function () {
                             <div class="form-check mb-3">
                                 <input class="form-check-input" type="checkbox" id="saWaiverCheck">
                                 <label class="form-check-label" for="saWaiverCheck" style="font-weight:600;">
-                                    Grant fee concession / waiver
+                                    Change the author fee
                                 </label>
                             </div>
 
                             <div id="saWaiverBox" style="display:none;">
                                 <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverStandard" value="standard_fee">
+                                        <label class="form-check-label" for="saWaiverStandard">
+                                            Standard Fee <span class="text-muted">(author pays the full standard amount)</span>
+                                        </label>
+                                    </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="saWaiverType" id="saWaiverConcession" value="concession">
                                         <label class="form-check-label" for="saWaiverConcession">
@@ -479,7 +488,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     </div>
                                 </div>
 
-                                <div class="mb-2">
+                                <div class="mb-2" id="saWaiverReasonWrap">
                                     <label class="form-label" id="saWaiverReasonLabel" style="font-size:13px;font-weight:600;">Reason (required)</label>
                                     <textarea class="form-control form-control-sm" id="saWaiverReason" rows="3"
                                         placeholder="Reason…"></textarea>
@@ -492,7 +501,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                         <div class="modal-footer border-top py-3">
                             <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saApproveConfirmBtn">Approve</button>
+                            <button type="button" class="btn btn-success btn-sm px-4 text-white" id="saApproveConfirmBtn">Apply</button>
                         </div>
                     </div>
                 </div>
@@ -517,6 +526,10 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("saWaiverAmountBox").style.display =
                 type === "concession" ? "block" : "none";
 
+            // Reason is not needed for the standard fee
+            document.getElementById("saWaiverReasonWrap").style.display =
+                type === "standard_fee" ? "none" : "block";
+
             document.getElementById("saWaiverReasonLabel").textContent =
                 type === "full_waiver"
                     ? "Reason for full fee waiver (required)"
@@ -525,11 +538,13 @@ document.addEventListener("DOMContentLoaded", function () {
                       : "Reason (required)";
 
             document.getElementById("saApproveHint").textContent =
-                type === "full_waiver"
-                    ? "The article will be published immediately. No payment will be requested."
-                    : type === "concession"
-                      ? "The author will see your reason and the amount they have to pay, with a Pay Now option."
-                      : WAIVER_DEFAULT_HINT;
+                type === "standard_fee"
+                    ? "The author will have to pay the full standard fee. Any earlier concession is removed."
+                    : type === "full_waiver"
+                      ? "The article will be published immediately. No payment will be requested."
+                      : type === "concession"
+                        ? "The author will see your reason and the amount they have to pay, with a Pay Now option."
+                        : WAIVER_DEFAULT_HINT;
         };
 
         document
@@ -555,6 +570,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .querySelectorAll('input[name="saWaiverType"]')
             .forEach((r) => (r.checked = false));
         document.getElementById("saWaiverAmountBox").style.display = "none";
+        document.getElementById("saWaiverReasonWrap").style.display = "block";
         document.getElementById("saWaiverAmount").value = "";
         document.getElementById("saWaiverReason").value = "";
         document.getElementById("saWaiverReasonLabel").textContent =
@@ -570,8 +586,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!document.getElementById("saWaiverCheck").checked) {
             showToast(
                 "warning",
-                "Waiver failed",
-                'Tick "Grant fee concession / waiver" and choose an option.',
+                "Fee update failed",
+                'Tick "Change the author fee" and choose an option.',
             );
             return;
         }
@@ -585,25 +601,21 @@ document.addEventListener("DOMContentLoaded", function () {
         const reason = document.getElementById("saWaiverReason").value.trim();
 
         if (!waiverType) {
-            showToast(
-                "error",
-                "Waiver failed",
-                "Choose Fee Concession or Full Fee Waiver.",
-            );
+            showToast("error", "Fee update failed", "Please choose an option.");
             return;
         }
         if (waiverType === "concession" && !(amount > 0)) {
             showToast(
                 "error",
-                "Waiver failed",
+                "Fee update failed",
                 "Enter the amount payable by the author (greater than 0).",
             );
             return;
         }
-        if (!reason) {
+        if (waiverType !== "standard_fee" && !reason) {
             showToast(
                 "error",
-                "Waiver failed",
+                "Fee update failed",
                 "A reason is required for the concession / waiver.",
             );
             return;
@@ -611,7 +623,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const payload = {
             waiver_type: waiverType,
-            waiver_reason: reason,
+            ...(waiverType !== "standard_fee" ? { waiver_reason: reason } : {}),
             ...(waiverType === "concession" ? { waiver_amount: amount } : {}),
         };
 
@@ -626,12 +638,12 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             const json = await res.json();
             if (!res.ok || !json.status)
-                throw new Error(json.message || "Waiver failed.");
-            showToast("success", "Waiver applied", json.message);
+                throw new Error(json.message || "Fee update failed.");
+            showToast("success", "Fee updated", json.message);
             saWaiverModal.hide();
             loadList(currentPage);
         } catch (e) {
-            showToast("error", "Waiver failed", e.message);
+            showToast("error", "Fee update failed", e.message);
         }
     }
 
